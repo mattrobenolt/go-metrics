@@ -29,7 +29,7 @@ func NewGauge(name string, f func() float64) *Gauge {
 // Gauge is a float64 gauge.
 type Gauge struct {
 	// valueBits contains uint64 representation of float64 passed to Gauge.Set.
-	valueBits uint64
+	valueBits atomic.Uint64
 
 	// f is a callback, which is called for returning the gauge value.
 	f func() float64
@@ -40,7 +40,7 @@ func (g *Gauge) Get() float64 {
 	if f := g.f; f != nil {
 		return f()
 	}
-	n := atomic.LoadUint64(&g.valueBits)
+	n := g.valueBits.Load()
 	return math.Float64frombits(n)
 }
 
@@ -52,7 +52,7 @@ func (g *Gauge) Set(v float64) {
 		panic(fmt.Errorf("cannot call Set on gauge created with non-nil callback"))
 	}
 	n := math.Float64bits(v)
-	atomic.StoreUint64(&g.valueBits, n)
+	g.valueBits.Store(n)
 }
 
 // Inc increments g by 1.
@@ -77,11 +77,11 @@ func (g *Gauge) Add(fAdd float64) {
 		panic(fmt.Errorf("cannot call Set on gauge created with non-nil callback"))
 	}
 	for {
-		n := atomic.LoadUint64(&g.valueBits)
+		n := g.valueBits.Load()
 		f := math.Float64frombits(n)
 		fNew := f + fAdd
 		nNew := math.Float64bits(fNew)
-		if atomic.CompareAndSwapUint64(&g.valueBits, n, nNew) {
+		if g.valueBits.CompareAndSwap(n, nNew) {
 			break
 		}
 	}

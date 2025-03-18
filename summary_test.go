@@ -3,6 +3,7 @@ package metrics
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +23,7 @@ func TestSummarySerial(t *testing.T) {
 	}
 
 	// Write data to summary
-	for i := 0; i < 2000; i++ {
+	for i := range 2000 {
 		s.Update(float64(i))
 		t := time.Now()
 		s.UpdateDuration(t.Add(-time.Millisecond * time.Duration(i)))
@@ -52,7 +53,7 @@ func TestSummaryConcurrent(t *testing.T) {
 	name := "SummaryConcurrent"
 	s := NewSummary(name)
 	err := testConcurrent(func() error {
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			s.Update(float64(i))
 		}
 		return nil
@@ -103,7 +104,7 @@ func TestSummarySmallWindow(t *testing.T) {
 	window := time.Millisecond * 20
 	quantiles := []float64{0.1, 0.2, 0.3}
 	s := NewSummaryExt(name, window, quantiles)
-	for i := 0; i < 2000; i++ {
+	for range 2000 {
 		s.Update(123)
 	}
 	// Wait for window update and verify that the summary has been cleared.
@@ -133,7 +134,7 @@ func TestGetOrCreateSummaryInvalidQuantiles(t *testing.T) {
 	expectPanic(t, name, func() {
 		GetOrCreateSummaryExt(name, defaultSummaryWindow, []float64{0.1, 0.2})
 	})
-	quantiles := append([]float64{}, defaultSummaryQuantiles...)
+	quantiles := slices.Clone(defaultSummaryQuantiles)
 	quantiles[len(quantiles)-1] /= 2
 	expectPanic(t, name, func() {
 		GetOrCreateSummaryExt(name, defaultSummaryWindow, quantiles)
@@ -159,7 +160,7 @@ func TestGetOrCreateSummaryConcurrent(t *testing.T) {
 
 func testGetOrCreateSummary(name string) error {
 	s1 := GetOrCreateSummary(name)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		s2 := GetOrCreateSummary(name)
 		if s1 != s2 {
 			return fmt.Errorf("unexpected summary returned; got %p; want %p", s2, s1)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -49,7 +48,7 @@ type procStat struct {
 
 func writeProcessMetrics(w io.Writer) {
 	statFilepath := "/proc/self/stat"
-	data, err := ioutil.ReadFile(statFilepath)
+	data, err := os.ReadFile(statFilepath)
 	if err != nil {
 		log.Printf("ERROR: metrics: cannot open %s: %s", statFilepath, err)
 		return
@@ -92,15 +91,15 @@ func writeProcessMetrics(w io.Writer) {
 	writeIOMetrics(w)
 }
 
-var procSelfIOErrLogged uint32
+var procSelfIOErrLogged atomic.Bool
 
 func writeIOMetrics(w io.Writer) {
 	ioFilepath := "/proc/self/io"
-	data, err := ioutil.ReadFile(ioFilepath)
+	data, err := os.ReadFile(ioFilepath)
 	if err != nil {
 		// Do not spam the logs with errors - this error cannot be fixed without process restart.
 		// See https://github.com/VictoriaMetrics/metrics/issues/42
-		if atomic.CompareAndSwapUint32(&procSelfIOErrLogged, 0, 1) {
+		if procSelfIOErrLogged.CompareAndSwap(false, true) {
 			log.Printf("ERROR: metrics: cannot read process_io_* metrics from %q, so these metrics won't be updated until the error is fixed; "+
 				"see https://github.com/VictoriaMetrics/metrics/issues/42 ; The error: %s", ioFilepath, err)
 		}
@@ -185,7 +184,7 @@ func getOpenFDsCount(path string) (uint64, error) {
 }
 
 func getMaxFilesLimit(path string) (uint64, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}
@@ -238,7 +237,7 @@ func writeProcessMemMetrics(w io.Writer) {
 }
 
 func getMemStats(path string) (*memStats, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

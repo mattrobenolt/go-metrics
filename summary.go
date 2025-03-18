@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -62,7 +63,7 @@ func NewSummaryExt(name string, window time.Duration, quantiles []float64) *Summ
 
 func newSummary(window time.Duration, quantiles []float64) *Summary {
 	// Make a copy of quantiles in order to prevent from their modification by the caller.
-	quantiles = append([]float64{}, quantiles...)
+	quantiles = slices.Clone(quantiles)
 	validateQuantiles(quantiles)
 	sm := &Summary{
 		curr:           histogram.NewFast(),
@@ -173,19 +174,6 @@ func GetOrCreateSummaryExt(name string, window time.Duration, quantiles []float6
 	return defaultSet.GetOrCreateSummaryExt(name, window, quantiles)
 }
 
-func isEqualQuantiles(a, b []float64) bool {
-	// Do not use relfect.DeepEqual, since it is slower than the direct comparison.
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 type quantileValue struct {
 	sm  *Summary
 	idx int
@@ -236,7 +224,7 @@ func unregisterSummary(sm *Summary) {
 	found := false
 	for i, xsm := range sms {
 		if xsm == sm {
-			sms = append(sms[:i], sms[i+1:]...)
+			sms = slices.Delete(sms, i, i+1)
 			found = true
 			break
 		}

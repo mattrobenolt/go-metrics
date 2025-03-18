@@ -13,9 +13,10 @@
 package metrics
 
 import (
+	"cmp"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -99,9 +100,10 @@ func WritePrometheus(w io.Writer, exposeProcessMetrics bool) {
 	}
 	registeredSetsLock.Unlock()
 
-	sort.Slice(sets, func(i, j int) bool {
-		return uintptr(unsafe.Pointer(sets[i])) < uintptr(unsafe.Pointer(sets[j]))
+	slices.SortFunc(sets, func(a, b *Set) int {
+		return cmp.Compare(uintptr(unsafe.Pointer(a)), uintptr(unsafe.Pointer(b)))
 	})
+
 	for _, s := range sets {
 		s.WritePrometheus(w)
 	}
@@ -270,19 +272,14 @@ func GetDefaultSet() *Set {
 // It is safe to call this method multiple times. It is allowed to change it in runtime.
 // ExposeMetadata is set to false by default.
 func ExposeMetadata(v bool) {
-	n := 0
-	if v {
-		n = 1
-	}
-	atomic.StoreUint32(&exposeMetadata, uint32(n))
+	exposeMetadata.Store(v)
 }
 
 func isMetadataEnabled() bool {
-	n := atomic.LoadUint32(&exposeMetadata)
-	return n != 0
+	return exposeMetadata.Load()
 }
 
-var exposeMetadata uint32
+var exposeMetadata atomic.Bool
 
 func isCounterName(name string) bool {
 	return strings.HasSuffix(name, "_total")

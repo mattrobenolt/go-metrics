@@ -2,9 +2,10 @@ package metrics
 
 import (
 	"bytes"
+	"cmp"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 )
@@ -32,21 +33,22 @@ func NewSet() *Set {
 	}
 }
 
+func compareMetrics(a, b *namedMetric) int {
+	return cmp.Compare(a.name, b.name)
+}
+
 // WritePrometheus writes all the metrics from s to w in Prometheus format.
 func (s *Set) WritePrometheus(w io.Writer) {
 	// Collect all the metrics in in-memory buffer in order to prevent from long locking due to slow w.
 	var bb bytes.Buffer
-	lessFunc := func(i, j int) bool {
-		return s.a[i].name < s.a[j].name
-	}
 	s.mu.Lock()
 	for _, sm := range s.summaries {
 		sm.updateQuantiles()
 	}
-	if !sort.SliceIsSorted(s.a, lessFunc) {
-		sort.Slice(s.a, lessFunc)
+	if !slices.IsSortedFunc(s.a, compareMetrics) {
+		slices.SortFunc(s.a, compareMetrics)
 	}
-	sa := append([]*namedMetric(nil), s.a...)
+	sa := slices.Clone(s.a)
 	metricsWriters := s.metricsWriters
 	s.mu.Unlock()
 
@@ -416,7 +418,7 @@ func (s *Set) GetOrCreateSummaryExt(name string, window time.Duration, quantiles
 	if sm.window != window {
 		panic(fmt.Errorf("BUG: invalid window requested for the summary %q; requested %s; need %s", name, window, sm.window))
 	}
-	if !isEqualQuantiles(sm.quantiles, quantiles) {
+	if !slices.Equal(sm.quantiles, quantiles) {
 		panic(fmt.Errorf("BUG: invalid quantiles requested from the summary %q; requested %v; need %v", name, quantiles, sm.quantiles))
 	}
 	return sm
@@ -448,19 +450,16 @@ func (s *Set) registerMetric(name string, m metric) {
 //
 // Panics if the given name was already registered before.
 func (s *Set) mustRegisterLocked(name string, m metric, isAux bool) {
-	nm, ok := s.m[name]
-	if !ok {
-		nm = &namedMetric{
-			name:   name,
-			metric: m,
-			isAux:  isAux,
-		}
-		s.m[name] = nm
-		s.a = append(s.a, nm)
-	}
-	if ok {
+	if _, ok := s.m[name]; ok {
 		panic(fmt.Errorf("BUG: metric %q is already registered", name))
 	}
+	nm := &namedMetric{
+		name:   name,
+		metric: m,
+		isAux:  isAux,
+	}
+	s.m[name] = nm
+	s.a = append(s.a, nm)
 }
 
 // UnregisterMetric removes metric with the given name from s.
@@ -490,7 +489,7 @@ func (s *Set) unregisterMetricLocked(nm *namedMetric) bool {
 	deleteFromList := func(metricName string) {
 		for i, nm := range s.a {
 			if nm.name == metricName {
-				s.a = append(s.a[:i], s.a[i+1:]...)
+				s.a = slices.Delete(s.a, i, i+1)
 				return
 			}
 		}
@@ -517,7 +516,7 @@ func (s *Set) unregisterMetricLocked(nm *namedMetric) bool {
 	found := false
 	for i, xsm := range s.summaries {
 		if xsm == sm {
-			s.summaries = append(s.summaries[:i], s.summaries[i+1:]...)
+			s.summaries = slices.Delete(s.summaries, i, i+1)
 			found = true
 			break
 		}
@@ -556,7 +555,7 @@ func (s *Set) ListMetricNames() []string {
 		}
 		metricNames = append(metricNames, nm.name)
 	}
-	sort.Strings(metricNames)
+	slices.Sort(metricNames)
 	return metricNames
 }
 

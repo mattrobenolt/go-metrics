@@ -24,37 +24,37 @@ func NewCounter(name string) *Counter {
 //
 // It may be used as a gauge if Dec and Set are called.
 type Counter struct {
-	n uint64
+	n atomic.Uint64
 }
 
 // Inc increments c.
 func (c *Counter) Inc() {
-	atomic.AddUint64(&c.n, 1)
+	c.n.Add(1)
 }
 
 // Dec decrements c.
 func (c *Counter) Dec() {
-	atomic.AddUint64(&c.n, ^uint64(0))
+	c.n.Add(^uint64(0))
 }
 
 // Add adds n to c.
 func (c *Counter) Add(n int) {
-	atomic.AddUint64(&c.n, uint64(n))
+	c.n.Add(uint64(n))
 }
 
 // AddInt64 adds n to c.
 func (c *Counter) AddInt64(n int64) {
-	atomic.AddUint64(&c.n, uint64(n))
+	c.n.Add(uint64(n))
 }
 
 // Get returns the current value for c.
 func (c *Counter) Get() uint64 {
-	return atomic.LoadUint64(&c.n)
+	return c.n.Load()
 }
 
 // Set sets c value to n.
 func (c *Counter) Set(n uint64) {
-	atomic.StoreUint64(&c.n, n)
+	c.n.Store(n)
 }
 
 // marshalTo marshals c with the given prefix to w.
