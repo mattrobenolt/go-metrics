@@ -13,10 +13,11 @@
 package metrics
 
 import (
+	"bytes"
 	"cmp"
-	"fmt"
 	"io"
 	"slices"
+	"strconv"
 	"sync"
 	"unsafe"
 )
@@ -228,15 +229,76 @@ func isFloatInteger(v float64) bool {
 
 // WriteMetricUint64 writes metric with the given name and value to w in Prometheus text exposition format.
 func WriteMetricUint64(w io.Writer, metricName string, value uint64) {
-	fmt.Fprintf(w, "%s %d\n", metricName, value)
+	bb, isBuffer := w.(*bytes.Buffer)
+	if !isBuffer {
+		bb = getMetricsBuffer()
+		defer freeMetricsBuffer(bb)
+	}
+
+	bb.WriteString(metricName)
+	bb.WriteByte(' ')
+	buf := bb.AvailableBuffer()
+	buf = strconv.AppendUint(buf, value, 10)
+	bb.Write(buf)
+	bb.WriteByte('\n')
+
+	if !isBuffer {
+		w.Write(bb.Bytes())
+	}
 }
 
 // WriteMetricInt64 writes metric with the given name and value to w in Prometheus text exposition format.
 func WriteMetricInt64(w io.Writer, metricName string, value int64) {
-	fmt.Fprintf(w, "%s %d\n", metricName, value)
+	bb, isBuffer := w.(*bytes.Buffer)
+	if !isBuffer {
+		bb = getMetricsBuffer()
+		defer freeMetricsBuffer(bb)
+	}
+
+	bb.WriteString(metricName)
+	bb.WriteByte(' ')
+	buf := bb.AvailableBuffer()
+	buf = strconv.AppendInt(buf, value, 10)
+	bb.Write(buf)
+	bb.WriteByte('\n')
+
+	if !isBuffer {
+		w.Write(bb.Bytes())
+	}
 }
 
 // WriteMetricFloat64 writes metric with the given name and value to w in Prometheus text exposition format.
 func WriteMetricFloat64(w io.Writer, metricName string, value float64) {
-	fmt.Fprintf(w, "%s %g\n", metricName, value)
+	bb, isBuffer := w.(*bytes.Buffer)
+	if !isBuffer {
+		bb = getMetricsBuffer()
+		defer freeMetricsBuffer(bb)
+	}
+
+	bb.WriteString(metricName)
+	bb.WriteByte(' ')
+	buf := bb.AvailableBuffer()
+	buf = strconv.AppendFloat(buf, value, 'g', -1, 64)
+	bb.Write(buf)
+	bb.WriteByte('\n')
+
+	if !isBuffer {
+		w.Write(bb.Bytes())
+	}
+}
+
+var metricsBufferPool sync.Pool
+
+const defaultBufferSize = 256
+
+func getMetricsBuffer() *bytes.Buffer {
+	if bb := metricsBufferPool.Get(); bb != nil {
+		return bb.(*bytes.Buffer)
+	}
+	return bytes.NewBuffer(make([]byte, defaultBufferSize))
+}
+
+func freeMetricsBuffer(bb *bytes.Buffer) {
+	bb.Reset()
+	metricsBufferPool.Put(bb)
 }
