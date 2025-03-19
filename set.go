@@ -52,18 +52,7 @@ func (s *Set) WritePrometheus(w io.Writer) {
 	metricsWriters := s.metricsWriters
 	s.mu.Unlock()
 
-	isMetadataEnabled := isMetadataEnabled()
-	prevMetricFamily := ""
 	for _, nm := range sa {
-		if isMetadataEnabled {
-			metricFamily := getMetricFamily(nm.name)
-			if metricFamily != prevMetricFamily {
-				// write meta info only once per metric family
-				metricType := nm.metric.metricType()
-				writeMetadata(&bb, nm.name, metricType)
-				prevMetricFamily = metricFamily
-			}
-		}
 		// Call marshalTo without the global lock, since certain metric types such as Gauge
 		// can call a callback, which, in turn, can try calling s.mu.Lock again.
 		nm.metric.marshalTo(nm.name, &bb)

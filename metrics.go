@@ -19,7 +19,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"unsafe"
 )
 
@@ -266,73 +265,34 @@ func GetDefaultSet() *Set {
 	return defaultSet
 }
 
-// ExposeMetadata allows enabling adding TYPE and HELP metadata to the exposed metrics globally.
-//
-// It is safe to call this method multiple times. It is allowed to change it in runtime.
-// ExposeMetadata is set to false by default.
-func ExposeMetadata(v bool) {
-	exposeMetadata.Store(v)
-}
-
-func isMetadataEnabled() bool {
-	return exposeMetadata.Load()
-}
-
-var exposeMetadata atomic.Bool
-
 func isCounterName(name string) bool {
 	return strings.HasSuffix(name, "_total")
 }
 
 // WriteGaugeUint64 writes gauge metric with the given name and value to w in Prometheus text exposition format.
 func WriteGaugeUint64(w io.Writer, name string, value uint64) {
-	writeMetricUint64(w, name, "gauge", value)
+	writeMetricUint64(w, name, value)
 }
 
 // WriteGaugeFloat64 writes gauge metric with the given name and value to w in Prometheus text exposition format.
 func WriteGaugeFloat64(w io.Writer, name string, value float64) {
-	writeMetricFloat64(w, name, "gauge", value)
+	writeMetricFloat64(w, name, value)
 }
 
 // WriteCounterUint64 writes counter metric with the given name and value to w in Prometheus text exposition format.
 func WriteCounterUint64(w io.Writer, name string, value uint64) {
-	writeMetricUint64(w, name, "counter", value)
+	writeMetricUint64(w, name, value)
 }
 
 // WriteCounterFloat64 writes counter metric with the given name and value to w in Prometheus text exposition format.
 func WriteCounterFloat64(w io.Writer, name string, value float64) {
-	writeMetricFloat64(w, name, "counter", value)
+	writeMetricFloat64(w, name, value)
 }
 
-func writeMetricUint64(w io.Writer, metricName, metricType string, value uint64) {
-	WriteMetadataIfNeeded(w, metricName, metricType)
+func writeMetricUint64(w io.Writer, metricName string, value uint64) {
 	fmt.Fprintf(w, "%s %d\n", metricName, value)
 }
 
-func writeMetricFloat64(w io.Writer, metricName, metricType string, value float64) {
-	WriteMetadataIfNeeded(w, metricName, metricType)
+func writeMetricFloat64(w io.Writer, metricName string, value float64) {
 	fmt.Fprintf(w, "%s %g\n", metricName, value)
-}
-
-// WriteMetadataIfNeeded writes HELP and TYPE metadata for the given metricName and metricType if this is globally enabled via ExposeMetadata().
-//
-// If the metadata exposition isn't enabled, then this function is no-op.
-func WriteMetadataIfNeeded(w io.Writer, metricName, metricType string) {
-	if isMetadataEnabled() {
-		writeMetadata(w, metricName, metricType)
-	}
-}
-
-func writeMetadata(w io.Writer, metricName, metricType string) {
-	metricFamily := getMetricFamily(metricName)
-	fmt.Fprintf(w, "# HELP %s\n", metricFamily)
-	fmt.Fprintf(w, "# TYPE %s %s\n", metricFamily, metricType)
-}
-
-func getMetricFamily(metricName string) string {
-	n := strings.IndexByte(metricName, '{')
-	if n < 0 {
-		return metricName
-	}
-	return metricName[:n]
 }

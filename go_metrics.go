@@ -82,7 +82,6 @@ func writeGoMetrics(w io.Writer) {
 	}
 	phis := []float64{0, 0.25, 0.5, 0.75, 1}
 	quantiles := make([]float64, 0, len(phis))
-	WriteMetadataIfNeeded(w, "go_gc_duration_seconds", "summary")
 	for i, q := range gcPauses.Quantiles(quantiles[:0], phis) {
 		fmt.Fprintf(w, `go_gc_duration_seconds{quantile="%g"} %g`+"\n", phis[i], q)
 	}
@@ -97,10 +96,8 @@ func writeGoMetrics(w io.Writer) {
 	WriteGaugeUint64(w, "go_threads", uint64(numThread))
 
 	// Export build details.
-	WriteMetadataIfNeeded(w, "go_info", "gauge")
 	fmt.Fprintf(w, "go_info{version=%q} 1\n", runtime.Version())
 
-	WriteMetadataIfNeeded(w, "go_info_ext", "gauge")
 	fmt.Fprintf(w, "go_info_ext{compiler=%q, GOARCH=%q, GOOS=%q, GOROOT=%q} 1\n",
 		runtime.Compiler, runtime.GOARCH, runtime.GOOS, runtime.GOROOT())
 }
@@ -165,7 +162,6 @@ func writeRuntimeHistogramMetric(w io.Writer, name string, h *runtimemetrics.Flo
 
 	totalCount := uint64(0)
 	iNext := 0.0
-	WriteMetadataIfNeeded(w, name, "histogram")
 	for i, count := range counts {
 		totalCount += count
 		if float64(i) >= iNext {
