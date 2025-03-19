@@ -40,7 +40,13 @@ func compareMetrics(a, b *namedMetric) int {
 // WritePrometheus writes all the metrics from s to w in Prometheus format.
 func (s *Set) WritePrometheus(w io.Writer) {
 	// Collect all the metrics in in-memory buffer in order to prevent from long locking due to slow w.
-	var bb bytes.Buffer
+	bb, isBuffer := w.(*bytes.Buffer)
+	if !isBuffer {
+		// if our io.Writer is not already a bytes.Buffer, allocate a new one
+		// with a resonable default.
+		bb = bytes.NewBuffer(make([]byte, 16*1024))
+	}
+
 	s.mu.Lock()
 	for _, sm := range s.summaries {
 		sm.updateQuantiles()
@@ -55,9 +61,12 @@ func (s *Set) WritePrometheus(w io.Writer) {
 	for _, nm := range sa {
 		// Call marshalTo without the global lock, since certain metric types such as Gauge
 		// can call a callback, which, in turn, can try calling s.mu.Lock again.
-		nm.metric.marshalTo(nm.name, &bb)
+		nm.metric.marshalTo(nm.name, bb)
 	}
-	w.Write(bb.Bytes())
+
+	if !isBuffer {
+		w.Write(bb.Bytes())
+	}
 
 	for _, writeMetrics := range metricsWriters {
 		writeMetrics(w)
