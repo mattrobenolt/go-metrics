@@ -70,7 +70,7 @@ func (g *Gauge) Add(fAdd float64) {
 
 func (g *Gauge) marshalTo(prefix string, w io.Writer) {
 	v := g.Get()
-	if float64(int64(v)) == v {
+	if isFloatInteger(v) {
 		// Marshal integer values without scientific notation
 		fmt.Fprintf(w, "%s %d\n", prefix, int64(v))
 	} else {

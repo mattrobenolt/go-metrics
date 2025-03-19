@@ -218,7 +218,7 @@ func (h *Histogram) marshalTo(prefix string, w io.Writer) {
 	}
 	name, labels := splitMetricName(prefix)
 	sum := h.getSum()
-	if float64(int64(sum)) == sum {
+	if isFloatInteger(sum) {
 		fmt.Fprintf(w, "%s_sum%s %d\n", name, labels, int64(sum))
 	} else {
 		fmt.Fprintf(w, "%s_sum%s %g\n", name, labels, sum)

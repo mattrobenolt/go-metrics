@@ -227,6 +227,10 @@ func isCounterName(name string) bool {
 	return strings.HasSuffix(name, "_total")
 }
 
+func isFloatInteger(v float64) bool {
+	return float64(int64(v)) == v
+}
+
 // WriteGaugeUint64 writes gauge metric with the given name and value to w in Prometheus text exposition format.
 func WriteGaugeUint64(w io.Writer, name string, value uint64) {
 	writeMetricUint64(w, name, value)
