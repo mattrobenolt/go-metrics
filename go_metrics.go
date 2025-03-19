@@ -9,7 +9,7 @@ import (
 	runtimemetrics "runtime/metrics"
 	"strings"
 
-	"github.com/valyala/histogram"
+	"github.com/VictoriaMetrics/metrics/internal/histogram"
 )
 
 // See https://pkg.go.dev/runtime/metrics#hdr-Supported_metrics

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/valyala/histogram"
+	"github.com/VictoriaMetrics/metrics/internal/histogram"
 )
 
 const defaultSummaryWindow = 5 * time.Minute
