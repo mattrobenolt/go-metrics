@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -75,10 +74,41 @@ func skipSpace(s string) string {
 }
 
 func validateIdent(s string) error {
-	if !identRegexp.MatchString(s) {
+	if !validateIdentFast(s) {
 		return fmt.Errorf("invalid identifier %q", s)
 	}
 	return nil
 }
 
-var identRegexp = regexp.MustCompile("^[a-zA-Z_:.][a-zA-Z0-9_:.]*$")
+func validateIdentFast(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	if !isAlpha(s[0]) && !isSymbol(s[0]) {
+		return false
+	}
+
+	for i := 1; i < len(s); i++ {
+		if !isAlpha(s[i]) && !isNumeric(s[i]) && !isSymbol(s[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isAlpha(c byte) bool {
+	return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
+}
+
+func isNumeric(c byte) bool {
+	return '0' <= c && c <= '9'
+}
+
+func isSymbol(c byte) bool {
+	switch c {
+	case '_', ':', '.':
+		return true
+	}
+	return false
+}
