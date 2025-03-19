@@ -48,7 +48,3 @@ func (c *Counter) marshalTo(prefix string, w io.Writer) {
 	v := c.Get()
 	fmt.Fprintf(w, "%s %d\n", prefix, v)
 }
-
-func (c *Counter) metricType() string {
-	return "counter"
-}

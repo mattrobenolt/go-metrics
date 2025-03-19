@@ -232,7 +232,3 @@ func (h *Histogram) getSum() float64 {
 	h.mu.Unlock()
 	return sum
 }
-
-func (h *Histogram) metricType() string {
-	return "histogram"
-}

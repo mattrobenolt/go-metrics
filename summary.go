@@ -91,10 +91,6 @@ func (sm *Summary) marshalTo(prefix string, w io.Writer) {
 	}
 }
 
-func (sm *Summary) metricType() string {
-	return "summary"
-}
-
 func splitMetricName(name string) (string, string) {
 	n := strings.IndexByte(name, '{')
 	if n < 0 {
@@ -121,10 +117,6 @@ func (qv *quantileValue) marshalTo(prefix string, w io.Writer) {
 	if !math.IsNaN(v) {
 		fmt.Fprintf(w, "%s %g\n", prefix, v)
 	}
-}
-
-func (qv *quantileValue) metricType() string {
-	return "unsupported"
 }
 
 func addTag(name, tag string) string {

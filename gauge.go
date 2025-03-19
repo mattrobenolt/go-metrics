@@ -77,7 +77,3 @@ func (g *Gauge) marshalTo(prefix string, w io.Writer) {
 		fmt.Fprintf(w, "%s %g\n", prefix, v)
 	}
 }
-
-func (g *Gauge) metricType() string {
-	return "gauge"
-}
