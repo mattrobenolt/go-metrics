@@ -318,9 +318,12 @@ func writeMetricFloat64(w io.Writer, metricName, metricType string, value float6
 //
 // If the metadata exposition isn't enabled, then this function is no-op.
 func WriteMetadataIfNeeded(w io.Writer, metricName, metricType string) {
-	if !isMetadataEnabled() {
-		return
+	if isMetadataEnabled() {
+		writeMetadata(w, metricName, metricType)
 	}
+}
+
+func writeMetadata(w io.Writer, metricName, metricType string) {
 	metricFamily := getMetricFamily(metricName)
 	fmt.Fprintf(w, "# HELP %s\n", metricFamily)
 	fmt.Fprintf(w, "# TYPE %s %s\n", metricFamily, metricType)
