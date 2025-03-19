@@ -12,7 +12,7 @@ func TestWriteMetrics(t *testing.T) {
 	t.Run("gauge_uint64", func(t *testing.T) {
 		var bb bytes.Buffer
 
-		WriteGaugeUint64(&bb, "foo", 123)
+		WriteMetricUint64(&bb, "foo", 123)
 		sExpected := "foo 123\n"
 		if s := bb.String(); s != sExpected {
 			t.Fatalf("unexpected value; got\n%s\nwant\n%s", s, sExpected)
@@ -21,7 +21,7 @@ func TestWriteMetrics(t *testing.T) {
 	t.Run("gauge_float64", func(t *testing.T) {
 		var bb bytes.Buffer
 
-		WriteGaugeFloat64(&bb, "foo", 1.23)
+		WriteMetricFloat64(&bb, "foo", 1.23)
 		sExpected := "foo 1.23\n"
 		if s := bb.String(); s != sExpected {
 			t.Fatalf("unexpected value; got\n%s\nwant\n%s", s, sExpected)
@@ -30,7 +30,7 @@ func TestWriteMetrics(t *testing.T) {
 	t.Run("counter_uint64", func(t *testing.T) {
 		var bb bytes.Buffer
 
-		WriteCounterUint64(&bb, "foo_total", 123)
+		WriteMetricUint64(&bb, "foo_total", 123)
 		sExpected := "foo_total 123\n"
 		if s := bb.String(); s != sExpected {
 			t.Fatalf("unexpected value; got\n%s\nwant\n%s", s, sExpected)
@@ -39,7 +39,7 @@ func TestWriteMetrics(t *testing.T) {
 	t.Run("counter_float64", func(t *testing.T) {
 		var bb bytes.Buffer
 
-		WriteCounterFloat64(&bb, "foo_total", 1.23)
+		WriteMetricFloat64(&bb, "foo_total", 1.23)
 		sExpected := "foo_total 1.23\n"
 		if s := bb.String(); s != sExpected {
 			t.Fatalf("unexpected value; got\n%s\nwant\n%s", s, sExpected)

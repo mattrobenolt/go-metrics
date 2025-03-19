@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	"io"
 	"sync/atomic"
 )
@@ -45,6 +44,5 @@ func (c *Counter) Set(n uint64) {
 
 // marshalTo marshals c with the given prefix to w.
 func (c *Counter) marshalTo(prefix string, w io.Writer) {
-	v := c.Get()
-	fmt.Fprintf(w, "%s %d\n", prefix, v)
+	WriteMetricUint64(w, prefix, c.Get())
 }

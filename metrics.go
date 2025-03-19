@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"io"
 	"slices"
-	"strings"
 	"sync"
 	"unsafe"
 )
@@ -223,38 +222,21 @@ func WriteFDMetrics(w io.Writer) {
 	writeFDMetrics(w)
 }
 
-func isCounterName(name string) bool {
-	return strings.HasSuffix(name, "_total")
-}
-
 func isFloatInteger(v float64) bool {
 	return float64(int64(v)) == v
 }
 
-// WriteGaugeUint64 writes gauge metric with the given name and value to w in Prometheus text exposition format.
-func WriteGaugeUint64(w io.Writer, name string, value uint64) {
-	writeMetricUint64(w, name, value)
-}
-
-// WriteGaugeFloat64 writes gauge metric with the given name and value to w in Prometheus text exposition format.
-func WriteGaugeFloat64(w io.Writer, name string, value float64) {
-	writeMetricFloat64(w, name, value)
-}
-
-// WriteCounterUint64 writes counter metric with the given name and value to w in Prometheus text exposition format.
-func WriteCounterUint64(w io.Writer, name string, value uint64) {
-	writeMetricUint64(w, name, value)
-}
-
-// WriteCounterFloat64 writes counter metric with the given name and value to w in Prometheus text exposition format.
-func WriteCounterFloat64(w io.Writer, name string, value float64) {
-	writeMetricFloat64(w, name, value)
-}
-
-func writeMetricUint64(w io.Writer, metricName string, value uint64) {
+// WriteMetricUint64 writes metric with the given name and value to w in Prometheus text exposition format.
+func WriteMetricUint64(w io.Writer, metricName string, value uint64) {
 	fmt.Fprintf(w, "%s %d\n", metricName, value)
 }
 
-func writeMetricFloat64(w io.Writer, metricName string, value float64) {
+// WriteMetricInt64 writes metric with the given name and value to w in Prometheus text exposition format.
+func WriteMetricInt64(w io.Writer, metricName string, value int64) {
+	fmt.Fprintf(w, "%s %d\n", metricName, value)
+}
+
+// WriteMetricFloat64 writes metric with the given name and value to w in Prometheus text exposition format.
+func WriteMetricFloat64(w io.Writer, metricName string, value float64) {
 	fmt.Fprintf(w, "%s %g\n", metricName, value)
 }

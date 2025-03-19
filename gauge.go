@@ -72,8 +72,8 @@ func (g *Gauge) marshalTo(prefix string, w io.Writer) {
 	v := g.Get()
 	if isFloatInteger(v) {
 		// Marshal integer values without scientific notation
-		fmt.Fprintf(w, "%s %d\n", prefix, int64(v))
+		WriteMetricInt64(w, prefix, int64(v))
 	} else {
-		fmt.Fprintf(w, "%s %g\n", prefix, v)
+		WriteMetricFloat64(w, prefix, v)
 	}
 }

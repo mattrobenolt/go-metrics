@@ -115,13 +115,13 @@ func (qv *quantileValue) marshalTo(prefix string, w io.Writer) {
 	v := qv.sm.quantileValues[qv.idx]
 	qv.sm.mu.Unlock()
 	if !math.IsNaN(v) {
-		fmt.Fprintf(w, "%s %g\n", prefix, v)
+		WriteMetricFloat64(w, prefix, v)
 	}
 }
 
 func addTag(name, tag string) string {
 	if len(name) == 0 || name[len(name)-1] != '}' {
-		return fmt.Sprintf("%s{%s}", name, tag)
+		return name + "{" + tag + "}"
 	}
 	name = name[:len(name)-1]
 	if len(name) == 0 {
@@ -129,9 +129,9 @@ func addTag(name, tag string) string {
 	}
 	if name[len(name)-1] == '{' {
 		// case for empty labels set metric_name{}
-		return fmt.Sprintf("%s%s}", name, tag)
+		return name + tag + "}"
 	}
-	return fmt.Sprintf("%s,%s}", name, tag)
+	return name + "," + tag + "}"
 }
 
 func registerSummaryLocked(sm *Summary) {
