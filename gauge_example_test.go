@@ -8,8 +8,10 @@ import (
 )
 
 func ExampleGauge() {
+	set := metrics.NewSet()
+
 	// Define a gauge exporting the number of goroutines.
-	var g = metrics.NewGauge(`goroutines_count`, func() float64 {
+	g := set.NewGauge(`goroutines_count`, func() float64 {
 		return float64(runtime.NumGoroutine())
 	})
 
@@ -18,11 +20,13 @@ func ExampleGauge() {
 }
 
 func ExampleGauge_vec() {
+	set := metrics.NewSet()
+
 	for i := range 3 {
 		// Dynamically construct metric name and pass it to GetOrCreateGauge.
 		name := fmt.Sprintf(`metric{label1=%q, label2="%d"}`, "value1", i)
 		iLocal := i
-		metrics.GetOrCreateGauge(name, func() float64 {
+		set.GetOrCreateGauge(name, func() float64 {
 			return float64(iLocal + 1)
 		})
 	}
@@ -30,7 +34,7 @@ func ExampleGauge_vec() {
 	// Read counter values.
 	for i := range 3 {
 		name := fmt.Sprintf(`metric{label1=%q, label2="%d"}`, "value1", i)
-		n := metrics.GetOrCreateGauge(name, func() float64 { return 0 }).Get()
+		n := set.GetOrCreateGauge(name, func() float64 { return 0 }).Get()
 		fmt.Println(n)
 	}
 

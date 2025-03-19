@@ -12,13 +12,14 @@ import (
 
 func TestHistogramMerge(t *testing.T) {
 	name := `TestHistogramMerge`
-	h := NewHistogram(name)
+	s := NewSet()
+	h := s.NewHistogram(name)
 	// Write data to histogram
 	for i := 98; i < 218; i++ {
 		h.Update(float64(i))
 	}
 
-	b := NewHistogram("test")
+	b := s.NewHistogram("test")
 	for i := 98; i < 218; i++ {
 		b.Update(float64(i))
 	}
@@ -58,7 +59,11 @@ func TestGetVMRange(t *testing.T) {
 
 func TestHistogramSerial(t *testing.T) {
 	name := `TestHistogramSerial`
-	h := NewHistogram(name)
+	s := NewSet()
+	RegisterSet(s)
+	defer UnregisterSet(s, true)
+
+	h := s.NewHistogram(name)
 
 	// Verify that the histogram is invisible in the output of WritePrometheus when it has no data.
 	var bb bytes.Buffer
@@ -141,7 +146,7 @@ prefix_count 120
 
 func TestHistogramConcurrent(t *testing.T) {
 	name := "HistogramConcurrent"
-	h := NewHistogram(name)
+	h := NewSet().NewHistogram(name)
 	err := testConcurrent(func() error {
 		for f := 0.6; f < 1.4; f += 0.1 {
 			h.Update(f)
@@ -188,7 +193,11 @@ prefix_count 40
 
 func TestHistogramWithTags(t *testing.T) {
 	name := `TestHistogram{tag="foo"}`
-	h := NewHistogram(name)
+	s := NewSet()
+	RegisterSet(s)
+	defer UnregisterSet(s, true)
+
+	h := s.NewHistogram(name)
 	h.Update(123)
 
 	var bb bytes.Buffer
@@ -202,7 +211,11 @@ func TestHistogramWithTags(t *testing.T) {
 
 func TestHistogramWithEmptyTags(t *testing.T) {
 	name := `TestHistogram{}`
-	h := NewHistogram(name)
+	s := NewSet()
+	RegisterSet(s)
+	defer UnregisterSet(s, true)
+
+	h := s.NewHistogram(name)
 	h.Update(123)
 
 	var bb bytes.Buffer
@@ -232,9 +245,10 @@ func TestGetOrCreateHistogramConcurrent(t *testing.T) {
 }
 
 func testGetOrCreateHistogram(name string) error {
-	h1 := GetOrCreateHistogram(name)
+	s := NewSet()
+	h1 := s.GetOrCreateHistogram(name)
 	for range 10 {
-		h2 := GetOrCreateHistogram(name)
+		h2 := s.GetOrCreateHistogram(name)
 		if h1 != h2 {
 			return fmt.Errorf("unexpected histogram returned; got %p; want %p", h2, h1)
 		}

@@ -7,23 +7,6 @@ import (
 	"sync/atomic"
 )
 
-// NewGauge registers and returns gauge with the given name, which calls f to obtain gauge value.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// f must be safe for concurrent calls.
-// if f is nil, then it is expected that the gauge value is changed via Set(), Inc(), Dec() and Add() calls.
-//
-// The returned gauge is safe to use from concurrent goroutines.
-func NewGauge(name string, f func() float64) *Gauge {
-	return defaultSet.NewGauge(name, f)
-}
-
 // Gauge is a float64 gauge.
 type Gauge struct {
 	// valueBits contains uint64 representation of float64 passed to Gauge.Set.
@@ -97,22 +80,4 @@ func (g *Gauge) marshalTo(prefix string, w io.Writer) {
 
 func (g *Gauge) metricType() string {
 	return "gauge"
-}
-
-// GetOrCreateGauge returns registered gauge with the given name
-// or creates new gauge if the registry doesn't contain gauge with
-// the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned gauge is safe to use from concurrent goroutines.
-//
-// Performance tip: prefer NewGauge instead of GetOrCreateGauge.
-func GetOrCreateGauge(name string, f func() float64) *Gauge {
-	return defaultSet.GetOrCreateGauge(name, f)
 }

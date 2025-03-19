@@ -143,6 +143,7 @@ func TestRegisterUnregister(t *testing.T) {
 		workers    = 16
 		iterations = 1000
 	)
+	s := NewSet()
 	wg := sync.WaitGroup{}
 	wg.Add(workers)
 	for range workers {
@@ -152,20 +153,20 @@ func TestRegisterUnregister(t *testing.T) {
 			for i := range iterations {
 				iteration := i % 5
 				counter := fmt.Sprintf(`counter{iteration="%d"}`, iteration)
-				GetOrCreateCounter(counter).Add(i)
-				UnregisterMetric(counter)
+				s.GetOrCreateCounter(counter).Add(i)
+				s.UnregisterMetric(counter)
 
 				histogram := fmt.Sprintf(`histogram{iteration="%d"}`, iteration)
-				GetOrCreateHistogram(histogram).UpdateDuration(now)
-				UnregisterMetric(histogram)
+				s.GetOrCreateHistogram(histogram).UpdateDuration(now)
+				s.UnregisterMetric(histogram)
 
 				gauge := fmt.Sprintf(`gauge{iteration="%d"}`, iteration)
-				GetOrCreateGauge(gauge, func() float64 { return 1 })
-				UnregisterMetric(gauge)
+				s.GetOrCreateGauge(gauge, func() float64 { return 1 })
+				s.UnregisterMetric(gauge)
 
 				summary := fmt.Sprintf(`summary{iteration="%d"}`, iteration)
-				GetOrCreateSummary(summary).Update(float64(i))
-				UnregisterMetric(summary)
+				s.GetOrCreateSummary(summary).Update(float64(i))
+				s.UnregisterMetric(summary)
 			}
 		}()
 	}

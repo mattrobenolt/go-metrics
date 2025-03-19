@@ -32,35 +32,6 @@ type Summary struct {
 	window time.Duration
 }
 
-// NewSummary creates and returns new summary with the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned summary is safe to use from concurrent goroutines.
-func NewSummary(name string) *Summary {
-	return defaultSet.NewSummary(name)
-}
-
-// NewSummaryExt creates and returns new summary with the given name,
-// window and quantiles.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned summary is safe to use from concurrent goroutines.
-func NewSummaryExt(name string, window time.Duration, quantiles []float64) *Summary {
-	return defaultSet.NewSummaryExt(name, window, quantiles)
-}
-
 func newSummary(window time.Duration, quantiles []float64) *Summary {
 	// Make a copy of quantiles in order to prevent from their modification by the caller.
 	quantiles = slices.Clone(quantiles)
@@ -136,42 +107,6 @@ func (sm *Summary) updateQuantiles() {
 	sm.mu.Lock()
 	sm.quantileValues = sm.curr.Quantiles(sm.quantileValues[:0], sm.quantiles)
 	sm.mu.Unlock()
-}
-
-// GetOrCreateSummary returns registered summary with the given name
-// or creates new summary if the registry doesn't contain summary with
-// the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned summary is safe to use from concurrent goroutines.
-//
-// Performance tip: prefer NewSummary instead of GetOrCreateSummary.
-func GetOrCreateSummary(name string) *Summary {
-	return defaultSet.GetOrCreateSummary(name)
-}
-
-// GetOrCreateSummaryExt returns registered summary with the given name,
-// window and quantiles or creates new summary if the registry doesn't
-// contain summary with the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned summary is safe to use from concurrent goroutines.
-//
-// Performance tip: prefer NewSummaryExt instead of GetOrCreateSummaryExt.
-func GetOrCreateSummaryExt(name string, window time.Duration, quantiles []float64) *Summary {
-	return defaultSet.GetOrCreateSummaryExt(name, window, quantiles)
 }
 
 type quantileValue struct {

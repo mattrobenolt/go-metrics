@@ -11,7 +11,11 @@ import (
 
 func TestSummarySerial(t *testing.T) {
 	name := `TestSummarySerial`
-	s := NewSummary(name)
+	set := NewSet()
+	RegisterSet(set)
+	defer UnregisterSet(set, true)
+
+	s := set.NewSummary(name)
 
 	// Verify that the summary isn't visible in the output of WritePrometheus,
 	// since it doesn't contain any values yet.
@@ -51,7 +55,7 @@ func TestSummarySerial(t *testing.T) {
 
 func TestSummaryConcurrent(t *testing.T) {
 	name := "SummaryConcurrent"
-	s := NewSummary(name)
+	s := NewSet().NewSummary(name)
 	err := testConcurrent(func() error {
 		for i := range 10 {
 			s.Update(float64(i))
@@ -66,7 +70,11 @@ func TestSummaryConcurrent(t *testing.T) {
 
 func TestSummaryWithTags(t *testing.T) {
 	name := `TestSummary{tag="foo"}`
-	s := NewSummary(name)
+	set := NewSet()
+	RegisterSet(set)
+	defer UnregisterSet(set, true)
+
+	s := set.NewSummary(name)
 	s.Update(123)
 
 	var bb bytes.Buffer
@@ -80,7 +88,11 @@ func TestSummaryWithTags(t *testing.T) {
 
 func TestSummaryWithEmptyTags(t *testing.T) {
 	name := `TestSummary{}`
-	s := NewSummary(name)
+	set := NewSet()
+	RegisterSet(set)
+	defer UnregisterSet(set, true)
+
+	s := set.NewSummary(name)
 	s.Update(123)
 
 	var bb bytes.Buffer
@@ -95,7 +107,7 @@ func TestSummaryWithEmptyTags(t *testing.T) {
 func TestSummaryInvalidQuantiles(t *testing.T) {
 	name := "SummaryInvalidQuantiles"
 	expectPanic(t, name, func() {
-		NewSummaryExt(name, time.Minute, []float64{123, -234})
+		NewSet().NewSummaryExt(name, time.Minute, []float64{123, -234})
 	})
 }
 
@@ -103,7 +115,11 @@ func TestSummarySmallWindow(t *testing.T) {
 	name := "SummarySmallWindow"
 	window := time.Millisecond * 20
 	quantiles := []float64{0.1, 0.2, 0.3}
-	s := NewSummaryExt(name, window, quantiles)
+	set := NewSet()
+	RegisterSet(set)
+	defer UnregisterSet(set, true)
+
+	s := set.NewSummaryExt(name, window, quantiles)
 	for range 2000 {
 		s.Update(123)
 	}
@@ -122,22 +138,24 @@ func TestSummarySmallWindow(t *testing.T) {
 
 func TestGetOrCreateSummaryInvalidWindow(t *testing.T) {
 	name := "GetOrCreateSummaryInvalidWindow"
-	GetOrCreateSummaryExt(name, defaultSummaryWindow, defaultSummaryQuantiles)
+	s := NewSet()
+	s.GetOrCreateSummaryExt(name, defaultSummaryWindow, defaultSummaryQuantiles)
 	expectPanic(t, name, func() {
-		GetOrCreateSummaryExt(name, defaultSummaryWindow/2, defaultSummaryQuantiles)
+		s.GetOrCreateSummaryExt(name, defaultSummaryWindow/2, defaultSummaryQuantiles)
 	})
 }
 
 func TestGetOrCreateSummaryInvalidQuantiles(t *testing.T) {
 	name := "GetOrCreateSummaryInvalidQuantiles"
-	GetOrCreateSummaryExt(name, defaultSummaryWindow, defaultSummaryQuantiles)
+	s := NewSet()
+	s.GetOrCreateSummaryExt(name, defaultSummaryWindow, defaultSummaryQuantiles)
 	expectPanic(t, name, func() {
-		GetOrCreateSummaryExt(name, defaultSummaryWindow, []float64{0.1, 0.2})
+		s.GetOrCreateSummaryExt(name, defaultSummaryWindow, []float64{0.1, 0.2})
 	})
 	quantiles := slices.Clone(defaultSummaryQuantiles)
 	quantiles[len(quantiles)-1] /= 2
 	expectPanic(t, name, func() {
-		GetOrCreateSummaryExt(name, defaultSummaryWindow, quantiles)
+		s.GetOrCreateSummaryExt(name, defaultSummaryWindow, quantiles)
 	})
 }
 
@@ -159,9 +177,10 @@ func TestGetOrCreateSummaryConcurrent(t *testing.T) {
 }
 
 func testGetOrCreateSummary(name string) error {
-	s1 := GetOrCreateSummary(name)
+	s := NewSet()
+	s1 := s.GetOrCreateSummary(name)
 	for range 10 {
-		s2 := GetOrCreateSummary(name)
+		s2 := s.GetOrCreateSummary(name)
 		if s1 != s2 {
 			return fmt.Errorf("unexpected summary returned; got %p; want %p", s2, s1)
 		}

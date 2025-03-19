@@ -5,7 +5,7 @@ import (
 )
 
 func BenchmarkHistogramUpdate(b *testing.B) {
-	h := GetOrCreateHistogram("BenchmarkHistogramUpdate")
+	h := NewSet().GetOrCreateHistogram("BenchmarkHistogramUpdate")
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		i := 0

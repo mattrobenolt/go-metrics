@@ -174,38 +174,6 @@ func (h *Histogram) VisitNonZeroBuckets(f func(vmrange string, count uint64)) {
 	h.mu.Unlock()
 }
 
-// NewHistogram creates and returns new histogram with the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned histogram is safe to use from concurrent goroutines.
-func NewHistogram(name string) *Histogram {
-	return defaultSet.NewHistogram(name)
-}
-
-// GetOrCreateHistogram returns registered histogram with the given name
-// or creates new histogram if the registry doesn't contain histogram with
-// the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned histogram is safe to use from concurrent goroutines.
-//
-// Performance tip: prefer NewHistogram instead of GetOrCreateHistogram.
-func GetOrCreateHistogram(name string) *Histogram {
-	return defaultSet.GetOrCreateHistogram(name)
-}
-
 // UpdateDuration updates request duration based on the given startTime.
 func (h *Histogram) UpdateDuration(startTime time.Time) {
 	d := time.Since(startTime).Seconds()

@@ -7,7 +7,7 @@ import (
 
 func TestCounterSerial(t *testing.T) {
 	name := "CounterSerial"
-	c := NewCounter(name)
+	c := NewSet().NewCounter(name)
 	c.Inc()
 	if n := c.Get(); n != 1 {
 		t.Fatalf("unexpected counter value; got %d; want 1", n)
@@ -31,7 +31,7 @@ func TestCounterSerial(t *testing.T) {
 
 func TestCounterConcurrent(t *testing.T) {
 	name := "CounterConcurrent"
-	c := NewCounter(name)
+	c := NewSet().NewCounter(name)
 	err := testConcurrent(func() error {
 		nPrev := c.Get()
 		for range 10 {
@@ -65,9 +65,10 @@ func TestGetOrCreateCounterConcurrent(t *testing.T) {
 }
 
 func testGetOrCreateCounter(name string) error {
-	c1 := GetOrCreateCounter(name)
+	s := NewSet()
+	c1 := s.GetOrCreateCounter(name)
 	for range 10 {
-		c2 := GetOrCreateCounter(name)
+		c2 := s.GetOrCreateCounter(name)
 		if c1 != c2 {
 			return fmt.Errorf("unexpected counter returned; got %p; want %p", c2, c1)
 		}

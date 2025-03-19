@@ -3,7 +3,6 @@ package metrics
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -48,54 +47,6 @@ func TestWriteMetrics(t *testing.T) {
 	})
 }
 
-func TestGetDefaultSet(t *testing.T) {
-	s := GetDefaultSet()
-	if s != defaultSet {
-		t.Fatalf("GetDefaultSet must return defaultSet=%p, but returned %p", defaultSet, s)
-	}
-}
-
-func TestUnregisterAllMetrics(t *testing.T) {
-	for j := range 3 {
-		for i := range 10 {
-			_ = NewCounter(fmt.Sprintf("counter_%d", i))
-			_ = NewSummary(fmt.Sprintf("summary_%d", i))
-			_ = NewHistogram(fmt.Sprintf("histogram_%d", i))
-			_ = NewGauge(fmt.Sprintf("gauge_%d", i), func() float64 { return 0 })
-		}
-		if mns := ListMetricNames(); len(mns) == 0 {
-			t.Fatalf("unexpected empty list of metrics on iteration %d", j)
-		}
-		UnregisterAllMetrics()
-		if mns := ListMetricNames(); len(mns) != 0 {
-			t.Fatalf("unexpected metric names after UnregisterAllMetrics call on iteration %d: %q", j, mns)
-		}
-	}
-}
-
-func TestRegisterMetricsWriter(t *testing.T) {
-	RegisterMetricsWriter(func(w io.Writer) {
-		WriteCounterUint64(w, `counter{label="abc"}`, 1234)
-		WriteGaugeFloat64(w, `gauge{a="b",c="d"}`, -34.43)
-	})
-
-	var bb bytes.Buffer
-	WritePrometheus(&bb, false)
-	data := bb.String()
-
-	UnregisterAllMetrics()
-
-	expectedLine := fmt.Sprintf(`counter{label="abc"} 1234` + "\n")
-	if !strings.Contains(data, expectedLine) {
-		t.Fatalf("missing %q in\n%s", expectedLine, data)
-	}
-
-	expectedLine = fmt.Sprintf(`gauge{a="b",c="d"} -34.43` + "\n")
-	if !strings.Contains(data, expectedLine) {
-		t.Fatalf("missing %q in\n%s", expectedLine, data)
-	}
-}
-
 func TestRegisterUnregisterSet(t *testing.T) {
 	const metricName = "metric_from_set"
 	const metricValue = 123
@@ -124,13 +75,14 @@ func TestRegisterUnregisterSet(t *testing.T) {
 func TestInvalidName(t *testing.T) {
 	f := func(name string) {
 		t.Helper()
-		expectPanic(t, fmt.Sprintf("NewCounter(%q)", name), func() { NewCounter(name) })
-		expectPanic(t, fmt.Sprintf("NewGauge(%q)", name), func() { NewGauge(name, func() float64 { return 0 }) })
-		expectPanic(t, fmt.Sprintf("NewSummary(%q)", name), func() { NewSummary(name) })
-		expectPanic(t, fmt.Sprintf("GetOrCreateCounter(%q)", name), func() { GetOrCreateCounter(name) })
-		expectPanic(t, fmt.Sprintf("GetOrCreateGauge(%q)", name), func() { GetOrCreateGauge(name, func() float64 { return 0 }) })
-		expectPanic(t, fmt.Sprintf("GetOrCreateSummary(%q)", name), func() { GetOrCreateSummary(name) })
-		expectPanic(t, fmt.Sprintf("GetOrCreateHistogram(%q)", name), func() { GetOrCreateHistogram(name) })
+		s := NewSet()
+		expectPanic(t, fmt.Sprintf("NewCounter(%q)", name), func() { s.NewCounter(name) })
+		expectPanic(t, fmt.Sprintf("NewGauge(%q)", name), func() { s.NewGauge(name, func() float64 { return 0 }) })
+		expectPanic(t, fmt.Sprintf("NewSummary(%q)", name), func() { s.NewSummary(name) })
+		expectPanic(t, fmt.Sprintf("GetOrCreateCounter(%q)", name), func() { s.GetOrCreateCounter(name) })
+		expectPanic(t, fmt.Sprintf("GetOrCreateGauge(%q)", name), func() { s.GetOrCreateGauge(name, func() float64 { return 0 }) })
+		expectPanic(t, fmt.Sprintf("GetOrCreateSummary(%q)", name), func() { s.GetOrCreateSummary(name) })
+		expectPanic(t, fmt.Sprintf("GetOrCreateHistogram(%q)", name), func() { s.GetOrCreateHistogram(name) })
 	}
 	f("")
 	f("foo{")
@@ -147,48 +99,56 @@ func TestInvalidName(t *testing.T) {
 func TestDoubleRegister(t *testing.T) {
 	t.Run("NewCounter", func(t *testing.T) {
 		name := "NewCounterDoubleRegister"
-		NewCounter(name)
-		expectPanic(t, name, func() { NewCounter(name) })
+		s := NewSet()
+		s.NewCounter(name)
+		expectPanic(t, name, func() { s.NewCounter(name) })
 	})
 	t.Run("NewGauge", func(t *testing.T) {
 		name := "NewGaugeDoubleRegister"
-		NewGauge(name, func() float64 { return 0 })
-		expectPanic(t, name, func() { NewGauge(name, func() float64 { return 0 }) })
+		s := NewSet()
+		s.NewGauge(name, func() float64 { return 0 })
+		expectPanic(t, name, func() { s.NewGauge(name, func() float64 { return 0 }) })
 	})
 	t.Run("NewSummary", func(t *testing.T) {
 		name := "NewSummaryDoubleRegister"
-		NewSummary(name)
-		expectPanic(t, name, func() { NewSummary(name) })
+		s := NewSet()
+		s.NewSummary(name)
+		expectPanic(t, name, func() { s.NewSummary(name) })
 	})
 	t.Run("NewHistogram", func(t *testing.T) {
 		name := "NewHistogramDoubleRegister"
-		NewHistogram(name)
-		expectPanic(t, name, func() { NewSummary(name) })
+		s := NewSet()
+		s.NewHistogram(name)
+		expectPanic(t, name, func() { s.NewSummary(name) })
 	})
 }
 
 func TestGetOrCreateNotCounter(t *testing.T) {
 	name := "GetOrCreateNotCounter"
-	NewSummary(name)
-	expectPanic(t, name, func() { GetOrCreateCounter(name) })
+	s := NewSet()
+	s.NewSummary(name)
+	expectPanic(t, name, func() { s.GetOrCreateCounter(name) })
 }
 
 func TestGetOrCreateNotGauge(t *testing.T) {
 	name := "GetOrCreateNotGauge"
-	NewCounter(name)
-	expectPanic(t, name, func() { GetOrCreateGauge(name, func() float64 { return 0 }) })
+	s := NewSet()
+	s.NewCounter(name)
+	expectPanic(t, name, func() { s.GetOrCreateGauge(name, func() float64 { return 0 }) })
 }
 
 func TestGetOrCreateNotSummary(t *testing.T) {
 	name := "GetOrCreateNotSummary"
-	NewCounter(name)
-	expectPanic(t, name, func() { GetOrCreateSummary(name) })
+	s := NewSet()
+	s.NewCounter(name)
+	expectPanic(t, name, func() { s.GetOrCreateSummary(name) })
 }
 
 func TestGetOrCreateNotHistogram(t *testing.T) {
 	name := "GetOrCreateNotHistogram"
-	NewCounter(name)
-	expectPanic(t, name, func() { GetOrCreateHistogram(name) })
+	s := NewSet()
+	s.NewCounter(name)
+	expectPanic(t, name, func() { s.GetOrCreateHistogram(name) })
 }
 
 func TestWritePrometheusSerial(t *testing.T) {

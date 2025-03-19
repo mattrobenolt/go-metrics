@@ -8,8 +8,10 @@ import (
 )
 
 func ExampleSummary() {
+	set := metrics.NewSet()
+
 	// Define a summary in global scope.
-	var s = metrics.NewSummary(`request_duration_seconds{path="/foo/bar"}`)
+	s := set.NewSummary(`request_duration_seconds{path="/foo/bar"}`)
 
 	// Update the summary with the duration of processRequest call.
 	startTime := time.Now()
@@ -18,11 +20,13 @@ func ExampleSummary() {
 }
 
 func ExampleSummary_vec() {
+	set := metrics.NewSet()
+
 	for range 3 {
 		// Dynamically construct metric name and pass it to GetOrCreateSummary.
 		name := fmt.Sprintf(`response_size_bytes{path=%q}`, "/foo/bar")
 		response := processRequest()
-		metrics.GetOrCreateSummary(name).Update(float64(len(response)))
+		set.GetOrCreateSummary(name).Update(float64(len(response)))
 	}
 }
 

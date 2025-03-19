@@ -7,24 +7,25 @@ import (
 )
 
 func TestGaugeError(t *testing.T) {
+	s := NewSet()
 	expectPanic(t, "NewGauge_Set_non-nil-callback", func() {
-		g := NewGauge("NewGauge_non_nil_callback", func() float64 { return 123 })
+		g := s.NewGauge("NewGauge_non_nil_callback", func() float64 { return 123 })
 		g.Set(12.35)
 	})
 	expectPanic(t, "GetOrCreateGauge_Set_non-nil-callback", func() {
-		g := GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
+		g := s.GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
 		g.Set(42)
 	})
 	expectPanic(t, "GetOrCreateGauge_Add_non-nil-callback", func() {
-		g := GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
+		g := s.GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
 		g.Add(42)
 	})
 	expectPanic(t, "GetOrCreateGauge_Inc_non-nil-callback", func() {
-		g := GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
+		g := s.GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
 		g.Inc()
 	})
 	expectPanic(t, "GetOrCreateGauge_Dec_non-nil-callback", func() {
-		g := GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
+		g := s.GetOrCreateGauge("GetOrCreateGauge_nil_callback", func() float64 { return 123 })
 		g.Dec()
 	})
 }
@@ -88,7 +89,7 @@ func TestGaugeSerial(t *testing.T) {
 	name := "GaugeSerial"
 	n := 1.23
 	var nLock sync.Mutex
-	g := NewGauge(name, func() float64 {
+	g := NewSet().NewGauge(name, func() float64 {
 		nLock.Lock()
 		defer nLock.Unlock()
 		n++
@@ -112,7 +113,7 @@ func TestGaugeConcurrent(t *testing.T) {
 	name := "GaugeConcurrent"
 	var n int
 	var nLock sync.Mutex
-	g := NewGauge(name, func() float64 {
+	g := NewSet().NewGauge(name, func() float64 {
 		nLock.Lock()
 		defer nLock.Unlock()
 		n++

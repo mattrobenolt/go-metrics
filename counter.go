@@ -6,20 +6,6 @@ import (
 	"sync/atomic"
 )
 
-// NewCounter registers and returns new counter with the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned counter is safe to use from concurrent goroutines.
-func NewCounter(name string) *Counter {
-	return defaultSet.NewCounter(name)
-}
-
 // Counter is a counter.
 //
 // It may be used as a gauge if Dec and Set are called.
@@ -65,22 +51,4 @@ func (c *Counter) marshalTo(prefix string, w io.Writer) {
 
 func (c *Counter) metricType() string {
 	return "counter"
-}
-
-// GetOrCreateCounter returns registered counter with the given name
-// or creates new counter if the registry doesn't contain counter with
-// the given name.
-//
-// name must be valid Prometheus-compatible metric with possible labels.
-// For instance,
-//
-//   - foo
-//   - foo{bar="baz"}
-//   - foo{bar="baz",aaa="b"}
-//
-// The returned counter is safe to use from concurrent goroutines.
-//
-// Performance tip: prefer NewCounter instead of GetOrCreateCounter.
-func GetOrCreateCounter(name string) *Counter {
-	return defaultSet.GetOrCreateCounter(name)
 }
