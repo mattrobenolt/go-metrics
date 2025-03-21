@@ -2,93 +2,111 @@ package metrics
 
 import (
 	"fmt"
-	"strings"
+	"unicode/utf8"
 )
 
-func validateMetric(s string) error {
-	if len(s) == 0 {
-		return fmt.Errorf("metric cannot be empty")
-	}
-	n := strings.IndexByte(s, '{')
-	if n < 0 {
-		return validateIdent(s)
-	}
-	ident := s[:n]
-	s = s[n+1:]
-	if err := validateIdent(ident); err != nil {
-		return err
-	}
-	if len(s) == 0 || s[len(s)-1] != '}' {
-		return fmt.Errorf("missing closing curly brace at the end of %q", ident)
-	}
-	return validateTags(s[:len(s)-1])
+// MustIdent ensures that s is a valid identifier and returns an Ident.
+//
+// This will panic if s is an invalid identifier.
+func MustIdent(s string) Ident {
+	return makeIdentHandle(s)
 }
 
-func validateTags(s string) error {
-	if len(s) == 0 {
+// MustLabel ensures that s is a valid label and returns a Label.
+//
+// This will panic if s is an invalid identifier.
+func MustLabel(s string) Label {
+	return makeIdentHandle(s)
+}
+
+// MustTag ensures that the label value pair are a valid
+// tag, and returns a Tag. Label must be a valid Ident and
+// value must be a valid tag value.
+//
+// This will panic if label or value are invalid for a tag.
+func MustTag(label, value string) Tag {
+	return Tag{
+		label: MustLabel(label),
+		value: MustValue(value),
+	}
+}
+
+// MustValue ensures that s is a valid tag value.
+//
+// This will panic if s is an invalid tag value.
+func MustValue(s string) Value {
+	if !validateLabelValue(s) {
+		panic(fmt.Errorf("invalid tag value: %q", s))
+	}
+	// Values are expected to vary quite a lot, and there's no use
+	// in uniquing.
+	return Value{s}
+}
+
+// MustTags converts label value pairs into Tags.
+//
+// This will panic if s is an invalid tag value.
+func MustTags(tags ...string) []Tag {
+	if len(tags) == 0 {
 		return nil
 	}
-	for {
-		n := strings.IndexByte(s, '=')
-		if n < 0 {
-			return fmt.Errorf("missing `=` after %q", s)
-		}
-		ident := s[:n]
-		s = s[n+1:]
-		if err := validateIdent(ident); err != nil {
-			return err
-		}
-		if len(s) == 0 || s[0] != '"' {
-			return fmt.Errorf("missing starting `\"` for %q value; tail=%q", ident, s)
-		}
-		s = s[1:]
-	again:
-		n = strings.IndexByte(s, '"')
-		if n < 0 {
-			return fmt.Errorf("missing trailing `\"` for %q value; tail=%q", ident, s)
-		}
-		m := n
-		for m > 0 && s[m-1] == '\\' {
-			m--
-		}
-		if (n-m)%2 == 1 {
-			s = s[n+1:]
-			goto again
-		}
-		s = s[n+1:]
-		if len(s) == 0 {
-			return nil
-		}
-		if !strings.HasPrefix(s, ",") {
-			return fmt.Errorf("missing `,` after %q value; tail=%q", ident, s)
-		}
-		s = skipSpace(s[1:])
+
+	if len(tags) > 0 && len(tags)%2 != 0 {
+		panic(fmt.Errorf("tag label/values must be in pairs, got: %v", tags))
 	}
+
+	pairs := make([]Tag, 0, len(tags)/2)
+	for i := 0; i < len(tags); i += 2 {
+		pairs = append(pairs, MustTag(tags[i], tags[i+1]))
+	}
+	return pairs
 }
 
-func skipSpace(s string) string {
-	for len(s) > 0 && s[0] == ' ' {
-		s = s[1:]
-	}
-	return s
-}
-
-func validateIdent(s string) error {
-	if !validateIdentFast(s) {
-		return fmt.Errorf("invalid identifier %q", s)
-	}
-	return nil
-}
-
-func validateIdentFast(s string) bool {
-	if len(s) == 0 {
+// labelValue can be any sequence of UTF-8 characters, but the backslash (\),
+// double-quote ("), and line feed (\n) characters have to be escaped as
+// \\, \", and \n, respectively.
+func validateLabelValue(s string) bool {
+	// XXX: This is marginally faster to do in two passes since
+	// utf8.ValidString is so optimized.
+	if !utf8.ValidString(s) {
 		return false
 	}
 
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '"', '\n':
+			// disallow double-quote and line feed
+			return false
+		case '\\':
+			// started escaping
+			i++
+			if i == len(s) {
+				// oh no, we got to the end
+				return false
+			}
+			switch s[i] {
+			case 'n', '\\', '"':
+				// escaping line feed, another backslash, or a quote
+			default:
+				// anything else is invalid escape sequence
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// validateIdent validates effectively this pattern:
+// ^[a-zA-Z_:.][a-zA-Z0-9_:.]*$
+func validateIdent(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	// first character is either alpha or symbol
 	if !isAlpha(s[0]) && !isSymbol(s[0]) {
 		return false
 	}
-
+	// every other character can include numbers
 	for i := 1; i < len(s); i++ {
 		if !isAlpha(s[i]) && !isNumeric(s[i]) && !isSymbol(s[i]) {
 			return false

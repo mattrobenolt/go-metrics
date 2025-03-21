@@ -1,24 +1,19 @@
-name: main
+name: ci
 on:
   - push
   - pull_request
+
 jobs:
-  build:
-    name: Build
+  tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.24"]
+    name: go${{ matrix.go }}
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: stable
-        id: go
-      - name: Code checkout
-        uses: actions/checkout@v4
-      - name: Test
-        run: |
-          go test -v ./...
-          go test -v ./... -race
-      - name: Build
-        run: |
-          GOOS=linux go build
-          GOOS=darwin go build
+          go-version: ${{ matrix.go }}
+      - run: make lint
+      - run: make test test-race

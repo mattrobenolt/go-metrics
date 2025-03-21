@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"io"
 	"sync/atomic"
 )
 
@@ -9,40 +8,35 @@ import (
 //
 // It may be used as a gauge if Dec and Set are called.
 type Counter struct {
-	n atomic.Uint64
+	v atomic.Uint64
 }
 
-// Inc increments c.
+// Inc increments c by 1.
 func (c *Counter) Inc() {
-	c.n.Add(1)
+	c.v.Add(1)
 }
 
-// Dec decrements c.
+// Dec decrements c by 1.
 func (c *Counter) Dec() {
-	c.n.Add(^uint64(0))
+	c.v.Add(^uint64(0))
 }
 
-// Add adds n to c.
-func (c *Counter) Add(n int) {
-	c.n.Add(uint64(n))
-}
-
-// AddInt64 adds n to c.
-func (c *Counter) AddInt64(n int64) {
-	c.n.Add(uint64(n))
+// Add adds delta to c.
+func (c *Counter) Add(delta uint64) {
+	c.v.Add(delta)
 }
 
 // Get returns the current value for c.
 func (c *Counter) Get() uint64 {
-	return c.n.Load()
+	return c.v.Load()
 }
 
-// Set sets c value to n.
-func (c *Counter) Set(n uint64) {
-	c.n.Store(n)
+// Set sets c value to val.
+func (c *Counter) Set(val uint64) {
+	c.v.Store(val)
 }
 
-// marshalTo marshals c with the given prefix to w.
-func (c *Counter) marshalTo(prefix string, w io.Writer) {
-	WriteMetricUint64(w, prefix, c.Get())
+func (c *Counter) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
+	w.WriteMetricName(family, tags...)
+	w.WriteUint64(c.Get())
 }

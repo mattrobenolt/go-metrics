@@ -1,17 +1,29 @@
 package metrics
 
-import (
-	"testing"
-)
+import "testing"
 
 func BenchmarkHistogramUpdate(b *testing.B) {
-	h := NewSet().GetOrCreateHistogram("BenchmarkHistogramUpdate")
+	h := NewSet().NewHistogram("foo")
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := range b.N {
+		h.Update(float64(i))
+	}
+}
+
+func BenchmarkHistogramUpdateParallel(b *testing.B) {
+	h := NewSet().NewHistogram("foo")
+
+	var i float64
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
-		i := 0
 		for pb.Next() {
-			h.Update(float64(i))
-			i++
+			// XXX: this is racy, but it doesn't matter,
+			// I don't want to add syncronization with an
+			// atomic to ruin the benchmark.
+			i += 1
+			h.Update(i)
 		}
 	})
 }

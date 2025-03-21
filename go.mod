@@ -1,3 +1,3 @@
-module github.com/VictoriaMetrics/metrics
+module go.withmatt.com/metrics
 
-go 1.23.0
+go 1.24.0

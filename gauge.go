@@ -1,39 +1,33 @@
 package metrics
 
 import (
-	"fmt"
-	"io"
-	"math"
-	"sync/atomic"
+	"errors"
+
+	"go.withmatt.com/metrics/internal/atomicx"
 )
 
 // Gauge is a float64 gauge.
 type Gauge struct {
-	// valueBits contains uint64 representation of float64 passed to Gauge.Set.
-	valueBits atomic.Uint64
-
-	// f is a callback, which is called for returning the gauge value.
-	f func() float64
+	v  atomicx.Float64
+	fn func() float64
 }
 
 // Get returns the current value for g.
 func (g *Gauge) Get() float64 {
-	if f := g.f; f != nil {
+	if f := g.fn; f != nil {
 		return f()
 	}
-	n := g.valueBits.Load()
-	return math.Float64frombits(n)
+	return g.v.Load()
 }
 
-// Set sets g value to v.
+// Set sets g value to val.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Set(v float64) {
-	if g.f != nil {
-		panic(fmt.Errorf("cannot call Set on gauge created with non-nil callback"))
+func (g *Gauge) Set(val float64) {
+	if g.fn != nil {
+		panic(errors.New("cannot call Set on gauge created with non-nil callback"))
 	}
-	n := math.Float64bits(v)
-	g.valueBits.Store(n)
+	g.v.Store(val)
 }
 
 // Inc increments g by 1.
@@ -50,30 +44,17 @@ func (g *Gauge) Dec() {
 	g.Add(-1)
 }
 
-// Add adds fAdd to g. fAdd may be positive and negative.
+// Add adds val to g. val may be positive or negative.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Add(fAdd float64) {
-	if g.f != nil {
-		panic(fmt.Errorf("cannot call Set on gauge created with non-nil callback"))
+func (g *Gauge) Add(val float64) {
+	if g.fn != nil {
+		panic(errors.New("cannot call Set on gauge created with non-nil callback"))
 	}
-	for {
-		n := g.valueBits.Load()
-		f := math.Float64frombits(n)
-		fNew := f + fAdd
-		nNew := math.Float64bits(fNew)
-		if g.valueBits.CompareAndSwap(n, nNew) {
-			break
-		}
-	}
+	g.v.Add(val)
 }
 
-func (g *Gauge) marshalTo(prefix string, w io.Writer) {
-	v := g.Get()
-	if isFloatInteger(v) {
-		// Marshal integer values without scientific notation
-		WriteMetricInt64(w, prefix, int64(v))
-	} else {
-		WriteMetricFloat64(w, prefix, v)
-	}
+func (g *Gauge) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
+	w.WriteMetricName(family, tags...)
+	w.WriteFloat64(g.Get())
 }

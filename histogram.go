@@ -1,11 +1,13 @@
 package metrics
 
 import (
-	"fmt"
-	"io"
 	"math"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"go.withmatt.com/metrics/internal/atomicx"
 )
 
 const (
@@ -13,10 +15,28 @@ const (
 	e10Max              = 18
 	bucketsPerDecimal   = 18
 	decimalBucketsCount = e10Max - e10Min
-	bucketsCount        = decimalBucketsCount * bucketsPerDecimal
+
+	// histBuckets is number of buckets within a single histogram
+	histBuckets = decimalBucketsCount * bucketsPerDecimal
+
+	// totalBuckets is histogram buckets + lower and upper buckets
+	totalBuckets = histBuckets + 2
+
+	// maxNumSeries is maximum possible series that can be emitted
+	// by a single histogram, this includes all buckets and the
+	// sum and count summaries
+	maxNumSeries = totalBuckets + 2
 )
 
-var bucketMultiplier = math.Pow(10, 1.0/bucketsPerDecimal)
+var (
+	bucketMultiplier = math.Pow(10, 1.0/bucketsPerDecimal)
+	bucketRanges     [totalBuckets]string
+)
+
+type (
+	decimalBucket       = [bucketsPerDecimal]atomic.Uint64
+	atomicDecimalBucket = atomic.Pointer[decimalBucket]
+)
 
 // Histogram is a histogram for non-negative values with automatically created buckets.
 //
@@ -46,58 +66,46 @@ var bucketMultiplier = math.Pow(10, 1.0/bucketsPerDecimal)
 //
 // Zero histogram is usable.
 type Histogram struct {
-	// Mu gurantees synchronous update for all the counters and sum.
-	//
-	// Do not use sync.RWMutex, since it has zero sense from performance PoV.
-	// It only complicates the code.
-	mu sync.Mutex
-
-	// decimalBuckets contains counters for histogram buckets
-	decimalBuckets [decimalBucketsCount]*[bucketsPerDecimal]uint64
+	// buckets contains counters for histogram buckets
+	buckets [decimalBucketsCount]atomicDecimalBucket
 
 	// lower is the number of values, which hit the lower bucket
-	lower uint64
+	lower atomic.Uint64
 
 	// upper is the number of values, which hit the upper bucket
-	upper uint64
+	upper atomic.Uint64
 
 	// sum is the sum of all the values put into Histogram
-	sum float64
+	sum atomicx.Float64
 }
 
 // Reset resets the given histogram.
 func (h *Histogram) Reset() {
-	h.mu.Lock()
-	for _, db := range h.decimalBuckets[:] {
-		if db == nil {
-			continue
-		}
-		for i := range db[:] {
-			db[i] = 0
-		}
-	}
-	h.lower = 0
-	h.upper = 0
-	h.sum = 0
-	h.mu.Unlock()
+	clear(h.buckets[:])
+
+	h.lower.Store(0)
+	h.upper.Store(0)
+	h.sum.Store(0)
 }
 
-// Update updates h with v.
+// Update updates h with val.
 //
 // Negative values and NaNs are ignored.
-func (h *Histogram) Update(v float64) {
-	if math.IsNaN(v) || v < 0 {
+func (h *Histogram) Update(val float64) {
+	if math.IsNaN(val) || val < 0 {
 		// Skip NaNs and negative values.
 		return
 	}
-	bucketIdx := (math.Log10(v) - e10Min) * bucketsPerDecimal
-	h.mu.Lock()
-	h.sum += v
-	if bucketIdx < 0 {
-		h.lower++
-	} else if bucketIdx >= bucketsCount {
-		h.upper++
-	} else {
+
+	bucketIdx := (math.Log10(val) - e10Min) * bucketsPerDecimal
+
+	switch {
+	case bucketIdx < 0:
+		h.lower.Add(1)
+		return
+	case bucketIdx >= histBuckets:
+		h.upper.Add(1)
+	default:
 		idx := uint(bucketIdx)
 		if bucketIdx == float64(idx) && idx > 0 {
 			// Edge case for 10^n values, which must go to the lower bucket
@@ -106,129 +114,200 @@ func (h *Histogram) Update(v float64) {
 		}
 		decimalBucketIdx := idx / bucketsPerDecimal
 		offset := idx % bucketsPerDecimal
-		db := h.decimalBuckets[decimalBucketIdx]
+
+		db := h.buckets[decimalBucketIdx].Load()
 		if db == nil {
-			var b [bucketsPerDecimal]uint64
-			db = &b
-			h.decimalBuckets[decimalBucketIdx] = db
+			// this bucket doesn't exist yet
+			var dbNew decimalBucket
+			if h.buckets[decimalBucketIdx].CompareAndSwap(db, &dbNew) {
+				db = &dbNew
+			} else {
+				db = h.buckets[decimalBucketIdx].Load()
+			}
 		}
-		db[offset]++
+		db[offset].Add(1)
 	}
-	h.mu.Unlock()
+	h.sum.Add(val)
 }
 
-// Merge merges src to h
+// Merge merges src to h.
 func (h *Histogram) Merge(src *Histogram) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	h.lower.Add(src.lower.Load())
+	h.upper.Add(src.upper.Load())
+	h.sum.Add(src.sum.Load())
 
-	src.mu.Lock()
-	defer src.mu.Unlock()
-
-	h.lower += src.lower
-	h.upper += src.upper
-	h.sum += src.sum
-
-	for i, dbSrc := range src.decimalBuckets {
-		if dbSrc == nil {
-			continue
-		}
-		dbDst := h.decimalBuckets[i]
-		if dbDst == nil {
-			var b [bucketsPerDecimal]uint64
-			dbDst = &b
-			h.decimalBuckets[i] = dbDst
-		}
-		for j := range dbSrc {
-			dbDst[j] += dbSrc[j]
-		}
-	}
-}
-
-// VisitNonZeroBuckets calls f for all buckets with non-zero counters.
-//
-// vmrange contains "<start>...<end>" string with bucket bounds. The lower bound
-// isn't included in the bucket, while the upper bound is included.
-// This is required to be compatible with Prometheus-style histogram buckets
-// with `le` (less or equal) labels.
-func (h *Histogram) VisitNonZeroBuckets(f func(vmrange string, count uint64)) {
-	h.mu.Lock()
-	if h.lower > 0 {
-		f(lowerBucketRange, h.lower)
-	}
-	for decimalBucketIdx, db := range h.decimalBuckets[:] {
-		if db == nil {
-			continue
-		}
-		for offset, count := range db[:] {
-			if count > 0 {
-				bucketIdx := decimalBucketIdx*bucketsPerDecimal + offset
-				vmrange := getVMRange(bucketIdx)
-				f(vmrange, count)
+	for i := range src.buckets {
+		if dbSrc := src.buckets[i].Load(); dbSrc != nil {
+			dbDst := h.buckets[i].Load()
+			if dbDst == nil {
+				// this bucket doesn't exist yet
+				var dbNew decimalBucket
+				if h.buckets[i].CompareAndSwap(dbDst, &dbNew) {
+					dbDst = &dbNew
+				} else {
+					dbDst = h.buckets[i].Load()
+				}
+			}
+			for j := range dbSrc {
+				dbDst[j].Add(dbSrc[j].Load())
 			}
 		}
 	}
-	if h.upper > 0 {
-		f(upperBucketRange, h.upper)
-	}
-	h.mu.Unlock()
 }
 
 // UpdateDuration updates request duration based on the given startTime.
 func (h *Histogram) UpdateDuration(startTime time.Time) {
-	d := time.Since(startTime).Seconds()
-	h.Update(d)
+	h.Update(time.Since(startTime).Seconds())
 }
 
-func getVMRange(bucketIdx int) string {
-	bucketRangesOnce.Do(initBucketRanges)
-	return bucketRanges[bucketIdx]
-}
+func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
+	card := punchCardPool.Get().(*punchCard)
+	defer func() {
+		clear(card[:])
+		punchCardPool.Put(card)
+	}()
 
-func initBucketRanges() {
-	v := math.Pow10(e10Min)
-	start := fmt.Sprintf("%.3e", v)
-	for i := range bucketsCount {
-		v *= bucketMultiplier
-		end := fmt.Sprintf("%.3e", v)
-		bucketRanges[i] = start + "..." + end
-		start = end
-	}
-}
-
-var (
-	lowerBucketRange = fmt.Sprintf("0...%.3e", math.Pow10(e10Min))
-	upperBucketRange = fmt.Sprintf("%.3e...+Inf", math.Pow10(e10Max))
-
-	bucketRanges     [bucketsCount]string
-	bucketRangesOnce sync.Once
-)
-
-func (h *Histogram) marshalTo(prefix string, w io.Writer) {
-	countTotal := uint64(0)
-	h.VisitNonZeroBuckets(func(vmrange string, count uint64) {
-		tag := fmt.Sprintf("vmrange=%q", vmrange)
-		metricName := addTag(prefix, tag)
-		name, labels := splitMetricName(metricName)
-		fmt.Fprintf(w, "%s_bucket%s %d\n", name, labels, count)
-		countTotal += count
-	})
-	if countTotal == 0 {
+	totalCounts, punches := h.punchBuckets(card)
+	if totalCounts == 0 {
 		return
 	}
-	name, labels := splitMetricName(prefix)
-	sum := h.getSum()
-	if isFloatInteger(sum) {
-		fmt.Fprintf(w, "%s_sum%s %d\n", name, labels, int64(sum))
-	} else {
-		fmt.Fprintf(w, "%s_sum%s %g\n", name, labels, sum)
+
+	sum := h.sum.Load()
+	familyS := family.String()
+
+	// 1 extra because we're always adding in the vmrange tag
+	// and sizeOfTags doesn't include a trailing comma
+	tagsSize := sizeOfTags(tags) + 1
+
+	const (
+		chunkVMRange = `_bucket{vmrange="`
+		chunkSum     = "_sum"
+		chunkCount   = "_count"
+	)
+
+	// we need the underlying bytes.Buffer
+	b := w.B
+
+	// this is trying to compute up front how much we'll need to write
+	// below with some margin of error to make sure we allocate enough
+	// since we can't compute exactly
+	b.Grow(
+		(len(familyS) * punches) +
+			(tagsSize * punches) +
+			(len(chunkVMRange) * punches) +
+			punches +
+			len(familyS) + len(chunkSum) + tagsSize + 3 +
+			len(familyS) + len(chunkCount) + tagsSize + 3 +
+			64, // extra margin of error
+	)
+
+	// Write each `_bucket` count metric
+	// This ultimately constructs a line such as:
+	//   foo_bucket{vmrange="...",foo="bar"} 5
+	for idx, count := range card {
+		if count > 0 {
+			vmrange := bucketRanges[idx]
+			b.WriteString(familyS)
+			b.WriteString(chunkVMRange)
+			b.WriteString(vmrange)
+			b.WriteByte('"')
+			for _, tag := range tags {
+				b.WriteByte(',')
+				writeTag(b, tag)
+			}
+			b.WriteString(`} `)
+			writeUint64(b, count)
+			b.WriteByte('\n')
+		}
 	}
-	fmt.Fprintf(w, "%s_count%s %d\n", name, labels, countTotal)
+
+	// Write our `_sum` line
+	// This ultimately constructs a line such as:
+	//   foo_sum{foo="bar"} 5
+	b.WriteString(familyS)
+	b.WriteString(chunkSum)
+	if tagsSize > 0 {
+		b.WriteByte('{')
+		writeTags(b, tags)
+		b.WriteByte('}')
+	}
+	b.WriteByte(' ')
+	writeFloat64(b, sum)
+	b.WriteByte('\n')
+
+	// Write our `_count` line
+	// This ultimately constructs a line such as:
+	//   foo_count{foo="bar"} 5
+	b.WriteString(familyS)
+	b.WriteString(chunkCount)
+	if tagsSize > 0 {
+		b.WriteByte('{')
+		writeTags(b, tags)
+		b.WriteByte('}')
+	}
+	b.WriteByte(' ')
+	writeUint64(b, totalCounts)
+	b.WriteByte('\n')
 }
 
-func (h *Histogram) getSum() float64 {
-	h.mu.Lock()
-	sum := h.sum
-	h.mu.Unlock()
-	return sum
+// punchBuckets marks the counts on the punchCard corresponding to which
+// histogram buckets have counts.
+func (h *Histogram) punchBuckets(c *punchCard) (total uint64, punches int) {
+	if count := h.lower.Load(); count > 0 {
+		c[0] = count
+		total += count
+		punches++
+	}
+
+	if count := h.upper.Load(); count > 0 {
+		c[len(c)-1] = count
+		total += count
+		punches++
+	}
+
+	for idx := range h.buckets {
+		if db := h.buckets[idx].Load(); db != nil {
+			for offset := range db {
+				if count := db[offset].Load(); count > 0 {
+					bucketIdx := idx*bucketsPerDecimal + offset
+					c[bucketIdx+1] = count
+					total += count
+					punches++
+				}
+			}
+		}
+	}
+
+	return
+}
+
+// punchCard is used internally to track counts per bucket when computing
+// which histograms ranges have been hit.
+type punchCard [totalBuckets]uint64
+
+var punchCardPool = sync.Pool{
+	New: func() any {
+		var c punchCard
+		return &c
+	},
+}
+
+func init() {
+	// pre-compute all bucket ranges
+	v := math.Pow10(e10Min)
+	bucketRanges[0] = "0..." + formatBucket(v)
+
+	start := formatBucket(v)
+	for i := range histBuckets {
+		v *= bucketMultiplier
+		end := formatBucket(v)
+		bucketRanges[i+1] = start + "..." + end
+		start = end
+	}
+
+	bucketRanges[totalBuckets-1] = formatBucket(math.Pow10(e10Max)) + "...+Inf"
+}
+
+func formatBucket(v float64) string {
+	return strconv.FormatFloat(v, 'e', 3, 64)
 }

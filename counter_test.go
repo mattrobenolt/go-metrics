@@ -1,77 +1,91 @@
 package metrics
 
 import (
-	"fmt"
 	"testing"
+
+	"go.withmatt.com/metrics/internal/assert"
 )
 
-func TestCounterSerial(t *testing.T) {
-	name := "CounterSerial"
-	c := NewSet().NewCounter(name)
-	c.Inc()
-	if n := c.Get(); n != 1 {
-		t.Fatalf("unexpected counter value; got %d; want 1", n)
-	}
-	c.Set(123)
-	if n := c.Get(); n != 123 {
-		t.Fatalf("unexpected counter value; got %d; want 123", n)
-	}
-	c.Dec()
-	if n := c.Get(); n != 122 {
-		t.Fatalf("unexpected counter value; got %d; want 122", n)
-	}
-	c.Add(3)
-	if n := c.Get(); n != 125 {
-		t.Fatalf("unexpected counter value; got %d; want 125", n)
-	}
+func TestCounterNew(t *testing.T) {
+	NewSet().NewCounter("foo")
+	NewSet().NewCounter("foo", "bar", "baz")
 
-	// Verify MarshalTo
-	testMarshalTo(t, c, "foobar", "foobar 125\n")
+	// invalid label pairs
+	assert.Panics(t, func() { NewSet().NewCounter("foo", "bar") })
+
+	// duplicate
+	set := NewSet()
+	set.NewCounter("foo")
+	assert.Panics(t, func() { set.NewCounter("foo") })
+}
+
+func TestCounterGetOrCreate(t *testing.T) {
+	set := NewSet()
+	set.GetOrCreateCounter("foo").Inc()
+	set.GetOrCreateCounter("foo").Inc()
+	assert.Equal(t, 2, set.GetOrCreateCounter("foo").Get())
+
+	set.GetOrCreateCounter("foo", "a", "1").Inc()
+	assert.Equal(t, 2, set.GetOrCreateCounter("foo").Get())
+	assert.Equal(t, 1, set.GetOrCreateCounter("foo", "a", "1").Get())
+}
+
+func TestCounterVec(t *testing.T) {
+	set := NewSet()
+	c := set.NewCounterVec(CounterVecOpt{
+		Family: "foo",
+		Labels: []string{"a", "b"},
+	})
+	c.WithLabelValues("1", "2").Inc()
+}
+
+func TestCounterSerial(t *testing.T) {
+	const name = "CounterSerial"
+	set := NewSet()
+	c := set.NewCounter(name)
+	c.Inc()
+	assert.Equal(t, c.Get(), 1)
+	c.Dec()
+	assert.Equal(t, c.Get(), 0)
+	c.Set(123)
+	assert.Equal(t, c.Get(), 123)
+	c.Dec()
+	assert.Equal(t, c.Get(), 122)
+	c.Add(3)
+	assert.Equal(t, c.Get(), 125)
+
+	assertMarshal(t, set, []string{"CounterSerial 125"})
 }
 
 func TestCounterConcurrent(t *testing.T) {
-	name := "CounterConcurrent"
-	c := NewSet().NewCounter(name)
-	err := testConcurrent(func() error {
+	const n = 1000
+	const inner = 10
+
+	c := NewSet().NewCounter("x")
+	hammer(t, n, func() {
 		nPrev := c.Get()
-		for range 10 {
+		for range inner {
 			c.Inc()
-			if n := c.Get(); n <= nPrev {
-				return fmt.Errorf("counter value must be greater than %d; got %d", nPrev, n)
-			}
+			assert.Greater(t, c.Get(), nPrev)
 		}
-		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Equal(t, c.Get(), n*inner)
 }
 
-func TestGetOrCreateCounterSerial(t *testing.T) {
-	name := "GetOrCreateCounterSerial"
-	if err := testGetOrCreateCounter(name); err != nil {
-		t.Fatal(err)
-	}
-}
+func TestCounterGetOrCreateConcurrent(t *testing.T) {
+	const n = 1000
+	const inner = 10
 
-func TestGetOrCreateCounterConcurrent(t *testing.T) {
-	name := "GetOrCreateCounterConcurrent"
-	err := testConcurrent(func() error {
-		return testGetOrCreateCounter(name)
-	})
-	if err != nil {
-		t.Fatal(err)
+	set := NewSet()
+	fn := func() *Counter {
+		return set.GetOrCreateCounter("x", "a", "1")
 	}
-}
-
-func testGetOrCreateCounter(name string) error {
-	s := NewSet()
-	c1 := s.GetOrCreateCounter(name)
-	for range 10 {
-		c2 := s.GetOrCreateCounter(name)
-		if c1 != c2 {
-			return fmt.Errorf("unexpected counter returned; got %p; want %p", c2, c1)
+	hammer(t, n, func() {
+		nPrev := fn().Get()
+		for range inner {
+			fn().Inc()
+			assert.Greater(t, fn().Get(), nPrev)
 		}
-	}
-	return nil
+	})
+	assert.Equal(t, fn().Get(), n*inner)
 }
