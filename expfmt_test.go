@@ -72,3 +72,24 @@ func TestWriteMetricsFloat64(t *testing.T) {
 		assert.Equal(t, tc.expected+"\n", w.B.String())
 	}
 }
+
+func TestSizeOf(t *testing.T) {
+	for _, tc := range []struct {
+		family       string
+		tags         []string
+		constantTags string
+		expected     int
+	}{
+		{"foo", nil, "", len(`foo`)},
+		{"foo", []string{"x", "y"}, "", len(`foo{x="y"}`)},
+		{"foo", []string{"x", "y", "other_tag", "other_value"}, "", len(`foo{x="y",other_tag="other_value"}`)},
+		{"foo", nil, `x="y"`, len(`foo{x="y"}`)},
+		{"foo", []string{"x", "y"}, `foo="bar"`, len(`foo{x="y",foo="bar"}`)},
+	} {
+		assert.Equal(t, tc.expected, sizeOfMetricName(MetricName{
+			Family:       MustIdent(tc.family),
+			Tags:         MustTags(tc.tags...),
+			ConstantTags: tc.constantTags,
+		}))
+	}
+}
