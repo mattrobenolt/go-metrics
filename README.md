@@ -7,37 +7,37 @@ pkg: go.withmatt.com/metrics
 cpu: Apple M1 Max
 BenchmarkCounterGetOrCreate
 BenchmarkCounterGetOrCreate/hot
-BenchmarkCounterGetOrCreate/hot-10     	51054565	        23.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterGetOrCreate/hot-10     	49523253	        24.68 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCounterGetOrCreate/cold
-BenchmarkCounterGetOrCreate/cold-10    	 7587610	       157.5 ns/op	      96 B/op	       3 allocs/op
+BenchmarkCounterGetOrCreate/cold-10    	 7437841	       161.3 ns/op	      96 B/op	       3 allocs/op
 BenchmarkCounterInc
-BenchmarkCounterInc-10                 	175391628	         6.839 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterInc-10                 	172056392	         6.984 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCounterIncParallel
-BenchmarkCounterIncParallel-10         	14670920	        80.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterIncParallel-10         	15404413	        75.01 ns/op	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter
 BenchmarkExpfmtWriter/name
-BenchmarkExpfmtWriter/name-10          	203007757	         5.907 ns/op	3047.24 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name-10          	154412713	         7.785 ns/op	2312.27 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_tags
-BenchmarkExpfmtWriter/name_with_tags-10         	28778386	        41.65 ns/op	 840.36 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_tags-10         	27872998	        43.65 ns/op	 801.80 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_many_tags
-BenchmarkExpfmtWriter/name_with_many_tags-10    	 6676158	       179.3 ns/op	 775.25 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_many_tags-10    	 6427512	       187.0 ns/op	 743.28 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/uint64
-BenchmarkExpfmtWriter/uint64-10                 	21796863	        55.42 ns/op	 721.75 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/uint64-10                 	21411715	        57.25 ns/op	 698.75 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/float64
-BenchmarkExpfmtWriter/float64-10                	14011434	        85.72 ns/op	 489.94 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/float64-10                	13505794	        90.42 ns/op	 464.48 MB/s	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdate
-BenchmarkHistogramUpdate-10                     	100000000	        11.87 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdate-10                     	100000000	        12.01 ns/op	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdateParallel
-BenchmarkHistogramUpdateParallel-10             	 2637985	       448.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdateParallel-10             	 2701826	       412.8 ns/op	       0 B/op	       0 allocs/op
 BenchmarkWritePrometheus
-BenchmarkWritePrometheus-10                     	  509984	      2352 ns/op	1203.67 MB/s	       0 B/op	       0 allocs/op
+BenchmarkWritePrometheus-10                     	  500120	      2427 ns/op	1166.65 MB/s	       0 B/op	       0 allocs/op
 BenchmarkValidate
 BenchmarkValidate/MustIdent
-BenchmarkValidate/MustIdent-10                  	54330500	        22.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustIdent-10                  	56988512	        20.94 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/validateIdent
-BenchmarkValidate/validateIdent-10              	76251796	        14.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/validateIdent-10              	79696489	        15.34 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/MustValue
-BenchmarkValidate/MustValue-10                  	75957976	        15.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustValue-10                  	75651510	        16.09 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	go.withmatt.com/metrics	18.646s
+ok  	go.withmatt.com/metrics	18.585s
 ```

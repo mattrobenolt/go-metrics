@@ -1,52 +1,71 @@
 package metrics
 
 import (
-	"bytes"
-	"math"
 	"testing"
 )
 
-func BenchmarkWritePrometheus(b *testing.B) {
+func TestSet(t *testing.T) {
 	set := NewSet()
 
-	c1 := set.NewCounter(
-		"http_request",
-		"path", "/test",
-		"status", "200",
-	)
-	c1.Inc()
-	c1.Inc()
+	set.NewCounter("counter1").Inc()
+	set.NewCounter("counter2", "a", "1").Inc()
+	set.NewGauge("gauge1", nil).Set(1)
+	set.NewGauge("gauge2", nil, "a", "1").Set(1)
+	set.NewHistogram("hist1").Update(1)
+	set.NewHistogram("hist2", "a", "1").Update(1)
 
-	c2 := set.NewCounter("counter_test", "bar", "baz")
-	c2.Inc()
+	s2 := set.NewSet()
+	s2.NewCounter("counter3").Inc()
 
-	c3 := set.NewCounter("other")
-	c3.Inc()
+	assertMarshal(t, set, []string{
+		`counter1 1`,
+		`counter2{a="1"} 1`,
+		`gauge1 1`,
+		`gauge2{a="1"} 1`,
+		`hist1_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
+		`hist1_sum 1`,
+		`hist1_count 1`,
+		`hist2_bucket{vmrange="8.799e-01...1.000e+00",a="1"} 1`,
+		`hist2_sum{a="1"} 1`,
+		`hist2_count{a="1"} 1`,
+		`counter3 1`,
+	})
+}
 
-	g1 := set.NewGauge("gauge_test", nil, "foo", "bar")
-	g1.Set(1.5898)
+func TestSetConstantTags(t *testing.T) {
+	set := NewSetOpt(SetOpt{
+		ConstantTags: MustTags("foo", "bar"),
+	})
 
-	h1 := set.NewHistogram("hist_test", "foo", "bar")
-	h1.Update(0.01)
-	h1.Update(1.23)
-	h1.Update(1.231)
+	set.NewCounter("counter1").Inc()
+	set.NewCounter("counter2", "a", "1").Inc()
+	set.NewGauge("gauge1", nil).Set(1)
+	set.NewGauge("gauge2", nil, "a", "1").Set(1)
+	set.NewHistogram("hist1").Update(1)
+	set.NewHistogram("hist2", "a", "1").Update(1)
 
-	h2 := set.NewHistogram("hist_test2")
-	for i := range 1000 {
-		h2.Update(float64(i))
-	}
-	h2.Update(math.Inf(1))
+	s2 := set.NewSet()
+	s2.NewCounter("counter3").Inc()
 
-	set.NewHistogram("hist_test3")
+	s3 := set.NewSetOpt(SetOpt{
+		ConstantTags: MustTags("x", "y"),
+	})
+	s3.NewCounter("counter4").Inc()
+	s3.NewCounter("counter5", "a", "1").Inc()
 
-	var bb bytes.Buffer
-	set.WritePrometheusUnthrottled(&bb)
-
-	b.ReportAllocs()
-
-	for b.Loop() {
-		bb.Reset()
-		set.WritePrometheusUnthrottled(&bb)
-		b.SetBytes(int64(bb.Len()))
-	}
+	assertMarshal(t, set, []string{
+		`counter1{foo="bar"} 1`,
+		`counter2{foo="bar",a="1"} 1`,
+		`gauge1{foo="bar"} 1`,
+		`gauge2{foo="bar",a="1"} 1`,
+		`hist1_bucket{vmrange="8.799e-01...1.000e+00",foo="bar"} 1`,
+		`hist1_sum{foo="bar"} 1`,
+		`hist1_count{foo="bar"} 1`,
+		`hist2_bucket{vmrange="8.799e-01...1.000e+00",foo="bar",a="1"} 1`,
+		`hist2_sum{foo="bar",a="1"} 1`,
+		`hist2_count{foo="bar",a="1"} 1`,
+		`counter3{foo="bar"} 1`,
+		`counter4{foo="bar",x="y"} 1`,
+		`counter5{foo="bar",x="y",a="1"} 1`,
+	})
 }

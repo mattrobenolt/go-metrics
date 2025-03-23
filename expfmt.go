@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // Ident represents either a metric family or a tag label.
@@ -50,8 +51,8 @@ type ExpfmtWriter struct {
 }
 
 // WriteMetricName writes the family and optional tags.
-func (w ExpfmtWriter) WriteMetricName(family Ident, tags ...Tag) {
-	writeMetricName(w.B, family, tags)
+func (w ExpfmtWriter) WriteMetricName(name MetricName) {
+	writeMetricName(w.B, name)
 }
 
 // WriteUint64 writes a uint64 and signals the end of the metric.
@@ -88,23 +89,18 @@ func writeFloat64(b *bytes.Buffer, value float64) {
 	}
 }
 
-func getMetricName(family Ident, tags []Tag) string {
-	if len(tags) == 0 {
-		return family.String()
-	}
-	var b bytes.Buffer
-	writeMetricName(&b, family, tags)
-	return b.String()
-}
-
-func sizeOfMetric(family string, tags []Tag) int {
-	size := len(family)
+func sizeOfMetricName(name MetricName) int {
+	size := len(name.Family.String())
 	size += len("{}")
-	return size + sizeOfTags(tags)
+	return size + sizeOfTags(name.ConstantTags, name.Tags)
 }
 
-func sizeOfTags(tags []Tag) int {
+func sizeOfTags(constantTags string, tags []Tag) int {
 	var size int
+	if len(constantTags) > 0 {
+		size += len(constantTags) + 1
+	}
+
 	for _, tag := range tags {
 		size += len(tag.label.String())
 		size += len(tag.value.String())
@@ -121,25 +117,47 @@ func writeTag(b *bytes.Buffer, tag Tag) {
 	b.WriteByte('"')
 }
 
-func writeMetricName(b *bytes.Buffer, family Ident, tags []Tag) {
-	if len(tags) == 0 {
-		b.WriteString(family.String())
+func writeMetricName(b *bytes.Buffer, name MetricName) {
+	if !name.HasTags() {
+		b.WriteString(name.Family.String())
 		return
 	}
 
-	b.Grow(sizeOfMetric(family.String(), tags))
+	b.Grow(sizeOfMetricName(name))
 
-	b.WriteString(family.String())
+	b.WriteString(name.Family.String())
 	b.WriteByte('{')
-	writeTags(b, tags)
+	writeTags(b, name.ConstantTags, name.Tags)
 	b.WriteByte('}')
 }
 
-func writeTags(b *bytes.Buffer, tags []Tag) {
+func writeTags(b *bytes.Buffer, constantTags string, tags []Tag) {
+	if len(constantTags) > 0 {
+		b.WriteString(constantTags)
+		if len(tags) == 0 {
+			return
+		}
+		b.WriteByte(',')
+	}
+
 	for i, tag := range tags {
 		if i > 0 {
 			b.WriteByte(',')
 		}
 		writeTag(b, tag)
 	}
+}
+
+func materializeTags(tags []Tag) string {
+	var sb strings.Builder
+	for i, tag := range tags {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		sb.WriteString(tag.label.String())
+		sb.WriteString(`="`)
+		sb.WriteString(tag.value.String())
+		sb.WriteByte('"')
+	}
+	return sb.String()
 }

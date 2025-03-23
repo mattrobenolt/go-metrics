@@ -12,6 +12,11 @@ import (
 
 const minimumWriteBuffer = 16 * 1024
 
+// SetOpt are the options for creating a Set.
+type SetOpt struct {
+	ConstantTags []Tag
+}
+
 // Set is a collection of metrics. A single Set may have children Sets.
 //
 // [Set.WritePrometheus] must be called for exporting metrics from the set.
@@ -25,16 +30,29 @@ type Set struct {
 
 	childrenMu sync.Mutex
 	children   []*Set
+
+	constantTags string
 }
 
 // NewSet creates new set of metrics.
 func NewSet() *Set {
+	return NewSetOpt(SetOpt{})
+}
+
+// NewSetOpt creates a new Set with the opts.
+func NewSetOpt(opt SetOpt) *Set {
 	var s Set
 	s.Reset()
+
+	if len(opt.ConstantTags) > 0 {
+		s.constantTags = materializeTags(opt.ConstantTags)
+	}
 	return &s
 }
 
 // Reset resets the Set and retains allocated memory for reuse.
+//
+// Reset retains any ConstantTags if set.
 func (s *Set) Reset() {
 	s.mu.Lock()
 	clear(s.metrics)
@@ -50,7 +68,12 @@ func (s *Set) Reset() {
 
 // NewSet creates a new child Set.
 func (s *Set) NewSet() *Set {
+	return s.NewSetOpt(SetOpt{})
+}
+
+func (s *Set) NewSetOpt(opt SetOpt) *Set {
 	s2 := NewSet()
+	s2.constantTags = joinTags(s.constantTags, opt.ConstantTags)
 	s.childrenMu.Lock()
 	s.children = append(s.children, s2)
 	s.childrenMu.Unlock()
@@ -110,7 +133,11 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		if throttle {
 			runtime.Gosched()
 		}
-		nm.metric.marshalTo(exp, nm.family, nm.tags...)
+		nm.metric.marshalTo(exp, MetricName{
+			Family:       nm.family,
+			Tags:         nm.tags,
+			ConstantTags: s.constantTags,
+		})
 	}
 
 	// This set has no children sets, so exit
@@ -153,7 +180,10 @@ func (s *Set) mustRegisterMetric(m Metric, family Ident, tags []Tag) {
 	defer s.mu.Unlock()
 
 	if _, ok := s.metrics[nm.id]; ok {
-		panic(fmt.Errorf("metric %q is already registered", getMetricName(family, tags)))
+		panic(fmt.Errorf("metric %q is already registered", MetricName{
+			Family: family,
+			Tags:   tags,
+		}.String()))
 	}
 
 	s.addMetricLocked(nm)
@@ -208,4 +238,17 @@ func (s *Set) addMetricLocked(nm *namedMetric) {
 	}
 	s.values = append(s.values, nm)
 	s.dirty.Store(true)
+}
+
+func joinTags(previous string, new []Tag) string {
+	switch {
+	case len(previous) == 0 && len(new) == 0:
+		return ""
+	case len(previous) == 0:
+		return materializeTags(new)
+	case len(new) == 0:
+		return previous
+	default:
+		return previous + "," + materializeTags(new)
+	}
 }

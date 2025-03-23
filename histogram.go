@@ -160,7 +160,7 @@ func (h *Histogram) UpdateDuration(startTime time.Time) {
 	h.Update(time.Since(startTime).Seconds())
 }
 
-func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
+func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 	card := punchCardPool.Get().(*punchCard)
 	defer func() {
 		clear(card[:])
@@ -173,11 +173,11 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
 	}
 
 	sum := h.sum.Load()
-	familyS := family.String()
+	family := name.Family.String()
 
 	// 1 extra because we're always adding in the vmrange tag
 	// and sizeOfTags doesn't include a trailing comma
-	tagsSize := sizeOfTags(tags) + 1
+	tagsSize := sizeOfTags(name.ConstantTags, name.Tags) + 1
 
 	const (
 		chunkVMRange = `_bucket{vmrange="`
@@ -192,12 +192,12 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
 	// below with some margin of error to make sure we allocate enough
 	// since we can't compute exactly
 	b.Grow(
-		(len(familyS) * punches) +
+		(len(family) * punches) +
 			(tagsSize * punches) +
 			(len(chunkVMRange) * punches) +
 			punches +
-			len(familyS) + len(chunkSum) + tagsSize + 3 +
-			len(familyS) + len(chunkCount) + tagsSize + 3 +
+			len(family) + len(chunkSum) + tagsSize + 3 +
+			len(family) + len(chunkCount) + tagsSize + 3 +
 			64, // extra margin of error
 	)
 
@@ -207,11 +207,15 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
 	for idx, count := range card {
 		if count > 0 {
 			vmrange := bucketRanges[idx]
-			b.WriteString(familyS)
+			b.WriteString(family)
 			b.WriteString(chunkVMRange)
 			b.WriteString(vmrange)
 			b.WriteByte('"')
-			for _, tag := range tags {
+			if len(name.ConstantTags) > 0 {
+				b.WriteByte(',')
+				b.WriteString(name.ConstantTags)
+			}
+			for _, tag := range name.Tags {
 				b.WriteByte(',')
 				writeTag(b, tag)
 			}
@@ -224,11 +228,11 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
 	// Write our `_sum` line
 	// This ultimately constructs a line such as:
 	//   foo_sum{foo="bar"} 5
-	b.WriteString(familyS)
+	b.WriteString(family)
 	b.WriteString(chunkSum)
 	if tagsSize > 0 {
 		b.WriteByte('{')
-		writeTags(b, tags)
+		writeTags(b, name.ConstantTags, name.Tags)
 		b.WriteByte('}')
 	}
 	b.WriteByte(' ')
@@ -238,11 +242,11 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
 	// Write our `_count` line
 	// This ultimately constructs a line such as:
 	//   foo_count{foo="bar"} 5
-	b.WriteString(familyS)
+	b.WriteString(family)
 	b.WriteString(chunkCount)
 	if tagsSize > 0 {
 		b.WriteByte('{')
-		writeTags(b, tags)
+		writeTags(b, name.ConstantTags, name.Tags)
 		b.WriteByte('}')
 	}
 	b.WriteByte(' ')

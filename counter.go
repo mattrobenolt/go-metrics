@@ -36,7 +36,7 @@ func (c *Counter) Set(val uint64) {
 	c.v.Store(val)
 }
 
-func (c *Counter) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
-	w.WriteMetricName(family, tags...)
+func (c *Counter) marshalTo(w ExpfmtWriter, name MetricName) {
+	w.WriteMetricName(name)
 	w.WriteUint64(c.Get())
 }

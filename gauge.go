@@ -54,7 +54,7 @@ func (g *Gauge) Add(val float64) {
 	g.v.Add(val)
 }
 
-func (g *Gauge) marshalTo(w ExpfmtWriter, family Ident, tags ...Tag) {
-	w.WriteMetricName(family, tags...)
+func (g *Gauge) marshalTo(w ExpfmtWriter, name MetricName) {
+	w.WriteMetricName(name)
 	w.WriteFloat64(g.Get())
 }

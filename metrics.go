@@ -1,13 +1,14 @@
 package metrics
 
 import (
+	"bytes"
 	"cmp"
 )
 
 // Metric is a single data point that can be written to the Prometheus
 // text format.
 type Metric interface {
-	marshalTo(w ExpfmtWriter, family Ident, tags ...Tag)
+	marshalTo(ExpfmtWriter, MetricName)
 }
 
 type Collector interface {
@@ -22,6 +23,28 @@ type namedMetric struct {
 	family Ident
 	tags   []Tag
 	metric Metric
+}
+
+// MetricName represents a FQN of a metric in pieces.
+type MetricName struct {
+	Family       Ident
+	Tags         []Tag
+	ConstantTags string
+}
+
+// String returns the MetricName in fully quanfied format. Prefer
+// [ExpfmtWriter.WriteMetricName] over this when marshalling.
+func (n MetricName) String() string {
+	if !n.HasTags() {
+		return n.Family.String()
+	}
+	var b bytes.Buffer
+	writeMetricName(&b, n)
+	return b.String()
+}
+
+func (n MetricName) HasTags() bool {
+	return len(n.ConstantTags) > 0 || len(n.Tags) > 0
 }
 
 func compareNamedMetrics(a, b *namedMetric) int {
