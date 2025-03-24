@@ -94,17 +94,10 @@ func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 func (s *Set) NewCounterVec(opt CounterVecOpt) *CounterVec {
 	family := MustIdent(opt.Family)
 
-	// copy labels into partial tags. partial tags
-	// have a validated label, but no value.
-	partialTags := make([]Tag, len(opt.Labels))
-	for i, label := range opt.Labels {
-		partialTags[i].label = MustIdent(label)
-	}
-
 	return &CounterVec{
 		s:           s,
 		family:      family,
-		partialTags: partialTags,
+		partialTags: makePartialTags(opt.Labels),
 		partialHash: hashStart(family.String(), opt.Labels),
 	}
 }

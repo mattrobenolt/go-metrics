@@ -278,3 +278,13 @@ func joinTags(previous string, new []Tag) string {
 		return previous + "," + materializeTags(new)
 	}
 }
+
+// makePartialTags copy labels into partial tags. partial tags
+// have a validated label, but no value.
+func makePartialTags(labels []string) []Tag {
+	partialTags := make([]Tag, len(labels))
+	for i, label := range labels {
+		partialTags[i].label = MustIdent(label)
+	}
+	return partialTags
+}

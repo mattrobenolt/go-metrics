@@ -1,5 +1,7 @@
 package metrics
 
+import "hash/maphash"
+
 // CounterOpt are the options for creating a Counter.
 type GauageOpt struct {
 	Family Ident
@@ -41,8 +43,8 @@ func (s *Set) NewGaugeOpt(opt GauageOpt) *Gauge {
 	return g
 }
 
-// GetOrCreateGauge returns registered gauge with the given name in s
-// or creates new gauge if s doesn't contain gauge with the given name.
+// GetOrCreateGauge returns registered Gauge with the given name in s
+// or creates new gauge if s doesn't contain Gauge with the given name.
 //
 // family must be a Prometheus compatible identifier format.
 //
@@ -66,4 +68,45 @@ func (s *Set) GetOrCreateGauge(family string, tags ...string) *Gauge {
 		nm = s.getOrAddMetricFromStrings(&Gauge{}, hash, family, tags)
 	}
 	return nm.metric.(*Gauge)
+}
+
+type GaugeVecOpt struct {
+	Family string
+	Labels []string
+	Func   func() float64
+}
+
+type GaugeVec struct {
+	s           *Set
+	family      Ident
+	partialTags []Tag
+	partialHash *maphash.Hash
+	fn          func() float64
+}
+
+func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
+	hash := hashFinish(g.partialHash, values)
+
+	g.s.mu.Lock()
+	nm := g.s.metrics[hash]
+	g.s.mu.Unlock()
+
+	if nm == nil {
+		nm = g.s.getOrRegisterMetricFromVec(
+			&Gauge{fn: g.fn}, hash, g.family, g.partialTags, values,
+		)
+	}
+	return nm.metric.(*Gauge)
+}
+
+func (s *Set) NewGaugeVec(opt GaugeVecOpt) *GaugeVec {
+	family := MustIdent(opt.Family)
+
+	return &GaugeVec{
+		s:           s,
+		family:      family,
+		partialTags: makePartialTags(opt.Labels),
+		partialHash: hashStart(family.String(), opt.Labels),
+		fn:          opt.Func,
+	}
 }
