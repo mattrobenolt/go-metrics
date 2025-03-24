@@ -48,7 +48,8 @@ func TestHistogramVec(t *testing.T) {
 	h.WithLabelValues("1", "2").Update(2)
 	h.WithLabelValues("3", "4").Update(1)
 
-	assertMarshal(t, set, []string{
+	// order is unpredictable bc the tags aren't ordered
+	assertMarshalUnordered(t, set, []string{
 		`foo_bucket{vmrange="8.799e-01...1.000e+00",a="1",b="2"} 1`,
 		`foo_bucket{vmrange="1.896e+00...2.154e+00",a="1",b="2"} 1`,
 		`foo_sum{a="1",b="2"} 3`,

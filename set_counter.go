@@ -54,9 +54,9 @@ func (s *Set) NewCounterOpt(opt CounterOpt) *Counter {
 func (s *Set) GetOrCreateCounter(family string, tags ...string) *Counter {
 	hash := getHashStrings(family, tags)
 
-	s.mu.Lock()
+	s.metricsMu.Lock()
 	nm := s.metrics[hash]
-	s.mu.Unlock()
+	s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = s.getOrAddMetricFromStrings(&Counter{}, hash, family, tags)
@@ -79,9 +79,9 @@ type CounterVec struct {
 func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 	hash := hashFinish(c.partialHash, values)
 
-	c.s.mu.Lock()
+	c.s.metricsMu.Lock()
 	nm := c.s.metrics[hash]
-	c.s.mu.Unlock()
+	c.s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = c.s.getOrRegisterMetricFromVec(

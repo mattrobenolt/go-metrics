@@ -43,7 +43,8 @@ func TestCounterVec(t *testing.T) {
 	assert.Equal(t, c.WithLabelValues("1", "2").Get(), 2)
 	assert.Equal(t, c.WithLabelValues("3", "4").Get(), 1)
 
-	assertMarshal(t, set, []string{
+	// order is unpredictable bc the tags aren't ordered
+	assertMarshalUnordered(t, set, []string{
 		`foo{a="1",b="2"} 2`,
 		`foo{a="3",b="4"} 1`,
 	})

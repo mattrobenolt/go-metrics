@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"runtime"
 	"slices"
 	"sync"
@@ -24,9 +25,11 @@ type Set struct {
 	dirty       atomic.Bool
 	hasChildren atomic.Bool
 
-	mu      sync.Mutex
-	metrics map[metricHash]*namedMetric
-	values  []*namedMetric
+	metricsMu sync.Mutex
+	metrics   map[metricHash]*namedMetric
+
+	valuesMu sync.Mutex
+	values   []*namedMetric
 
 	childrenMu sync.Mutex
 	children   []*Set
@@ -55,11 +58,11 @@ func NewSetOpt(opt SetOpt) *Set {
 //
 // Reset retains any ConstantTags if set.
 func (s *Set) Reset() {
-	s.mu.Lock()
+	s.metricsMu.Lock()
 	clear(s.metrics)
 	s.values = s.values[:0]
 	s.dirty.Store(false)
-	s.mu.Unlock()
+	s.metricsMu.Unlock()
 
 	s.childrenMu.Lock()
 	s.children = s.children[:0]
@@ -138,19 +141,37 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		bb.Grow(minimumWriteBuffer)
 	}
 
-	// TODO: optimize this dirty tracking to not need a lock for sorting.
 	if s.dirty.Load() {
-		s.mu.Lock()
-		slices.SortFunc(s.values, compareNamedMetrics)
-		s.mu.Unlock()
+		s.metricsMu.Lock()
+		tmp := maps.Clone(s.metrics)
+		// mark dirty early since we've taken a clone of our
+		// metrics, which is the point we have split off.
 		s.dirty.Store(false)
+
+		// lock our values before unlocking the metrics to enforce
+		// that we run sequentially in the same goroutine.
+		s.valuesMu.Lock()
+		s.metricsMu.Unlock()
+
+		s.values = slices.Grow(s.values, len(tmp))
+		s.values = s.values[:0]
+		for _, v := range tmp {
+			s.values = append(s.values, v)
+		}
+		slices.SortStableFunc(s.values, compareNamedMetrics)
+		s.valuesMu.Unlock()
 	}
 
 	exp := ExpfmtWriter{
 		b:            bb,
 		constantTags: s.constantTags,
 	}
-	for _, nm := range s.values {
+
+	s.valuesMu.Lock()
+	values := slices.Clone(s.values)
+	s.valuesMu.Unlock()
+
+	for _, nm := range values {
 		// yield the scheduler for each metric to not starve CPU
 		if throttle {
 			runtime.Gosched()
@@ -177,6 +198,10 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		s.childrenMu.Unlock()
 
 		for _, c := range collectors {
+			// yield the scheduler for each Collector to not starve CPU
+			if throttle {
+				runtime.Gosched()
+			}
 			c.Collect(exp)
 		}
 	}
@@ -202,8 +227,8 @@ func (s *Set) mustRegisterMetric(m Metric, family Ident, tags []Tag) {
 		metric: m,
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.metricsMu.Lock()
+	defer s.metricsMu.Unlock()
 
 	if _, ok := s.metrics[nm.id]; ok {
 		panic(fmt.Errorf("metric %q is already registered", MetricName{
@@ -244,8 +269,8 @@ func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident
 }
 
 func (s *Set) getOrAddNamedMetric(newNm *namedMetric) *namedMetric {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.metricsMu.Lock()
+	defer s.metricsMu.Unlock()
 	nm := s.metrics[newNm.id]
 	if nm == nil {
 		nm = newNm
@@ -262,7 +287,6 @@ func (s *Set) addMetricLocked(nm *namedMetric) {
 	} else {
 		s.metrics[nm.id] = nm
 	}
-	s.values = append(s.values, nm)
 	s.dirty.Store(true)
 }
 

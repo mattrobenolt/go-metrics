@@ -60,9 +60,9 @@ func (s *Set) NewGaugeOpt(opt GauageOpt) *Gauge {
 func (s *Set) GetOrCreateGauge(family string, tags ...string) *Gauge {
 	hash := getHashStrings(family, tags)
 
-	s.mu.Lock()
+	s.metricsMu.Lock()
 	nm := s.metrics[hash]
-	s.mu.Unlock()
+	s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = s.getOrAddMetricFromStrings(&Gauge{}, hash, family, tags)
@@ -87,9 +87,9 @@ type GaugeVec struct {
 func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
 	hash := hashFinish(g.partialHash, values)
 
-	g.s.mu.Lock()
+	g.s.metricsMu.Lock()
 	nm := g.s.metrics[hash]
-	g.s.mu.Unlock()
+	g.s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = g.s.getOrRegisterMetricFromVec(

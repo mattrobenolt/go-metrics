@@ -54,9 +54,9 @@ func (s *Set) NewHistogramOpt(opt HistogramOpt) *Histogram {
 func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
 	hash := getHashStrings(family, tags)
 
-	s.mu.Lock()
+	s.metricsMu.Lock()
 	nm := s.metrics[hash]
-	s.mu.Unlock()
+	s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = s.getOrAddMetricFromStrings(&Histogram{}, hash, family, tags)
@@ -79,9 +79,9 @@ type HistogramVec struct {
 func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 	hash := hashFinish(h.partialHash, values)
 
-	h.s.mu.Lock()
+	h.s.metricsMu.Lock()
 	nm := h.s.metrics[hash]
-	h.s.mu.Unlock()
+	h.s.metricsMu.Unlock()
 
 	if nm == nil {
 		nm = h.s.getOrRegisterMetricFromVec(
