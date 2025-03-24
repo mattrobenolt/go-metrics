@@ -31,11 +31,11 @@ func TestHistogramGetOrCreate(t *testing.T) {
 	fn("foo").Update(2)
 
 	h := fn("foo")
-	assert.Equal(t, 3, h.sum.Load())
+	assert.Equal(t, 3, h.sum())
 
 	fn("foo", "a", "1").Update(1)
-	assert.Equal(t, 3, fn("foo").sum.Load())
-	assert.Equal(t, 1, fn("foo", "a", "1").sum.Load())
+	assert.Equal(t, 3, fn("foo").sum())
+	assert.Equal(t, 1, fn("foo", "a", "1").sum())
 }
 
 func TestHistogramVec(t *testing.T) {
