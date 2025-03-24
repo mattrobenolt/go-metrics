@@ -2,15 +2,15 @@ package metrics
 
 import "hash/maphash"
 
-// GaugeOpt are the options for creating a Gauge.
-type GaugeOpt struct {
+// IntGaugeOpt are the options for creating a Gauge.
+type IntGaugeOpt struct {
 	Family Ident
 	Tags   []Tag
 	// Func is an optional callback for making observations.
-	Func func() float64
+	Func func() uint64
 }
 
-// NewGauge registers and returns gauge with the given name in s, which calls fn
+// NewIntGauge registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
 // family must be a Prometheus compatible identifier format.
@@ -19,32 +19,32 @@ type GaugeOpt struct {
 //
 // Optional tags must be specified in [label, value] pairs, for instance,
 //
-//	NewGauge("family", observeFn, "label1", "value1", "label2", "value2")
+//	NewIntGauge("family", observeFn, "label1", "value1", "label2", "value2")
 //
-// The returned Gauge is safe to use from concurrent goroutines.
+// The returned IntGauge is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *Set) NewGauge(family string, fn func() float64, tags ...string) *Gauge {
-	return s.NewGaugeOpt(GaugeOpt{
+func (s *Set) NewIntGauge(family string, fn func() uint64, tags ...string) *IntGauge {
+	return s.NewIntGaugeOpt(IntGaugeOpt{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 		Func:   fn,
 	})
 }
 
-// NewGaugeOpt registers and returns new Gauge with the opts in the s.
+// NewIntGaugeOpt registers and returns new IntGauge with the opts in the s.
 //
-// The returned Gauge is safe to use from concurrent goroutines.
+// The returned IntGauge is safe to use from concurrent goroutines.
 //
 // This will panic if already registered.
-func (s *Set) NewGaugeOpt(opt GaugeOpt) *Gauge {
-	g := &Gauge{fn: opt.Func}
+func (s *Set) NewIntGaugeOpt(opt IntGaugeOpt) *IntGauge {
+	g := &IntGauge{fn: opt.Func}
 	s.mustRegisterMetric(g, opt.Family, opt.Tags)
 	return g
 }
 
-// GetOrCreateGauge returns registered Gauge with the given name in s
-// or creates new gauge if s doesn't contain Gauge with the given name.
+// GetOrCreateIntGauge returns registered IntGauge with the given name in s
+// or creates new gauge if s doesn't contain IntGauge with the given name.
 //
 // family must be a Prometheus compatible identifier format.
 //
@@ -54,10 +54,10 @@ func (s *Set) NewGaugeOpt(opt GaugeOpt) *Gauge {
 //
 // The returned Gauge is safe to use from concurrent goroutines.
 //
-// Prefer [NewGauge] or [NewGaugeOpt] when performance is critical.
+// Prefer [NewIntGauge] or [NewGaugeIntOpt] when performance is critical.
 //
 // This will panic if values are invalid.
-func (s *Set) GetOrCreateGauge(family string, tags ...string) *Gauge {
+func (s *Set) GetOrCreateIntGauge(family string, tags ...string) *IntGauge {
 	hash := getHashStrings(family, tags)
 
 	s.metricsMu.Lock()
@@ -65,26 +65,26 @@ func (s *Set) GetOrCreateGauge(family string, tags ...string) *Gauge {
 	s.metricsMu.Unlock()
 
 	if nm == nil {
-		nm = s.getOrAddMetricFromStrings(&Gauge{}, hash, family, tags)
+		nm = s.getOrAddMetricFromStrings(&IntGauge{}, hash, family, tags)
 	}
-	return nm.metric.(*Gauge)
+	return nm.metric.(*IntGauge)
 }
 
-type GaugeVecOpt struct {
+type IntGaugeVecOpt struct {
 	Family string
 	Labels []string
-	Func   func() float64
+	Func   func() uint64
 }
 
-type GaugeVec struct {
+type IntGaugeVec struct {
 	s           *Set
 	family      Ident
 	partialTags []Tag
 	partialHash *maphash.Hash
-	fn          func() float64
+	fn          func() uint64
 }
 
-func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
+func (g *IntGaugeVec) WithLabelValues(values ...string) *IntGauge {
 	hash := hashFinish(g.partialHash, values)
 
 	g.s.metricsMu.Lock()
@@ -93,16 +93,16 @@ func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
 
 	if nm == nil {
 		nm = g.s.getOrRegisterMetricFromVec(
-			&Gauge{fn: g.fn}, hash, g.family, g.partialTags, values,
+			&IntGauge{fn: g.fn}, hash, g.family, g.partialTags, values,
 		)
 	}
-	return nm.metric.(*Gauge)
+	return nm.metric.(*IntGauge)
 }
 
-func (s *Set) NewGaugeVec(opt GaugeVecOpt) *GaugeVec {
+func (s *Set) NewIntGaugeVec(opt IntGaugeVecOpt) *IntGaugeVec {
 	family := MustIdent(opt.Family)
 
-	return &GaugeVec{
+	return &IntGaugeVec{
 		s:           s,
 		family:      family,
 		partialTags: makePartialTags(opt.Labels),

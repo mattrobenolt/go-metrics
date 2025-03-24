@@ -2,18 +2,17 @@ package metrics
 
 import (
 	"errors"
-
-	"go.withmatt.com/metrics/internal/atomicx"
+	"sync/atomic"
 )
 
-// Gauge is a float64 gauge.
-type Gauge struct {
-	v  atomicx.Float64
-	fn func() float64
+// IntGauge is a uint64 gauge.
+type IntGauge struct {
+	v  atomic.Uint64
+	fn func() uint64
 }
 
 // Get returns the current value for g.
-func (g *Gauge) Get() float64 {
+func (g *IntGauge) Get() uint64 {
 	if f := g.fn; f != nil {
 		return f()
 	}
@@ -23,7 +22,7 @@ func (g *Gauge) Get() float64 {
 // Set sets g value to val.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Set(val float64) {
+func (g *IntGauge) Set(val uint64) {
 	if g.fn != nil {
 		panic(errors.New("cannot call Set on gauge created with non-nil callback"))
 	}
@@ -33,28 +32,28 @@ func (g *Gauge) Set(val float64) {
 // Inc increments g by 1.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Inc() {
+func (g *IntGauge) Inc() {
 	g.Add(1)
 }
 
 // Dec decrements g by 1.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Dec() {
-	g.Add(-1)
+func (g *IntGauge) Dec() {
+	g.Add(^uint64(0))
 }
 
-// Add adds delta to g. val may be positive or negative.
+// Add adds val to g. val may be positive or negative.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *Gauge) Add(delta float64) {
+func (g *IntGauge) Add(val uint64) {
 	if g.fn != nil {
 		panic(errors.New("cannot call Set on gauge created with non-nil callback"))
 	}
-	g.v.Add(delta)
+	g.v.Add(val)
 }
 
-func (g *Gauge) marshalTo(w ExpfmtWriter, name MetricName) {
+func (g *IntGauge) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
-	w.WriteFloat64(g.Get())
+	w.WriteUint64(g.Get())
 }

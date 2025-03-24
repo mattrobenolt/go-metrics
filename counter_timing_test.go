@@ -25,6 +25,17 @@ func BenchmarkCounterGetOrCreate(b *testing.B) {
 			set.GetOrCreateCounter(family, tags...)
 		}
 	})
+
+	b.Run("verycold", func(b *testing.B) {
+		set := NewSet()
+
+		b.ReportAllocs()
+		for b.Loop() {
+			set.Reset()
+			identCache.Clear()
+			set.GetOrCreateCounter(family, tags...)
+		}
+	})
 }
 
 func BenchmarkCounterInc(b *testing.B) {
