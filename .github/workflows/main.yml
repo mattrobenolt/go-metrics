@@ -5,11 +5,12 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         go: ["1.24"]
-    name: go${{ matrix.go }}
+        os: [ubuntu, macos]
+    runs-on: ${{ matrix.os }}-latest
+    name: go${{ matrix.go }}-${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
