@@ -72,7 +72,7 @@ func TestCounterConcurrent(t *testing.T) {
 	const inner = 10
 
 	c := NewSet().NewCounter("x")
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		nPrev := c.Get()
 		for range inner {
 			c.Inc()
@@ -90,7 +90,7 @@ func TestCounterGetOrCreateConcurrent(t *testing.T) {
 	fn := func() *Counter {
 		return set.GetOrCreateCounter("x", "a", "1")
 	}
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		nPrev := fn().Get()
 		for range inner {
 			fn().Inc()

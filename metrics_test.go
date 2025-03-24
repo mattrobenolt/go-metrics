@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -20,17 +21,29 @@ func assertMarshal(tb testing.TB, set *Set, expected []string) {
 	)
 }
 
-func hammer(t testing.TB, n int, f func()) {
+func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
+	var b bytes.Buffer
+	set.WritePrometheusUnthrottled(&b)
+	lines := strings.Split(strings.Trim(b.String(), "\n"), "\n")
+	slices.Sort(lines)
+	slices.Sort(expected)
+	assert.Equal(tb,
+		strings.Join(lines, "\n"),
+		strings.Join(expected, "\n"),
+	)
+}
+
+func hammer(t testing.TB, n int, f func(int)) {
 	var wg sync.WaitGroup
-	for range n {
+	for i := range n {
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			defer func() {
 				assert.Nil(t, recover())
 				wg.Done()
 			}()
-			f()
-		}()
+			f(i)
+		}(i)
 	}
 	wg.Wait()
 }

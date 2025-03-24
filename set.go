@@ -90,7 +90,7 @@ func (s *Set) UnregisterSet(set *Set) {
 		s.children = slices.Delete(s.children, idx, idx+1)
 	}
 	s.hasChildren.Store(len(s.children) > 0 || len(s.collectors) > 0)
-	s.childrenMu.Lock()
+	s.childrenMu.Unlock()
 }
 
 func (s *Set) RegisterCollector(c Collector) {

@@ -161,7 +161,7 @@ func TestHistogramConcurrent(t *testing.T) {
 
 	set := NewSet()
 	h := set.NewHistogram("x")
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		for f := 0.6; f < 1.4; f += 0.1 {
 			h.Update(f)
 		}
@@ -187,7 +187,7 @@ func TestHistogramGetOrCreateConcurrent(t *testing.T) {
 	fn := func() *Histogram {
 		return set.GetOrCreateHistogram("x", "a", "1")
 	}
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		for f := 0.6; f < 1.4; f += 0.1 {
 			fn().Update(f)
 		}

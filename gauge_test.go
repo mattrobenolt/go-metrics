@@ -131,7 +131,7 @@ func TestGaugeConcurrent(t *testing.T) {
 		x++
 		return float64(x)
 	})
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		prevX := g.Get()
 		for range inner {
 			assert.Greater(t, g.Get(), prevX)
@@ -149,7 +149,7 @@ func TestGaugeGetOrCreateConcurrent(t *testing.T) {
 	fn := func() *Gauge {
 		return set.GetOrCreateGauge("x", "a", "1")
 	}
-	hammer(t, n, func() {
+	hammer(t, n, func(_ int) {
 		nPrev := fn().Get()
 		for range inner {
 			fn().Inc()
