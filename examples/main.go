@@ -29,6 +29,11 @@ func observe(next http.Handler) http.Handler {
 	})
 }
 
+func init() {
+	global.RegisterCollector(metrics.NewGoMetricsCollector())
+	global.RegisterCollector(metrics.NewProcessMetricsCollector())
+}
+
 func main() {
 	go func() {
 		for {
@@ -36,7 +41,7 @@ func main() {
 			ticksA.Inc()
 		}
 	}()
-	global.RegisterCollector(metrics.NewGoMetricsCollector())
+
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler(global))
 	panic(http.ListenAndServe("127.0.0.1:9091", observe(mux)))

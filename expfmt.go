@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Ident represents either a metric family or a tag label.
@@ -77,6 +78,11 @@ func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
 func (w ExpfmtWriter) WriteMetricFloat64(name MetricName, value float64) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(value)
+}
+
+func (w ExpfmtWriter) WriteMetricDuration(name MetricName, value time.Duration) {
+	w.WriteMetricName(name)
+	w.WriteFloat64(value.Seconds())
 }
 
 func writeUint64(b *bytes.Buffer, value uint64) {

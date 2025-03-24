@@ -7,6 +7,7 @@ import (
 	runtimemetrics "runtime/metrics"
 	"slices"
 	"strings"
+	"time"
 )
 
 var (
@@ -138,10 +139,10 @@ func (c *goMetricsCollector) collectMemoryStats(w ExpfmtWriter, constantTags str
 		Family:       MustIdent("go_memstats_heap_sys_bytes"),
 		ConstantTags: constantTags,
 	}, ms.HeapSys)
-	w.WriteMetricFloat64(MetricName{
+	w.WriteMetricDuration(MetricName{
 		Family:       MustIdent("go_memstats_last_gc_time_seconds"),
 		ConstantTags: constantTags,
-	}, float64(ms.LastGC)/1e9)
+	}, time.Duration(ms.LastGC))
 	w.WriteMetricUint64(MetricName{
 		Family:       MustIdent("go_memstats_lookups_total"),
 		ConstantTags: constantTags,
@@ -204,26 +205,26 @@ func (c *goMetricsCollector) collectGCStats(ms *runtime.MemStats, w ExpfmtWriter
 
 	const nq = len(quantileTags) - 1
 	for i := range nq {
-		w.WriteMetricFloat64(MetricName{
+		w.WriteMetricDuration(MetricName{
 			Family:       MustIdent("go_gc_duration_seconds"),
 			Tags:         []Tag{quantileTags[i]},
 			ConstantTags: constantTags,
-		}, float64(pauses[len(pauses)*i/nq])/1e9)
+		}, time.Duration(pauses[len(pauses)*i/nq]))
 	}
-	w.WriteMetricFloat64(MetricName{
+	w.WriteMetricDuration(MetricName{
 		Family:       MustIdent("go_gc_duration_seconds"),
 		Tags:         []Tag{quantileTags[nq]},
 		ConstantTags: constantTags,
-	}, float64(pauses[len(pauses)-1])/1e9)
+	}, time.Duration(pauses[len(pauses)-1]))
 
 	w.WriteMetricUint64(MetricName{
 		Family:       MustIdent("go_gc_duration_seconds_count"),
 		ConstantTags: constantTags,
 	}, uint64(ms.NumGC))
-	w.WriteMetricFloat64(MetricName{
+	w.WriteMetricDuration(MetricName{
 		Family:       MustIdent("go_gc_duration_seconds_sum"),
 		ConstantTags: constantTags,
-	}, float64(ms.PauseTotalNs)/1e9)
+	}, time.Duration(ms.PauseTotalNs))
 }
 
 func (c *goMetricsCollector) collectRuntimeMetrics(w ExpfmtWriter, constantTags string) {
