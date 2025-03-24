@@ -4,6 +4,10 @@ import "io"
 
 var defaultSet Set
 
+func ResetDefaultSet() {
+	defaultSet.Reset()
+}
+
 func RegisterDefaultCollectors() {
 	RegisterCollector(NewGoMetricsCollector())
 	RegisterCollector(NewProcessMetricsCollector())
