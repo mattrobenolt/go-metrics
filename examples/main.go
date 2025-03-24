@@ -8,11 +8,13 @@ import (
 	"go.withmatt.com/metrics/promhttp"
 )
 
-var global = metrics.NewSet()
+var global = metrics.NewSetOpt(metrics.SetOpt{
+	ConstantTags: metrics.MustTags("process_id", "1234"),
+})
 
 var (
 	currentTime = global.NewGauge("current_time", func() float64 {
-		return float64(time.Now().UTC().Unix())
+		return float64(time.Now().UnixNano()) / 1e9
 	})
 	ticksA = global.NewCounter("tick", "variant", "a")
 	ticksB = global.NewCounter("tick", "variant", "b")
@@ -34,6 +36,7 @@ func main() {
 			ticksA.Inc()
 		}
 	}()
+	global.RegisterCollector(metrics.NewGoMetricsCollector())
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler(global))
 	panic(http.ListenAndServe("127.0.0.1:9091", observe(mux)))

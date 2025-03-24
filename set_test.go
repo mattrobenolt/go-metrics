@@ -4,8 +4,20 @@ import (
 	"testing"
 )
 
+type testCollector struct{}
+
+func (testCollector) Collect(w ExpfmtWriter, constantTags string) {
+	w.WriteMetricName(MetricName{
+		Family:       MustIdent("collector1"),
+		ConstantTags: constantTags,
+	})
+	w.WriteUint64(10)
+}
+
 func TestSet(t *testing.T) {
 	set := NewSet()
+
+	set.RegisterCollector(&testCollector{})
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
@@ -29,6 +41,7 @@ func TestSet(t *testing.T) {
 		`hist2_sum{a="1"} 1`,
 		`hist2_count{a="1"} 1`,
 		`counter3 1`,
+		`collector1 10`,
 	})
 }
 
@@ -36,6 +49,8 @@ func TestSetConstantTags(t *testing.T) {
 	set := NewSetOpt(SetOpt{
 		ConstantTags: MustTags("foo", "bar"),
 	})
+
+	set.RegisterCollector(&testCollector{})
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
@@ -67,5 +82,6 @@ func TestSetConstantTags(t *testing.T) {
 		`counter3{foo="bar"} 1`,
 		`counter4{foo="bar",x="y"} 1`,
 		`counter5{foo="bar",x="y",a="1"} 1`,
+		`collector1{foo="bar"} 10`,
 	})
 }

@@ -30,6 +30,7 @@ type Set struct {
 
 	childrenMu sync.Mutex
 	children   []*Set
+	collectors []Collector
 
 	constantTags string
 }
@@ -62,22 +63,24 @@ func (s *Set) Reset() {
 
 	s.childrenMu.Lock()
 	s.children = s.children[:0]
+	s.collectors = s.collectors[:0]
 	s.hasChildren.Store(false)
 	s.childrenMu.Unlock()
 }
 
-// NewSet creates a new child Set.
+// NewSet creates a new child Set in s.
 func (s *Set) NewSet() *Set {
 	return s.NewSetOpt(SetOpt{})
 }
 
+// NewSetOpt creates a new child Set with the opts in s.
 func (s *Set) NewSetOpt(opt SetOpt) *Set {
 	s2 := NewSet()
 	s2.constantTags = joinTags(s.constantTags, opt.ConstantTags)
 	s.childrenMu.Lock()
 	s.children = append(s.children, s2)
-	s.childrenMu.Unlock()
 	s.hasChildren.Store(true)
+	s.childrenMu.Unlock()
 	return s2
 }
 
@@ -86,8 +89,24 @@ func (s *Set) UnregisterSet(set *Set) {
 	if idx := slices.Index(s.children, set); idx >= 0 {
 		s.children = slices.Delete(s.children, idx, idx+1)
 	}
-	s.hasChildren.Store(len(s.children) > 0)
+	s.hasChildren.Store(len(s.children) > 0 || len(s.collectors) > 0)
 	s.childrenMu.Lock()
+}
+
+func (s *Set) RegisterCollector(c Collector) {
+	s.childrenMu.Lock()
+	s.collectors = append(s.collectors, c)
+	s.hasChildren.Store(true)
+	s.childrenMu.Unlock()
+}
+
+func (s *Set) UnregisterCollector(c Collector) {
+	s.childrenMu.Lock()
+	if idx := slices.Index(s.collectors, c); idx >= 0 {
+		s.collectors = slices.Delete(s.collectors, idx, idx+1)
+	}
+	s.hasChildren.Store(len(s.children) > 0 || len(s.collectors) > 0)
+	s.childrenMu.Unlock()
 }
 
 // WritePrometheus writes the metrics along with all children to the io.Writer
@@ -140,27 +159,32 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		})
 	}
 
-	// This set has no children sets, so exit
-	if !s.hasChildren.Load() {
-		if bb.Len() == 0 {
-			return 0, nil
+	if s.hasChildren.Load() {
+		s.childrenMu.Lock()
+		children := slices.Clone(s.children)
+		s.childrenMu.Unlock()
+
+		for _, s := range children {
+			if _, err := s.writePrometheus(bb, throttle); err != nil {
+				return 0, err
+			}
 		}
 
-		if !isBuffer {
-			return w.Write(bb.Bytes())
-		}
+		s.childrenMu.Lock()
+		collectors := slices.Clone(s.collectors)
+		s.childrenMu.Unlock()
 
-		return bb.Len(), nil
+		for _, c := range collectors {
+			c.Collect(exp, s.constantTags)
+		}
 	}
 
-	s.childrenMu.Lock()
-	children := slices.Clone(s.children)
-	s.childrenMu.Unlock()
+	if bb.Len() == 0 {
+		return 0, nil
+	}
 
-	for _, s := range children {
-		if _, err := s.writePrometheus(bb, throttle); err != nil {
-			return 0, err
-		}
+	if !isBuffer {
+		return w.Write(bb.Bytes())
 	}
 
 	return bb.Len(), nil
