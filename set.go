@@ -146,16 +146,18 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		s.dirty.Store(false)
 	}
 
-	exp := ExpfmtWriter{bb}
+	exp := ExpfmtWriter{
+		b:            bb,
+		constantTags: s.constantTags,
+	}
 	for _, nm := range s.values {
 		// yield the scheduler for each metric to not starve CPU
 		if throttle {
 			runtime.Gosched()
 		}
 		nm.metric.marshalTo(exp, MetricName{
-			Family:       nm.family,
-			Tags:         nm.tags,
-			ConstantTags: s.constantTags,
+			Family: nm.family,
+			Tags:   nm.tags,
 		})
 	}
 
@@ -175,7 +177,7 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		s.childrenMu.Unlock()
 
 		for _, c := range collectors {
-			c.Collect(exp, s.constantTags)
+			c.Collect(exp)
 		}
 	}
 

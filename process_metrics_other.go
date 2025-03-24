@@ -2,4 +2,4 @@
 
 package metrics
 
-func (c *processMetricsCollector) Collect(w ExpfmtWriter, constantTags string) {}
+func (c *processMetricsCollector) Collect(w ExpfmtWriter) {}

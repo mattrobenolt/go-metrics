@@ -177,7 +177,7 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 
 	// 1 extra because we're always adding in the vmrange tag
 	// and sizeOfTags doesn't include a trailing comma
-	tagsSize := sizeOfTags(name.ConstantTags, name.Tags) + 1
+	tagsSize := sizeOfTags(name.Tags, w.constantTags) + 1
 
 	const (
 		chunkVMRange = `_bucket{vmrange="`
@@ -186,7 +186,7 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 	)
 
 	// we need the underlying bytes.Buffer
-	b := w.B
+	b := w.b
 
 	// this is trying to compute up front how much we'll need to write
 	// below with some margin of error to make sure we allocate enough
@@ -211,9 +211,9 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 			b.WriteString(chunkVMRange)
 			b.WriteString(vmrange)
 			b.WriteByte('"')
-			if len(name.ConstantTags) > 0 {
+			if len(w.constantTags) > 0 {
 				b.WriteByte(',')
-				b.WriteString(name.ConstantTags)
+				b.WriteString(w.constantTags)
 			}
 			for _, tag := range name.Tags {
 				b.WriteByte(',')
@@ -232,7 +232,7 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 	b.WriteString(chunkSum)
 	if tagsSize > 0 {
 		b.WriteByte('{')
-		writeTags(b, name.ConstantTags, name.Tags)
+		writeTags(b, w.constantTags, name.Tags)
 		b.WriteByte('}')
 	}
 	b.WriteByte(' ')
@@ -246,7 +246,7 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 	b.WriteString(chunkCount)
 	if tagsSize > 0 {
 		b.WriteByte('{')
-		writeTags(b, name.ConstantTags, name.Tags)
+		writeTags(b, w.constantTags, name.Tags)
 		b.WriteByte('}')
 	}
 	b.WriteByte(' ')

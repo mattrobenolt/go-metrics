@@ -7,7 +7,7 @@ import (
 
 func BenchmarkExpfmtWriter(b *testing.B) {
 	w := ExpfmtWriter{
-		B: bytes.NewBuffer(nil),
+		b: bytes.NewBuffer(nil),
 	}
 
 	family := MustIdent("really_cool_metric")
@@ -35,10 +35,10 @@ func BenchmarkExpfmtWriter(b *testing.B) {
 
 		b.ReportAllocs()
 		for b.Loop() {
-			w.B.Reset()
+			w.b.Reset()
 
 			w.WriteMetricName(MetricName{Family: family})
-			b.SetBytes(int64(w.B.Len()))
+			b.SetBytes(int64(w.b.Len()))
 		}
 	})
 
@@ -47,9 +47,9 @@ func BenchmarkExpfmtWriter(b *testing.B) {
 
 		b.ReportAllocs()
 		for b.Loop() {
-			w.B.Reset()
+			w.b.Reset()
 			w.WriteMetricName(MetricName{Family: family, Tags: tags})
-			b.SetBytes(int64(w.B.Len()))
+			b.SetBytes(int64(w.b.Len()))
 		}
 	})
 
@@ -58,9 +58,9 @@ func BenchmarkExpfmtWriter(b *testing.B) {
 
 		b.ReportAllocs()
 		for b.Loop() {
-			w.B.Reset()
+			w.b.Reset()
 			w.WriteMetricName(MetricName{Family: family, Tags: manyTags})
-			b.SetBytes(int64(w.B.Len()))
+			b.SetBytes(int64(w.b.Len()))
 		}
 	})
 
@@ -71,10 +71,10 @@ func BenchmarkExpfmtWriter(b *testing.B) {
 
 		b.ReportAllocs()
 		for b.Loop() {
-			w.B.Reset()
+			w.b.Reset()
 			w.WriteMetricName(MetricName{Family: family, Tags: tags})
 			w.WriteUint64(value)
-			b.SetBytes(int64(w.B.Len()))
+			b.SetBytes(int64(w.b.Len()))
 		}
 	})
 
@@ -85,10 +85,10 @@ func BenchmarkExpfmtWriter(b *testing.B) {
 
 		b.ReportAllocs()
 		for b.Loop() {
-			w.B.Reset()
+			w.b.Reset()
 			w.WriteMetricName(MetricName{Family: family, Tags: tags})
 			w.WriteFloat64(value)
-			b.SetBytes(int64(w.B.Len()))
+			b.SetBytes(int64(w.b.Len()))
 		}
 	})
 }

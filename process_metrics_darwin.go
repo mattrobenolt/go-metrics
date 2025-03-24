@@ -2,6 +2,6 @@
 
 package metrics
 
-func (c *processMetricsCollector) Collect(w ExpfmtWriter, constantTags string) {
-	collectUnix(w, constantTags)
+func (c *processMetricsCollector) Collect(w ExpfmtWriter) {
+	collectUnix(w)
 }

@@ -48,26 +48,35 @@ func (v Value) String() string {
 // ExpfmtWriter wraps a bytes.Buffer adds functionality to write
 // the Prometheus text exposiiton format.
 type ExpfmtWriter struct {
-	B *bytes.Buffer
+	b            *bytes.Buffer
+	constantTags string
+}
+
+func (w ExpfmtWriter) Buffer() *bytes.Buffer {
+	return w.b
+}
+
+func (w ExpfmtWriter) ConstantTags() string {
+	return w.constantTags
 }
 
 // WriteMetricName writes the family and optional tags.
 func (w ExpfmtWriter) WriteMetricName(name MetricName) {
-	writeMetricName(w.B, name)
+	writeMetricName(w.b, name, w.constantTags)
 }
 
 // WriteUint64 writes a uint64 and signals the end of the metric.
 func (w ExpfmtWriter) WriteUint64(value uint64) {
-	w.B.WriteByte(' ')
-	writeUint64(w.B, value)
-	w.B.WriteByte('\n')
+	w.b.WriteByte(' ')
+	writeUint64(w.b, value)
+	w.b.WriteByte('\n')
 }
 
 // WriteUint64 writes a float64 and signals the end of the metric.
 func (w ExpfmtWriter) WriteFloat64(value float64) {
-	w.B.WriteByte(' ')
-	writeFloat64(w.B, value)
-	w.B.WriteByte('\n')
+	w.b.WriteByte(' ')
+	writeFloat64(w.b, value)
+	w.b.WriteByte('\n')
 }
 
 func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
@@ -105,16 +114,16 @@ func writeFloat64(b *bytes.Buffer, value float64) {
 	}
 }
 
-func sizeOfMetricName(name MetricName) int {
-	if !name.HasTags() {
+func sizeOfMetricName(name MetricName, constantTags string) int {
+	if !name.HasTags() && len(constantTags) == 0 {
 		return len(name.Family.String())
 	}
 	size := len(name.Family.String())
 	size += len("{}")
-	return size + sizeOfTags(name.ConstantTags, name.Tags)
+	return size + sizeOfTags(name.Tags, constantTags)
 }
 
-func sizeOfTags(constantTags string, tags []Tag) int {
+func sizeOfTags(tags []Tag, constantTags string) int {
 	var size int
 	if len(constantTags) > 0 {
 		size += len(constantTags) + 1
@@ -136,17 +145,17 @@ func writeTag(b *bytes.Buffer, tag Tag) {
 	b.WriteByte('"')
 }
 
-func writeMetricName(b *bytes.Buffer, name MetricName) {
-	if !name.HasTags() {
+func writeMetricName(b *bytes.Buffer, name MetricName, constantTags string) {
+	if !name.HasTags() && len(constantTags) == 0 {
 		b.WriteString(name.Family.String())
 		return
 	}
 
-	b.Grow(sizeOfMetricName(name))
+	b.Grow(sizeOfMetricName(name, constantTags))
 
 	b.WriteString(name.Family.String())
 	b.WriteByte('{')
-	writeTags(b, name.ConstantTags, name.Tags)
+	writeTags(b, constantTags, name.Tags)
 	b.WriteByte('}')
 }
 

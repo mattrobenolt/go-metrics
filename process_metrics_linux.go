@@ -39,12 +39,12 @@ type procStat struct {
 	Rss         int
 }
 
-func (c *processMetricsCollector) Collect(w ExpfmtWriter, constantTags string) {
-	collectUnix(w, constantTags)
-	collectStatMetrics(w, constantTags)
+func (c *processMetricsCollector) Collect(w ExpfmtWriter) {
+	collectUnix(w)
+	collectStatMetrics(w)
 }
 
-func collectStatMetrics(w ExpfmtWriter, constantTags string) {
+func collectStatMetrics(w ExpfmtWriter) {
 	data, err := os.ReadFile("/proc/self/stat")
 	if err != nil {
 		return
@@ -67,11 +67,9 @@ func collectStatMetrics(w ExpfmtWriter, constantTags string) {
 	}
 
 	w.WriteMetricUint64(MetricName{
-		Family:       MustIdent("process_resident_memory_bytes"),
-		ConstantTags: constantTags,
+		Family: MustIdent("process_resident_memory_bytes"),
 	}, uint64(p.Rss)*pageSizeBytes)
 	w.WriteMetricUint64(MetricName{
-		Family:       MustIdent("process_virtual_memory_bytes"),
-		ConstantTags: constantTags,
+		Family: MustIdent("process_virtual_memory_bytes"),
 	}, uint64(p.Vsize))
 }

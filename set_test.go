@@ -6,10 +6,9 @@ import (
 
 type testCollector struct{}
 
-func (testCollector) Collect(w ExpfmtWriter, constantTags string) {
+func (testCollector) Collect(w ExpfmtWriter) {
 	w.WriteMetricName(MetricName{
-		Family:       MustIdent("collector1"),
-		ConstantTags: constantTags,
+		Family: MustIdent("collector1"),
 	})
 	w.WriteUint64(10)
 }

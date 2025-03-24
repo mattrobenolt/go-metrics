@@ -10,7 +10,7 @@ import (
 
 func TestWriteMetricsUint64(t *testing.T) {
 	w := ExpfmtWriter{
-		B: bytes.NewBuffer(nil),
+		b: bytes.NewBuffer(nil),
 	}
 	for _, tc := range []struct {
 		family       string
@@ -26,20 +26,20 @@ func TestWriteMetricsUint64(t *testing.T) {
 		{"foo", []string{"a", "1", "b", "2"}, "", 10, `foo{a="1",b="2"} 10`},
 		{"foo", []string{"a", "1", "b", "2"}, `x="y"`, 10, `foo{x="y",a="1",b="2"} 10`},
 	} {
-		w.B.Reset()
+		w.b.Reset()
+		w.constantTags = tc.constantTags
 		w.WriteMetricName(MetricName{
-			Family:       MustIdent(tc.family),
-			Tags:         MustTags(tc.tags...),
-			ConstantTags: tc.constantTags,
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
 		})
 		w.WriteUint64(tc.value)
-		assert.Equal(t, tc.expected+"\n", w.B.String())
+		assert.Equal(t, tc.expected+"\n", w.b.String())
 	}
 }
 
 func TestWriteMetricsFloat64(t *testing.T) {
 	w := ExpfmtWriter{
-		B: bytes.NewBuffer(nil),
+		b: bytes.NewBuffer(nil),
 	}
 	for _, tc := range []struct {
 		family       string
@@ -62,14 +62,14 @@ func TestWriteMetricsFloat64(t *testing.T) {
 		{"foo", nil, "", -1.1, `foo -1.1`},
 		{"foo", nil, "", 1e20, `foo 1e+20`},
 	} {
-		w.B.Reset()
+		w.b.Reset()
+		w.constantTags = tc.constantTags
 		w.WriteMetricName(MetricName{
-			Family:       MustIdent(tc.family),
-			Tags:         MustTags(tc.tags...),
-			ConstantTags: tc.constantTags,
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
 		})
 		w.WriteFloat64(tc.value)
-		assert.Equal(t, tc.expected+"\n", w.B.String())
+		assert.Equal(t, tc.expected+"\n", w.b.String())
 	}
 }
 
@@ -87,9 +87,8 @@ func TestSizeOf(t *testing.T) {
 		{"foo", []string{"x", "y"}, `foo="bar"`, len(`foo{x="y",foo="bar"}`)},
 	} {
 		assert.Equal(t, tc.expected, sizeOfMetricName(MetricName{
-			Family:       MustIdent(tc.family),
-			Tags:         MustTags(tc.tags...),
-			ConstantTags: tc.constantTags,
-		}))
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
+		}, tc.constantTags))
 	}
 }
