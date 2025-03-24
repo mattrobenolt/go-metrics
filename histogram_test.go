@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"bytes"
-	"context"
 	"math"
 	"strings"
 	"testing"
@@ -40,7 +39,24 @@ func TestHistogramGetOrCreate(t *testing.T) {
 }
 
 func TestHistogramVec(t *testing.T) {
-	t.Skip(context.TODO())
+	set := NewSet()
+	h := set.NewHistogramVec(HistogramVecOpt{
+		Family: "foo",
+		Labels: []string{"a", "b"},
+	})
+	h.WithLabelValues("1", "2").Update(1)
+	h.WithLabelValues("1", "2").Update(2)
+	h.WithLabelValues("3", "4").Update(1)
+
+	assertMarshal(t, set, []string{
+		`foo_bucket{vmrange="8.799e-01...1.000e+00",a="1",b="2"} 1`,
+		`foo_bucket{vmrange="1.896e+00...2.154e+00",a="1",b="2"} 1`,
+		`foo_sum{a="1",b="2"} 3`,
+		`foo_count{a="1",b="2"} 2`,
+		`foo_bucket{vmrange="8.799e-01...1.000e+00",a="3",b="4"} 1`,
+		`foo_sum{a="3",b="4"} 1`,
+		`foo_count{a="3",b="4"} 1`,
+	})
 }
 
 func TestHistogramSerial(t *testing.T) {
@@ -141,9 +157,51 @@ func TestHistogramSerial(t *testing.T) {
 }
 
 func TestHistogramConcurrent(t *testing.T) {
-	t.Skip(context.TODO())
+	const n = 5
+
+	set := NewSet()
+	h := set.NewHistogram("x")
+	hammer(t, n, func() {
+		for f := 0.6; f < 1.4; f += 0.1 {
+			h.Update(f)
+		}
+	})
+
+	assertMarshal(t, set, []string{
+		`x_bucket{vmrange="5.995e-01...6.813e-01"} 5`,
+		`x_bucket{vmrange="6.813e-01...7.743e-01"} 5`,
+		`x_bucket{vmrange="7.743e-01...8.799e-01"} 5`,
+		`x_bucket{vmrange="8.799e-01...1.000e+00"} 10`,
+		`x_bucket{vmrange="1.000e+00...1.136e+00"} 5`,
+		`x_bucket{vmrange="1.136e+00...1.292e+00"} 5`,
+		`x_bucket{vmrange="1.292e+00...1.468e+00"} 5`,
+		`x_sum 38`,
+		`x_count 40`,
+	})
 }
 
 func TestHistogramGetOrCreateConcurrent(t *testing.T) {
-	t.Skip(context.TODO())
+	const n = 5
+
+	set := NewSet()
+	fn := func() *Histogram {
+		return set.GetOrCreateHistogram("x", "a", "1")
+	}
+	hammer(t, n, func() {
+		for f := 0.6; f < 1.4; f += 0.1 {
+			fn().Update(f)
+		}
+	})
+
+	assertMarshal(t, set, []string{
+		`x_bucket{vmrange="5.995e-01...6.813e-01",a="1"} 5`,
+		`x_bucket{vmrange="6.813e-01...7.743e-01",a="1"} 5`,
+		`x_bucket{vmrange="7.743e-01...8.799e-01",a="1"} 5`,
+		`x_bucket{vmrange="8.799e-01...1.000e+00",a="1"} 10`,
+		`x_bucket{vmrange="1.000e+00...1.136e+00",a="1"} 5`,
+		`x_bucket{vmrange="1.136e+00...1.292e+00",a="1"} 5`,
+		`x_bucket{vmrange="1.292e+00...1.468e+00",a="1"} 5`,
+		`x_sum{a="1"} 38`,
+		`x_count{a="1"} 40`,
+	})
 }

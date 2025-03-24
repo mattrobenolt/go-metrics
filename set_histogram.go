@@ -1,5 +1,7 @@
 package metrics
 
+import "hash/maphash"
+
 // HistogramOpt are the options for creating a Histogram.
 type HistogramOpt struct {
 	Family Ident
@@ -60,4 +62,42 @@ func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
 		nm = s.getOrAddMetricFromStrings(&Histogram{}, hash, family, tags)
 	}
 	return nm.metric.(*Histogram)
+}
+
+type HistogramVecOpt struct {
+	Family string
+	Labels []string
+}
+
+type HistogramVec struct {
+	s           *Set
+	family      Ident
+	partialTags []Tag
+	partialHash *maphash.Hash
+}
+
+func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
+	hash := hashFinish(h.partialHash, values)
+
+	h.s.mu.Lock()
+	nm := h.s.metrics[hash]
+	h.s.mu.Unlock()
+
+	if nm == nil {
+		nm = h.s.getOrRegisterMetricFromVec(
+			&Histogram{}, hash, h.family, h.partialTags, values,
+		)
+	}
+	return nm.metric.(*Histogram)
+}
+
+func (s *Set) NewHistogramVec(opt HistogramVecOpt) *HistogramVec {
+	family := MustIdent(opt.Family)
+
+	return &HistogramVec{
+		s:           s,
+		family:      family,
+		partialTags: makePartialTags(opt.Labels),
+		partialHash: hashStart(family.String(), opt.Labels),
+	}
 }
