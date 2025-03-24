@@ -69,6 +69,16 @@ func (w ExpfmtWriter) WriteFloat64(value float64) {
 	w.B.WriteByte('\n')
 }
 
+func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
+	w.WriteMetricName(name)
+	w.WriteUint64(value)
+}
+
+func (w ExpfmtWriter) WriteMetricFloat64(name MetricName, value float64) {
+	w.WriteMetricName(name)
+	w.WriteFloat64(value)
+}
+
 func writeUint64(b *bytes.Buffer, value uint64) {
 	b.Write(strconv.AppendUint(b.AvailableBuffer(), value, 10))
 }
