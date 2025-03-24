@@ -15,5 +15,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
+      - run: go mod download
+      - run: go build
       - run: make lint
       - run: make test test-race
