@@ -110,7 +110,7 @@ func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec 
 
 	buckets := opt.Buckets
 	if len(buckets) == 0 {
-		buckets = DefBuckets
+		buckets = slices.Clone(DefBuckets)
 	} else {
 		buckets = slices.Clone(buckets)
 		slices.Sort(buckets)

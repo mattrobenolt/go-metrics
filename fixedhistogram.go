@@ -24,7 +24,7 @@ type FixedHistogram struct {
 
 func newFixedHistogram(buckets []float64) *FixedHistogram {
 	if len(buckets) == 0 {
-		buckets = DefBuckets
+		buckets = slices.Clone(DefBuckets)
 	} else {
 		buckets = slices.Clone(buckets)
 		slices.Sort(buckets)
