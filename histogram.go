@@ -130,6 +130,13 @@ func (h *Histogram) Update(val float64) {
 	h.sum.Add(val)
 }
 
+// Observe updates h with val, identical to Histogram.Update.
+//
+// Negative values and NaNs are ignored.
+func (h *Histogram) Observe(val float64) {
+	h.Update(val)
+}
+
 // Merge merges src to h.
 func (h *Histogram) Merge(src *Histogram) {
 	h.lower.Add(src.lower.Load())
