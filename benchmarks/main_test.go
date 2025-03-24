@@ -66,7 +66,7 @@ func BenchmarkIncWithLabelValues(b *testing.B) {
 	})
 }
 
-func BenchmarkUpdateHistogram(b *testing.B) {
+func BenchmarkUpdateVMRangeHistogram(b *testing.B) {
 	const numObservations = 1000
 
 	var seed [32]byte
@@ -98,9 +98,30 @@ func BenchmarkUpdateHistogram(b *testing.B) {
 			h.Update(float64(observations[i%len(observations)]))
 		}
 	})
+}
 
-	// This test isn't quite fair since prom histograms are very different from
-	// the VM style histogram.
+func BenchmarkUpdatePromHistogram(b *testing.B) {
+	const numObservations = 1000
+
+	var seed [32]byte
+	r := rand.NewChaCha8(seed)
+	observations := make([]uint64, numObservations)
+	for i := range numObservations {
+		observations[i] = r.Uint64()
+	}
+
+	b.Run(modMattware, func(b *testing.B) {
+		set := metrics.NewSet()
+		h := set.NewFixedHistogram("foo", nil)
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		for i := range b.N {
+			h.Observe(float64(observations[i%len(observations)]))
+		}
+	})
+
 	b.Run(modPrometheus, func(b *testing.B) {
 		registry := prometheus.NewRegistry()
 		factory := promauto.With(registry)
@@ -197,7 +218,7 @@ func BenchmarkWriteMetricsCounters(b *testing.B) {
 	})
 }
 
-func BenchmarkWriteMetricsHistograms(b *testing.B) {
+func BenchmarkWriteMetricsVMRangeHistograms(b *testing.B) {
 	const numHistograms = 100
 	const numObservations = 100000
 
@@ -254,6 +275,44 @@ func BenchmarkWriteMetricsHistograms(b *testing.B) {
 		for b.Loop() {
 			bb.Reset()
 			set.WritePrometheus(&bb)
+			b.SetBytes(int64(bb.Len()))
+		}
+	})
+}
+
+func BenchmarkWriteMetricsPromHistograms(b *testing.B) {
+	const numHistograms = 100
+	const numObservations = 100000
+
+	var seed [32]byte
+	r := rand.NewChaCha8(seed)
+	observations := make([]uint64, numObservations)
+	for i := range numObservations {
+		observations[i] = r.Uint64()
+	}
+
+	b.Run(modMattware, func(b *testing.B) {
+		set := metrics.NewSet()
+		v := set.NewFixedHistogramVec(metrics.FixedHistogramVecOpt{
+			Family: "foo",
+			Labels: []string{"label1", "label2", "label3"},
+		})
+		for i := range numHistograms {
+			h := v.WithLabelValues("a", strconv.Itoa(i), "something")
+			for j := range numObservations {
+				h.Update(float64(observations[j]))
+			}
+		}
+
+		var bb bytes.Buffer
+		set.WritePrometheusUnthrottled(&bb)
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		for b.Loop() {
+			bb.Reset()
+			set.WritePrometheusUnthrottled(&bb)
 			b.SetBytes(int64(bb.Len()))
 		}
 	})

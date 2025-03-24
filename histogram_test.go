@@ -215,12 +215,12 @@ func TestHistogramMerge(t *testing.T) {
 		h.Update(float64(i))
 	}
 
-	b := set.NewHistogram("test")
+	var v Histogram
 	for i := 1; i < 300; i++ {
-		b.Update(float64(i))
+		v.Update(float64(i))
 	}
 
-	h.Merge(b)
+	h.Merge(&v)
 
 	assertMarshal(t, set, []string{
 		`foo_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
@@ -261,43 +261,5 @@ func TestHistogramMerge(t *testing.T) {
 		`foo_bucket{vmrange="2.783e+02...3.162e+02"} 21`,
 		`foo_sum 49755`,
 		`foo_count 389`,
-		`test_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
-		`test_bucket{vmrange="1.896e+00...2.154e+00"} 1`,
-		`test_bucket{vmrange="2.783e+00...3.162e+00"} 1`,
-		`test_bucket{vmrange="3.594e+00...4.084e+00"} 1`,
-		`test_bucket{vmrange="4.642e+00...5.275e+00"} 1`,
-		`test_bucket{vmrange="5.995e+00...6.813e+00"} 1`,
-		`test_bucket{vmrange="6.813e+00...7.743e+00"} 1`,
-		`test_bucket{vmrange="7.743e+00...8.799e+00"} 1`,
-		`test_bucket{vmrange="8.799e+00...1.000e+01"} 2`,
-		`test_bucket{vmrange="1.000e+01...1.136e+01"} 1`,
-		`test_bucket{vmrange="1.136e+01...1.292e+01"} 1`,
-		`test_bucket{vmrange="1.292e+01...1.468e+01"} 2`,
-		`test_bucket{vmrange="1.468e+01...1.668e+01"} 2`,
-		`test_bucket{vmrange="1.668e+01...1.896e+01"} 2`,
-		`test_bucket{vmrange="1.896e+01...2.154e+01"} 3`,
-		`test_bucket{vmrange="2.154e+01...2.448e+01"} 3`,
-		`test_bucket{vmrange="2.448e+01...2.783e+01"} 3`,
-		`test_bucket{vmrange="2.783e+01...3.162e+01"} 4`,
-		`test_bucket{vmrange="3.162e+01...3.594e+01"} 4`,
-		`test_bucket{vmrange="3.594e+01...4.084e+01"} 5`,
-		`test_bucket{vmrange="4.084e+01...4.642e+01"} 6`,
-		`test_bucket{vmrange="4.642e+01...5.275e+01"} 6`,
-		`test_bucket{vmrange="5.275e+01...5.995e+01"} 7`,
-		`test_bucket{vmrange="5.995e+01...6.813e+01"} 9`,
-		`test_bucket{vmrange="6.813e+01...7.743e+01"} 9`,
-		`test_bucket{vmrange="7.743e+01...8.799e+01"} 10`,
-		`test_bucket{vmrange="8.799e+01...1.000e+02"} 13`,
-		`test_bucket{vmrange="1.000e+02...1.136e+02"} 13`,
-		`test_bucket{vmrange="1.136e+02...1.292e+02"} 16`,
-		`test_bucket{vmrange="1.292e+02...1.468e+02"} 17`,
-		`test_bucket{vmrange="1.468e+02...1.668e+02"} 20`,
-		`test_bucket{vmrange="1.668e+02...1.896e+02"} 23`,
-		`test_bucket{vmrange="1.896e+02...2.154e+02"} 26`,
-		`test_bucket{vmrange="2.154e+02...2.448e+02"} 29`,
-		`test_bucket{vmrange="2.448e+02...2.783e+02"} 34`,
-		`test_bucket{vmrange="2.783e+02...3.162e+02"} 21`,
-		`test_sum 44850`,
-		`test_count 299`,
 	})
 }
