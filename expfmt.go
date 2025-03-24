@@ -94,6 +94,24 @@ func (w ExpfmtWriter) WriteMetricDuration(name MetricName, value time.Duration) 
 	w.WriteFloat64(value.Seconds())
 }
 
+func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ...string) {
+	w.WriteMetricUint64(MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	}, value)
+}
+
+func (w ExpfmtWriter) WriteLazyMetricFloat64(family string, value float64, tags ...string) {
+	w.WriteMetricFloat64(MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	}, value)
+}
+
+func (w ExpfmtWriter) WriteLazyMetricDuration(family string, value time.Duration, tags ...string) {
+	w.WriteLazyMetricFloat64(family, value.Seconds(), tags...)
+}
+
 func writeUint64(b *bytes.Buffer, value uint64) {
 	b.Write(strconv.AppendUint(b.AvailableBuffer(), value, 10))
 }

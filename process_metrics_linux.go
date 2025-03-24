@@ -66,10 +66,6 @@ func collectStatMetrics(w ExpfmtWriter) {
 		return
 	}
 
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("process_resident_memory_bytes"),
-	}, uint64(p.Rss)*pageSizeBytes)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("process_virtual_memory_bytes"),
-	}, uint64(p.Vsize))
+	w.WriteLazyMetricUint64("process_resident_memory_bytes", uint64(p.Rss)*pageSizeBytes)
+	w.WriteLazyMetricUint64("process_virtual_memory_bytes", uint64(p.Vsize))
 }

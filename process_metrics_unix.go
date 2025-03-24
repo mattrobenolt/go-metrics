@@ -14,9 +14,7 @@ import (
 var startTimeSeconds = float64(time.Now().UnixNano()) / 1e9
 
 func collectUnix(w ExpfmtWriter) {
-	w.WriteMetricFloat64(MetricName{
-		Family: MustIdent("process_start_time_seconds"),
-	}, startTimeSeconds)
+	w.WriteLazyMetricFloat64("process_start_time_seconds", startTimeSeconds)
 
 	collectRusageUnix(w)
 }
@@ -25,27 +23,22 @@ func collectRusageUnix(w ExpfmtWriter) {
 	var rusage unix.Rusage
 
 	if err := unix.Getrusage(syscall.RUSAGE_SELF, &rusage); err == nil {
-		w.WriteMetricDuration(MetricName{
-			Family: MustIdent("process_cpu_seconds_total"),
-		}, time.Duration(rusage.Stime.Nano()+rusage.Utime.Nano()))
+		w.WriteLazyMetricDuration(
+			"process_cpu_seconds_total",
+			time.Duration(rusage.Stime.Nano()+rusage.Utime.Nano()),
+		)
 	}
 
 	if fds, err := getOpenFileCount(); err == nil {
-		w.WriteMetricUint64(MetricName{
-			Family: MustIdent("process_open_fds"),
-		}, fds)
+		w.WriteLazyMetricUint64("process_open_fds", fds)
 	}
 
 	var rlimit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rlimit); err == nil {
-		w.WriteMetricUint64(MetricName{
-			Family: MustIdent("process_max_fds"),
-		}, rlimit.Cur)
+		w.WriteLazyMetricUint64("process_max_fds", rlimit.Cur)
 	}
 	if err := syscall.Getrlimit(syscall.RLIMIT_AS, &rlimit); err == nil {
-		w.WriteMetricUint64(MetricName{
-			Family: MustIdent("process_virtual_memory_max_bytes"),
-		}, rlimit.Cur)
+		w.WriteLazyMetricUint64("process_virtual_memory_max_bytes", rlimit.Cur)
 	}
 }
 

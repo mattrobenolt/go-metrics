@@ -55,27 +55,19 @@ func (c *goMetricsCollector) init() {
 }
 
 func (c *goMetricsCollector) Collect(w ExpfmtWriter) {
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_info"),
-		Tags:   MustTags("version", runtime.Version()),
-	}, 1)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_info_ext"),
-		Tags: MustTags(
-			"compiler", runtime.Compiler,
-			"GOARCH", runtime.GOARCH,
-			"GOOS", runtime.GOOS,
-		),
-	}, 1)
+	w.WriteLazyMetricUint64("go_info", 1,
+		"version", runtime.Version(),
+	)
+	w.WriteLazyMetricUint64("go_info_ext", 1,
+		"compiler", runtime.Compiler,
+		"GOARCH", runtime.GOARCH,
+		"GOOS", runtime.GOOS,
+	)
 
-	w.WriteMetricFloat64(MetricName{
-		Family: MustIdent("go_goroutines"),
-	}, float64(runtime.NumGoroutine()))
+	w.WriteLazyMetricFloat64("go_goroutines", float64(runtime.NumGoroutine()))
 
 	numThreads, _ := runtime.ThreadCreateProfile(nil)
-	w.WriteMetricFloat64(MetricName{
-		Family: MustIdent("go_threads"),
-	}, float64(numThreads))
+	w.WriteLazyMetricFloat64("go_threads", float64(numThreads))
 
 	c.collectMemoryStats(w)
 	c.collectRuntimeMetrics(w)
@@ -86,78 +78,30 @@ func (c *goMetricsCollector) collectMemoryStats(w ExpfmtWriter) {
 	runtime.ReadMemStats(&ms)
 	c.collectGCStats(&ms, w)
 
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_alloc_bytes"),
-	}, ms.Alloc)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_alloc_bytes_total"),
-	}, ms.TotalAlloc)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_buck_hash_sys_bytes"),
-	}, ms.BuckHashSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_frees_total"),
-	}, ms.Frees)
-	w.WriteMetricFloat64(MetricName{
-		Family: MustIdent("go_memstats_gc_cpu_fraction"),
-	}, ms.GCCPUFraction)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_gc_sys_bytes"),
-	}, ms.GCSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_alloc_bytes"),
-	}, ms.HeapAlloc)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_idle_bytes"),
-	}, ms.HeapIdle)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_inuse_bytes"),
-	}, ms.HeapInuse)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_objects"),
-	}, ms.HeapObjects)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_released_bytes"),
-	}, ms.HeapReleased)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_heap_sys_bytes"),
-	}, ms.HeapSys)
-	w.WriteMetricDuration(MetricName{
-		Family: MustIdent("go_memstats_last_gc_time_seconds"),
-	}, time.Duration(ms.LastGC))
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_lookups_total"),
-	}, ms.Lookups)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_mallocs_total"),
-	}, ms.Mallocs)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_mcache_inuse_bytes"),
-	}, ms.MCacheInuse)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_mcache_sys_bytes"),
-	}, ms.MCacheSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_mspan_inuse_bytes"),
-	}, ms.MSpanInuse)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_mspan_sys_bytes"),
-	}, ms.MSpanSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_next_gc_bytes"),
-	}, ms.NextGC)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_other_sys_bytes"),
-	}, ms.OtherSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_stack_inuse_bytes"),
-	}, ms.StackInuse)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_stack_sys_bytes"),
-	}, ms.StackSys)
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_memstats_sys_bytes"),
-	}, ms.Sys)
+	w.WriteLazyMetricUint64("go_memstats_alloc_bytes", ms.Alloc)
+	w.WriteLazyMetricUint64("go_memstats_alloc_bytes_total", ms.TotalAlloc)
+	w.WriteLazyMetricUint64("go_memstats_buck_hash_sys_bytes", ms.BuckHashSys)
+	w.WriteLazyMetricUint64("go_memstats_frees_total", ms.Frees)
+	w.WriteLazyMetricFloat64("go_memstats_gc_cpu_fraction", ms.GCCPUFraction)
+	w.WriteLazyMetricUint64("go_memstats_gc_sys_bytes", ms.GCSys)
+	w.WriteLazyMetricUint64("go_memstats_heap_alloc_bytes", ms.HeapAlloc)
+	w.WriteLazyMetricUint64("go_memstats_heap_idle_bytes", ms.HeapIdle)
+	w.WriteLazyMetricUint64("go_memstats_heap_inuse_bytes", ms.HeapInuse)
+	w.WriteLazyMetricUint64("go_memstats_heap_objects", ms.HeapObjects)
+	w.WriteLazyMetricUint64("go_memstats_heap_released_bytes", ms.HeapReleased)
+	w.WriteLazyMetricUint64("go_memstats_heap_sys_bytes", ms.HeapSys)
+	w.WriteLazyMetricDuration("go_memstats_last_gc_time_seconds", time.Duration(ms.LastGC))
+	w.WriteLazyMetricUint64("go_memstats_lookups_total", ms.Lookups)
+	w.WriteLazyMetricUint64("go_memstats_mallocs_total", ms.Mallocs)
+	w.WriteLazyMetricUint64("go_memstats_mcache_inuse_bytes", ms.MCacheInuse)
+	w.WriteLazyMetricUint64("go_memstats_mcache_sys_bytes", ms.MCacheSys)
+	w.WriteLazyMetricUint64("go_memstats_mspan_inuse_bytes", ms.MSpanInuse)
+	w.WriteLazyMetricUint64("go_memstats_mspan_sys_bytes", ms.MSpanSys)
+	w.WriteLazyMetricUint64("go_memstats_next_gc_bytes", ms.NextGC)
+	w.WriteLazyMetricUint64("go_memstats_other_sys_bytes", ms.OtherSys)
+	w.WriteLazyMetricUint64("go_memstats_stack_inuse_bytes", ms.StackInuse)
+	w.WriteLazyMetricUint64("go_memstats_stack_sys_bytes", ms.StackSys)
+	w.WriteLazyMetricUint64("go_memstats_sys_bytes", ms.Sys)
 }
 
 func (c *goMetricsCollector) collectGCStats(ms *runtime.MemStats, w ExpfmtWriter) {
@@ -174,24 +118,22 @@ func (c *goMetricsCollector) collectGCStats(ms *runtime.MemStats, w ExpfmtWriter
 	}
 	slices.Sort(pauses)
 
+	goGCDurationSeconds := MustIdent("go_gc_duration_seconds")
 	const nq = len(quantileTags) - 1
+
 	for i := range nq {
 		w.WriteMetricDuration(MetricName{
-			Family: MustIdent("go_gc_duration_seconds"),
+			Family: goGCDurationSeconds,
 			Tags:   []Tag{quantileTags[i]},
 		}, time.Duration(pauses[len(pauses)*i/nq]))
 	}
 	w.WriteMetricDuration(MetricName{
-		Family: MustIdent("go_gc_duration_seconds"),
+		Family: goGCDurationSeconds,
 		Tags:   []Tag{quantileTags[nq]},
 	}, time.Duration(pauses[len(pauses)-1]))
 
-	w.WriteMetricUint64(MetricName{
-		Family: MustIdent("go_gc_duration_seconds_count"),
-	}, uint64(ms.NumGC))
-	w.WriteMetricDuration(MetricName{
-		Family: MustIdent("go_gc_duration_seconds_sum"),
-	}, time.Duration(ms.PauseTotalNs))
+	w.WriteLazyMetricUint64("go_gc_duration_seconds_count", uint64(ms.NumGC))
+	w.WriteLazyMetricDuration("go_gc_duration_seconds_sum", time.Duration(ms.PauseTotalNs))
 }
 
 func (c *goMetricsCollector) collectRuntimeMetrics(w ExpfmtWriter) {
