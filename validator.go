@@ -51,7 +51,7 @@ func MustTags(tags ...string) []Tag {
 		return nil
 	}
 
-	if len(tags) > 0 && len(tags)%2 != 0 {
+	if len(tags)%2 != 0 {
 		panic(fmt.Errorf("tag label/values must be in pairs, got: %v", tags))
 	}
 

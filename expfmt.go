@@ -45,22 +45,25 @@ func (v Value) String() string {
 	return v.v
 }
 
-// ExpfmtWriter wraps a bytes.Buffer adds functionality to write
+// ExpfmtWriter wraps a [bytes.Buffer] adds functionality to write
 // the Prometheus text exposiiton format.
 type ExpfmtWriter struct {
 	b            *bytes.Buffer
 	constantTags string
 }
 
+// Buffer returns the underlying [bytes.Buffer].
 func (w ExpfmtWriter) Buffer() *bytes.Buffer {
 	return w.b
 }
 
+// ConstantTags returns the materialized set of tags that are written
+// for every metric.
 func (w ExpfmtWriter) ConstantTags() string {
 	return w.constantTags
 }
 
-// WriteMetricName writes the family and optional tags.
+// WriteMetricName writes the family name, optional tags, and constant tags.
 func (w ExpfmtWriter) WriteMetricName(name MetricName) {
 	writeMetricName(w.b, name, w.constantTags)
 }
@@ -72,28 +75,35 @@ func (w ExpfmtWriter) WriteUint64(value uint64) {
 	w.b.WriteByte('\n')
 }
 
-// WriteUint64 writes a float64 and signals the end of the metric.
+// WriteFloat64 writes a float64 and signals the end of the metric.
 func (w ExpfmtWriter) WriteFloat64(value float64) {
 	w.b.WriteByte(' ')
 	writeFloat64(w.b, value)
 	w.b.WriteByte('\n')
 }
 
+// WriteMetricUint64 writes a full MetricName and uint64 value.
 func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
 	w.WriteMetricName(name)
 	w.WriteUint64(value)
 }
 
+// WriteMetricFloat64 writes a full MetricName and float64 value.
 func (w ExpfmtWriter) WriteMetricFloat64(name MetricName, value float64) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(value)
 }
 
+// WriteMetricDuration writes a full MetricName and time.Duration value as seconds.
 func (w ExpfmtWriter) WriteMetricDuration(name MetricName, value time.Duration) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(value.Seconds())
 }
 
+// WriteLazyMetricUint64 writes a full metric name and uint64 value.
+// Tags are passed as interleving [label value] pairs.
+// Prefer [ExpfmtWriter.WriteMetricUint64] when performance is critical.
+// This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ...string) {
 	w.WriteMetricUint64(MetricName{
 		Family: MustIdent(family),
@@ -101,6 +111,10 @@ func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ..
 	}, value)
 }
 
+// WriteLazyMetricFloat64 writes a full metric name and float64 value.
+// Tags are passed as interleving [label value] pairs.
+// Prefer [ExpfmtWriter.WriteMetricFloat64] when performance is critical.
+// This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricFloat64(family string, value float64, tags ...string) {
 	w.WriteMetricFloat64(MetricName{
 		Family: MustIdent(family),
@@ -108,6 +122,10 @@ func (w ExpfmtWriter) WriteLazyMetricFloat64(family string, value float64, tags 
 	}, value)
 }
 
+// WriteLazyMetricDuration writes a full metric name and time.Duration value as seconds.
+// Tags are passed as interleving [label value] pairs.
+// Prefer [ExpfmtWriter.WriteMetricDuration] when performance is critical.
+// This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricDuration(family string, value time.Duration, tags ...string) {
 	w.WriteLazyMetricFloat64(family, value.Seconds(), tags...)
 }

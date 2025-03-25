@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 )
 
-// Counter is a counter.
+// Counter is a uint64 counter.
 //
 // It may be used as a gauge if Dec and Set are called.
 type Counter struct {

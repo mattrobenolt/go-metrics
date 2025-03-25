@@ -43,14 +43,14 @@ func (g *IntGauge) Dec() {
 	g.Add(^uint64(0))
 }
 
-// Add adds val to g. val may be positive or negative.
+// Add adds delta to g. val may be positive or negative.
 //
 // The g must be created with nil callback in order to be able to call this function.
-func (g *IntGauge) Add(val uint64) {
+func (g *IntGauge) Add(delta uint64) {
 	if g.fn != nil {
 		panic(errors.New("cannot call Set on gauge created with non-nil callback"))
 	}
-	g.v.Add(val)
+	g.v.Add(delta)
 }
 
 func (g *IntGauge) marshalTo(w ExpfmtWriter, name MetricName) {

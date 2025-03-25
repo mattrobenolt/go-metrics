@@ -123,6 +123,20 @@ func TestFixedHistogramSerial(t *testing.T) {
 		`hist_count 0`,
 	})
 
+	h.Update(-5)
+	assertMarshal(t, set, []string{
+		`hist_bucket{le="100"} 1`,
+		`hist_bucket{le="110"} 1`,
+		`hist_bucket{le="120"} 1`,
+		`hist_bucket{le="150"} 1`,
+		`hist_bucket{le="200"} 1`,
+		`hist_bucket{le="+Inf"} 1`,
+		`hist_sum -5`,
+		`hist_count 1`,
+	})
+
+	h.Reset()
+
 	// Verify supported ranges
 	for e10 := -100; e10 < 100; e10++ {
 		for offset := range bucketsPerDecimal {
@@ -152,9 +166,9 @@ func TestFixedHistogramSerial(t *testing.T) {
 		`hist_bucket{le="120"} 5512`,
 		`hist_bucket{le="150"} 5513`,
 		`hist_bucket{le="200"} 5514`,
-		`hist_bucket{le="+Inf"} 10807`,
-		`hist_sum +Inf`,
-		`hist_count 10807`,
+		`hist_bucket{le="+Inf"} 10806`,
+		`hist_sum NaN`,
+		`hist_count 10806`,
 	})
 }
 

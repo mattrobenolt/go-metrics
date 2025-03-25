@@ -64,6 +64,8 @@ type (
 // Prometheus histogram buckets with `le` labels, since they don't include counters
 // for all the previous buckets.
 //
+// If you would like Prometheus style histogram buckets, see [FixedHistogram].
+//
 // Zero histogram is usable.
 type Histogram struct {
 	// buckets contains counters for histogram buckets
@@ -83,7 +85,6 @@ type Histogram struct {
 // Reset resets the given histogram.
 func (h *Histogram) Reset() {
 	clear(h.buckets[:])
-
 	h.lower.Store(0)
 	h.upper.Store(0)
 	h.sumInt.Store(0)
@@ -139,7 +140,7 @@ func (h *Histogram) Update(val float64) {
 	}
 }
 
-// Observe updates h with val, identical to Histogram.Update.
+// Observe updates h with val, identical to [Histogram.Update].
 //
 // Negative values and NaNs are ignored.
 func (h *Histogram) Observe(val float64) {

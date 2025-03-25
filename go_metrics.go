@@ -21,6 +21,8 @@ var (
 	goCollectorDefaultRuntimeMetrics = regexp.MustCompile(`/gc/gogc:percent|/gc/gomemlimit:bytes|/sched/gomaxprocs:threads`)
 )
 
+// NewGoMetricsCollector is a Collector that yields Go runtime metrics.
+// Metrics are prefixed with `go_`.
 func NewGoMetricsCollector() Collector {
 	var c goMetricsCollector
 	c.init()

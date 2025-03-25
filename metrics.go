@@ -11,8 +11,9 @@ type Metric interface {
 	marshalTo(ExpfmtWriter, MetricName)
 }
 
+// Collector is custom data collector that is called during [Set.WritePrometheus].
 type Collector interface {
-	Collect(w ExpfmtWriter)
+	Collect(ExpfmtWriter)
 }
 
 // namedMetric is a single data point.
@@ -25,10 +26,12 @@ type namedMetric struct {
 	metric Metric
 }
 
-// MetricName represents a FQN of a metric in pieces.
+// MetricName represents a fully qualified name of a metric in pieces.
 type MetricName struct {
+	// Family is the metric Ident, see [MustIdent].
 	Family Ident
-	Tags   []Tag
+	// Tags are optional tags for the metric, see [MustTags].
+	Tags []Tag
 }
 
 // String returns the MetricName in fully quanfied format. Prefer

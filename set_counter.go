@@ -2,10 +2,12 @@ package metrics
 
 import "hash/maphash"
 
-// CounterOpt are the options for creating a Counter.
+// CounterOpt are the options for creating a [Counter].
 type CounterOpt struct {
+	// Family is the metric Ident, see [MustIdent].
 	Family Ident
-	Tags   []Tag
+	// Tags are optional tags for the metric, see [MustTags].
+	Tags []Tag
 }
 
 // NewCounter registers and returns new Counter with the given name in the s.
@@ -64,11 +66,16 @@ func (s *Set) GetOrCreateCounter(family string, tags ...string) *Counter {
 	return nm.metric.(*Counter)
 }
 
+// CounterVecOpt are options for creating a new [CounterVec].
 type CounterVecOpt struct {
+	// Family is the metric family name, e.g. `http_requests`
 	Family string
+	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
 	Labels []string
 }
 
+// A CounterVec is a collection of Counters that are partitioned
+// by the same metric name and tag labels, but different tag values.
 type CounterVec struct {
 	s           *Set
 	family      Ident
@@ -76,6 +83,9 @@ type CounterVec struct {
 	partialHash *maphash.Hash
 }
 
+// WithLabelValues returns the Counter for the corresponding label values.
+// If the combination of values is seen for the first time, a new Counter
+// is created.
 func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 	hash := hashFinish(c.partialHash, values)
 
@@ -91,6 +101,7 @@ func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 	return nm.metric.(*Counter)
 }
 
+// NewCounterVec creates a new [CounterVec] with the supplied opt.
 func (s *Set) NewCounterVec(opt CounterVecOpt) *CounterVec {
 	family := MustIdent(opt.Family)
 

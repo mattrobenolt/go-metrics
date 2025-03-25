@@ -6,10 +6,13 @@ import (
 	"sync/atomic"
 )
 
-// FixedHistogramOpt are the options for creating a Histogram.
+// FixedHistogramOpt are the options for creating a [FixedHistogram].
 type FixedHistogramOpt struct {
-	Family  Ident
-	Tags    []Tag
+	// Family is the metric Ident, see [MustIdent].
+	Family Ident
+	// Tags are optional tags for the metric, see [MustTags].
+	Tags []Tag
+	// Buckets are histogram buckets, e.g. []float64{0.1, 0.5, 1}
 	Buckets []float64
 }
 
@@ -19,7 +22,7 @@ type FixedHistogramOpt struct {
 //
 // Optional tags must be specified in [label, value] pairs, for instance,
 //
-//	NewFixedHistogram("family", "label1", "value1", "label2", "value2")
+//	NewFixedHistogram("family", []float64{0.1, 0.5, 1}, "label1", "value1", "label2", "value2")
 //
 // The returned Histogram is safe to use from concurrent goroutines.
 //
@@ -44,7 +47,7 @@ func (s *Set) NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
 }
 
 // GetOrCreateFixedHistogram returns registered FixedHistogram in s with the given name
-// and tags creates new Histogram if s doesn't contain Histogram with the given name.
+// and tags creates new Histogram if s doesn't contain FixedHistogram with the given name.
 //
 // family must be a Prometheus compatible identifier format.
 //
@@ -70,12 +73,15 @@ func (s *Set) GetOrCreateFixedHistogram(family string, buckets []float64, tags .
 	return nm.metric.(*FixedHistogram)
 }
 
+// FixedHistogramVecOpt are options for creating a new [FixedHistogramVec].
 type FixedHistogramVecOpt struct {
 	Family  string
 	Labels  []string
 	Buckets []float64
 }
 
+// A FixedHistogramVec is a collection of FixedHistogramVecs that are partitioned
+// by the same metric name and tag labels, but different tag values.
 type FixedHistogramVec struct {
 	s           *Set
 	family      Ident
@@ -86,6 +92,9 @@ type FixedHistogramVec struct {
 	labels  []string
 }
 
+// WithLabelValues returns the FixedHistogram for the corresponding label values.
+// If the combination of values is seen for the first time, a new FixedHistogram
+// is created.
 func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
 	hash := hashFinish(h.partialHash, values)
 
@@ -105,6 +114,7 @@ func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
 	return nm.metric.(*FixedHistogram)
 }
 
+// NewFixedHistogramVec creates a new [FixedHistogramVec] with the supplied opt.
 func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec {
 	family := MustIdent(opt.Family)
 

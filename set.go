@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -87,6 +88,7 @@ func (s *Set) NewSetOpt(opt SetOpt) *Set {
 	return s2
 }
 
+// UnregisterSet removes a previously registered child Set.
 func (s *Set) UnregisterSet(set *Set) {
 	s.childrenMu.Lock()
 	if idx := slices.Index(s.children, set); idx >= 0 {
@@ -96,13 +98,20 @@ func (s *Set) UnregisterSet(set *Set) {
 	s.childrenMu.Unlock()
 }
 
+// RegisterCollector registers a Collector.
+// Registering the same collector more than once will panic.
 func (s *Set) RegisterCollector(c Collector) {
 	s.childrenMu.Lock()
+	if idx := slices.Index(s.collectors, c); idx >= 0 {
+		panic(errors.New("Collector already registered"))
+	}
 	s.collectors = append(s.collectors, c)
 	s.hasChildren.Store(true)
 	s.childrenMu.Unlock()
 }
 
+// UnregisterCollector removes a previously registered Collector from
+// the Set.
 func (s *Set) UnregisterCollector(c Collector) {
 	s.childrenMu.Lock()
 	if idx := slices.Index(s.collectors, c); idx >= 0 {

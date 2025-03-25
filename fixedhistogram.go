@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"math"
 	"slices"
 	"strconv"
 	"sync/atomic"
@@ -9,15 +10,19 @@ import (
 	"go.withmatt.com/metrics/internal/atomicx"
 )
 
+// DefBuckets is the default set of buckets used with a [FixedHistogram].
 var DefBuckets = []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
 
+// FixedHistogram is a Prometheus-like histogram with fixed buckets.
+//
+// If you would like VictoriaMetrics `vmrange` histogram buckets, see [Histogram].
 type FixedHistogram struct {
 	buckets      []float64
 	labels       []string
 	observations []atomic.Uint64
 
 	upper    atomic.Uint64
-	sumInt   atomic.Uint64
+	sumInt   atomic.Int64
 	sumFloat atomicx.Float64
 	count    atomic.Uint64
 }
@@ -37,6 +42,7 @@ func newFixedHistogram(buckets []float64) *FixedHistogram {
 	}
 }
 
+// Reset resets the given histogram.
 func (h *FixedHistogram) Reset() {
 	clear(h.observations)
 	h.upper.Store(0)
@@ -45,25 +51,33 @@ func (h *FixedHistogram) Reset() {
 	h.sumFloat.Store(0)
 }
 
+// Update updates h with val.
+//
+// NaNs are ignored.
 func (h *FixedHistogram) Update(val float64) {
+	if math.IsNaN(val) {
+		// Skip NaNs.
+		return
+	}
+
 	n := h.findBucket(val)
 	for ; n < len(h.buckets); n++ {
 		h.observations[n].Add(1)
 	}
 	h.upper.Add(1)
-	if val > 0 {
-		intval := uint64(val)
-		if float64(intval) == val {
+
+	if val != 0 {
+		if intval := int64(val); float64(intval) == val {
 			h.sumInt.Add(intval)
 		} else {
 			h.sumFloat.Add(val)
 		}
-
 	}
+
 	h.count.Add(1)
 }
 
-// Observe updates h with val, identical to Histogram.Update.
+// Observe updates h with val, identical to [FixedHistogram.Update].
 //
 // Negative values and NaNs are ignored.
 func (h *FixedHistogram) Observe(val float64) {

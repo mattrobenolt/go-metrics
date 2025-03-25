@@ -4,8 +4,10 @@ import "hash/maphash"
 
 // FloatCounterOpt are the options for creating a Counter.
 type FloatCounterOpt struct {
+	// Family is the metric Ident, see [MustIdent].
 	Family Ident
-	Tags   []Tag
+	// Tags are optional tags for the metric, see [MustTags].
+	Tags []Tag
 }
 
 // NewFloatCounter registers and returns new FloatCounter with the given name in the s.
@@ -64,11 +66,16 @@ func (s *Set) GetOrCreateFloatCounter(family string, tags ...string) *FloatCount
 	return nm.metric.(*FloatCounter)
 }
 
+// FloatCounterVecOpt are options for creating a new [FloatCounterVec].
 type FloatCounterVecOpt struct {
+	// Family is the metric family name, e.g. `http_requests`
 	Family string
+	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
 	Labels []string
 }
 
+// A FloatCounterVec is a collection of FloatCounters that are partitioned
+// by the same metric name and tag labels, but different tag values.
 type FloatCounterVec struct {
 	s           *Set
 	family      Ident
@@ -76,6 +83,9 @@ type FloatCounterVec struct {
 	partialHash *maphash.Hash
 }
 
+// WithLabelValues returns the FloatCounter for the corresponding label values.
+// If the combination of values is seen for the first time, a new FloatCounter
+// is created.
 func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
 	hash := hashFinish(c.partialHash, values)
 
@@ -91,6 +101,7 @@ func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
 	return nm.metric.(*FloatCounter)
 }
 
+// NewFloatCounterVec creates a new [FloatCounterVec] with the supplied opt.
 func (s *Set) NewFloatCounterVec(opt FloatCounterVecOpt) *FloatCounterVec {
 	family := MustIdent(opt.Family)
 

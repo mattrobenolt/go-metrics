@@ -4,8 +4,10 @@ import "hash/maphash"
 
 // IntGaugeOpt are the options for creating a Gauge.
 type IntGaugeOpt struct {
+	// Family is the metric Ident, see [MustIdent].
 	Family Ident
-	Tags   []Tag
+	// Tags are optional tags for the metric, see [MustTags].
+	Tags []Tag
 	// Func is an optional callback for making observations.
 	Func func() uint64
 }
@@ -70,12 +72,18 @@ func (s *Set) GetOrCreateIntGauge(family string, tags ...string) *IntGauge {
 	return nm.metric.(*IntGauge)
 }
 
+// IntGaugeVecOpt are options for creating a new [IntGaugeVec].
 type IntGaugeVecOpt struct {
+	// Family is the metric family name, e.g. `http_requests`
 	Family string
+	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
 	Labels []string
-	Func   func() uint64
+	// Func is an optional callback for making observations.
+	Func func() uint64
 }
 
+// A IntGaugeVec is a collection of IntGauges that are partitioned
+// by the same metric name and tag labels, but different tag values.
 type IntGaugeVec struct {
 	s           *Set
 	family      Ident
@@ -84,6 +92,9 @@ type IntGaugeVec struct {
 	fn          func() uint64
 }
 
+// WithLabelValues returns the IntGauge for the corresponding label values.
+// If the combination of values is seen for the first time, a new IntGauge
+// is created.
 func (g *IntGaugeVec) WithLabelValues(values ...string) *IntGauge {
 	hash := hashFinish(g.partialHash, values)
 
@@ -99,6 +110,7 @@ func (g *IntGaugeVec) WithLabelValues(values ...string) *IntGauge {
 	return nm.metric.(*IntGauge)
 }
 
+// NewIntGaugeVec creates a new [IntGaugeVec] with the supplied opt.
 func (s *Set) NewIntGaugeVec(opt IntGaugeVecOpt) *IntGaugeVec {
 	family := MustIdent(opt.Family)
 
