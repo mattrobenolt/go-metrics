@@ -8,7 +8,7 @@ import (
 
 func ExampleFixedHistogram() {
 	// Define a histogram in global scope.
-	var h = metrics.NewFixedHistogram(
+	h := metrics.NewFixedHistogram(
 		"request_duration_seconds",
 		[]float64{0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1},
 		"path", "/foo/bar",

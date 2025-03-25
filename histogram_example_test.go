@@ -8,7 +8,7 @@ import (
 
 func ExampleHistogram() {
 	// Define a histogram in global scope.
-	var h = metrics.NewHistogram(
+	h := metrics.NewHistogram(
 		"request_duration_seconds",
 		"path", "/foo/bar",
 	)

@@ -9,7 +9,7 @@ import (
 
 func ExampleCounter() {
 	// Define a counter in global scope.
-	var c = metrics.NewCounter(
+	c := metrics.NewCounter(
 		"metric_total",
 		"label1", "value1",
 		"label2", "value2",
