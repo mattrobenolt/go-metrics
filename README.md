@@ -26,6 +26,7 @@ import (
 )
 
 func main() {
+	// exposes Go and process runtime metrics
 	metrics.RegisterDefaultCollectors()
 
 	// create a new counter "foo" with the tag a=b

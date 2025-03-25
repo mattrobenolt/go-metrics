@@ -151,7 +151,7 @@ func writeFloat64(b *bytes.Buffer, value float64) {
 }
 
 func sizeOfMetricName(name MetricName, constantTags string) int {
-	if !name.HasTags() && len(constantTags) == 0 {
+	if !name.hasTags() && len(constantTags) == 0 {
 		return len(name.Family.String())
 	}
 	size := len(name.Family.String())
@@ -182,7 +182,7 @@ func writeTag(b *bytes.Buffer, tag Tag) {
 }
 
 func writeMetricName(b *bytes.Buffer, name MetricName, constantTags string) {
-	if !name.HasTags() && len(constantTags) == 0 {
+	if !name.hasTags() && len(constantTags) == 0 {
 		b.WriteString(name.Family.String())
 		return
 	}

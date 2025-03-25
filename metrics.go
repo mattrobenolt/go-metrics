@@ -1,3 +1,7 @@
+/*
+Package metrics provides an extremely fast and lightweight API for
+recording and exporting metrics in Prometheus format.
+*/
 package metrics
 
 import (
@@ -37,7 +41,7 @@ type MetricName struct {
 // String returns the MetricName in fully qualified format. Prefer
 // [ExpfmtWriter.WriteMetricName] over this when marshalling.
 func (n MetricName) String() string {
-	if !n.HasTags() {
+	if !n.hasTags() {
 		return n.Family.String()
 	}
 	var b bytes.Buffer
@@ -45,7 +49,7 @@ func (n MetricName) String() string {
 	return b.String()
 }
 
-func (n MetricName) HasTags() bool {
+func (n MetricName) hasTags() bool {
 	return len(n.Tags) > 0
 }
 
