@@ -100,7 +100,7 @@ func (h *FixedHistogram) findBucket(v float64) int {
 		return n
 	case n < 35:
 		// For small arrays, use simple linear search
-		// "magic number" 35 is result of tests on couple different (AWS and baremetal) servers
+		// "magic number" 35 is result of tests on couple different (AWS and bare metal) servers
 		// see more details here: https://github.com/prometheus/client_golang/pull/1662
 		for i, bound := range h.buckets {
 			if v <= bound {

@@ -112,7 +112,7 @@ func (c *goMetricsCollector) collectGCStats(ms *runtime.MemStats, w ExpfmtWriter
 		// the entire ring buffer is full
 		pauses = ms.PauseNs[:]
 	} else if n == 0 {
-		// edge case of no GC pausese at all, we want a slice
+		// edge case of no GC pauses at all, we want a slice
 		// of length 1 with 0 values
 		pauses = ms.PauseNs[:1]
 	} else {

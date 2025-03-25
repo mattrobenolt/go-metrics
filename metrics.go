@@ -34,7 +34,7 @@ type MetricName struct {
 	Tags []Tag
 }
 
-// String returns the MetricName in fully quanfied format. Prefer
+// String returns the MetricName in fully qualified format. Prefer
 // [ExpfmtWriter.WriteMetricName] over this when marshalling.
 func (n MetricName) String() string {
 	if !n.HasTags() {

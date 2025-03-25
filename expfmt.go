@@ -46,7 +46,7 @@ func (v Value) String() string {
 }
 
 // ExpfmtWriter wraps a [bytes.Buffer] adds functionality to write
-// the Prometheus text exposiiton format.
+// the Prometheus text exposition format.
 type ExpfmtWriter struct {
 	b            *bytes.Buffer
 	constantTags string
@@ -101,7 +101,7 @@ func (w ExpfmtWriter) WriteMetricDuration(name MetricName, value time.Duration) 
 }
 
 // WriteLazyMetricUint64 writes a full metric name and uint64 value.
-// Tags are passed as interleving [label value] pairs.
+// Tags are passed as interleaving [label value] pairs.
 // Prefer [ExpfmtWriter.WriteMetricUint64] when performance is critical.
 // This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ...string) {
@@ -112,7 +112,7 @@ func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ..
 }
 
 // WriteLazyMetricFloat64 writes a full metric name and float64 value.
-// Tags are passed as interleving [label value] pairs.
+// Tags are passed as interleaving [label value] pairs.
 // Prefer [ExpfmtWriter.WriteMetricFloat64] when performance is critical.
 // This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricFloat64(family string, value float64, tags ...string) {
@@ -123,7 +123,7 @@ func (w ExpfmtWriter) WriteLazyMetricFloat64(family string, value float64, tags 
 }
 
 // WriteLazyMetricDuration writes a full metric name and time.Duration value as seconds.
-// Tags are passed as interleving [label value] pairs.
+// Tags are passed as interleaving [label value] pairs.
 // Prefer [ExpfmtWriter.WriteMetricDuration] when performance is critical.
 // This will panic if family or tag labels are invalid.
 func (w ExpfmtWriter) WriteLazyMetricDuration(family string, value time.Duration, tags ...string) {

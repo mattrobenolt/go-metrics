@@ -53,7 +53,7 @@ func getHashTags(family string, tags []Tag) metricHash {
 }
 
 // getHashStrings generates an identical hash to getHash,
-// but operates on interleved level value pairs.
+// but operates on interleaved level value pairs.
 func getHashStrings(family string, bits []string) metricHash {
 	// Optimize when no tags, this variant is internally optimized.
 	if len(bits) == 0 {
@@ -64,7 +64,7 @@ func getHashStrings(family string, bits []string) metricHash {
 	h.SetSeed(globalSeed)
 	h.WriteString(family)
 
-	// bits are interleved, [label, value, label, value]
+	// bits are interleaved, [label, value, label, value]
 	for i := 0; i < len(bits); i += 2 {
 		h.WriteByte(labelDelimeter)
 		h.WriteString(bits[i])

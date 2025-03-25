@@ -69,7 +69,7 @@ func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
 	return nm.metric.(*Histogram)
 }
 
-// HistogramVecOpt are options for creating a new [HistgoramVec].
+// HistogramVecOpt are options for creating a new [HistogramVec].
 type HistogramVecOpt struct {
 	// Family is the metric family name, e.g. `http_requests`
 	Family string
@@ -109,7 +109,7 @@ func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 	return nm.metric.(*Histogram)
 }
 
-// NewHistogramVec creates a new [HistgoramVec] with the supplied opt.
+// NewHistogramVec creates a new [HistogramVec] with the supplied opt.
 func (s *Set) NewHistogramVec(opt HistogramVecOpt) *HistogramVec {
 	family := MustIdent(opt.Family)
 

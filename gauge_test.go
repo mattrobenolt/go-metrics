@@ -99,7 +99,7 @@ func TestGaugeIncDec(t *testing.T) {
 	}
 }
 
-func TestGaugeIncDecConcurrenc(t *testing.T) {
+func TestGaugeIncDecConcurrent(t *testing.T) {
 	s := NewSet()
 	g := s.NewGauge("foo", nil)
 
