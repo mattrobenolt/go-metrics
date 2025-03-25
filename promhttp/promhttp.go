@@ -2,7 +2,7 @@
 Package promhttp provides a Prometheus-compatible HTTP endpoint.
 
 promhttp doesn't support and compression out of the box. I would
-recommend wrapping the http.Handler with soemthing like
+recommend wrapping the http.Handler with something like
 https://pkg.go.dev/github.com/klauspost/compress/gzhttp.
 
 For example:

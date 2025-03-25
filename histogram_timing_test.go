@@ -20,7 +20,7 @@ func BenchmarkHistogramUpdateParallel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			// XXX: this is racy, but it doesn't matter,
-			// I don't want to add syncronization with an
+			// I don't want to add synchronization with an
 			// atomic to ruin the benchmark.
 			i += 1
 			h.Update(i)

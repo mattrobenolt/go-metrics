@@ -106,14 +106,14 @@ Exporting 10,000 counters
 | vm | 1033.3µ | +46.72% | 10018 | 478.91Mi
 | prom | 10068.0µ | +1329.60% | 41422 | 48.23Mi
 
-Exporting 100 Prometheus-like histograms, with 100,000 observations each.
+Exporting 100 Prometheus-like histograms, with 100,000 observations each
 
 | package | sec/op | vs base | allocs/op | B/s |
 | :------ | :----: | :-----: | :-------: | :-: |
 | mattware | 108.2µ | +0% | 1 | 811.6Mi
 | prom | 437.4µ | +304.36% | 5434 | 200.6Mi
 
-Exporting 100 VictoriaMetrics-like histograms, with 100,000 observations each.
+Exporting 100 VictoriaMetrics-like histograms, with 100,000 observations each
 
 | package | sec/op | vs base | allocs/op | B/s |
 | :------ | :----: | :-----: | :-------: | :-: |
