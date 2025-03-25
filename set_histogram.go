@@ -1,6 +1,9 @@
 package metrics
 
-import "hash/maphash"
+import (
+	"errors"
+	"hash/maphash"
+)
 
 // HistogramOpt are the options for creating a Histogram.
 type HistogramOpt struct {
@@ -86,7 +89,12 @@ type HistogramVec struct {
 // WithLabelValues returns the Histogram for the corresponding label values.
 // If the combination of values is seen for the first time, a new Histogram
 // is created.
+//
+// This will panic if the values count doesn't match the number of labels.
 func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
+	if len(values) != len(h.partialTags) {
+		panic(errors.New("mismatch length of labels"))
+	}
 	hash := hashFinish(h.partialHash, values)
 
 	h.s.metricsMu.Lock()

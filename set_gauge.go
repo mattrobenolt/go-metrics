@@ -1,6 +1,9 @@
 package metrics
 
-import "hash/maphash"
+import (
+	"errors"
+	"hash/maphash"
+)
 
 // GaugeOpt are the options for creating a Gauge.
 type GaugeOpt struct {
@@ -95,7 +98,12 @@ type GaugeVec struct {
 // WithLabelValues returns the Gauge for the corresponding label values.
 // If the combination of values is seen for the first time, a new Gauge
 // is created.
+//
+// This will panic if the values count doesn't match the number of labels.
 func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
+	if len(values) != len(g.partialTags) {
+		panic(errors.New("mismatch length of labels"))
+	}
 	hash := hashFinish(g.partialHash, values)
 
 	g.s.metricsMu.Lock()

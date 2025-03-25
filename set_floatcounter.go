@@ -1,6 +1,9 @@
 package metrics
 
-import "hash/maphash"
+import (
+	"errors"
+	"hash/maphash"
+)
 
 // FloatCounterOpt are the options for creating a Counter.
 type FloatCounterOpt struct {
@@ -86,7 +89,12 @@ type FloatCounterVec struct {
 // WithLabelValues returns the FloatCounter for the corresponding label values.
 // If the combination of values is seen for the first time, a new FloatCounter
 // is created.
+//
+// This will panic if the values count doesn't match the number of labels.
 func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
+	if len(values) != len(c.partialTags) {
+		panic(errors.New("mismatch length of labels"))
+	}
 	hash := hashFinish(c.partialHash, values)
 
 	c.s.metricsMu.Lock()

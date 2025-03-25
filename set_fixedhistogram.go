@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"errors"
 	"hash/maphash"
 	"slices"
 	"sync/atomic"
@@ -95,7 +96,12 @@ type FixedHistogramVec struct {
 // WithLabelValues returns the FixedHistogram for the corresponding label values.
 // If the combination of values is seen for the first time, a new FixedHistogram
 // is created.
+//
+// This will panic if the values count doesn't match the number of labels.
 func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
+	if len(values) != len(h.partialTags) {
+		panic(errors.New("mismatch length of labels"))
+	}
 	hash := hashFinish(h.partialHash, values)
 
 	h.s.metricsMu.Lock()
