@@ -43,7 +43,7 @@ func main() {
 
 ## Metric Types
 * Counters (uint64/float64)
-* Gauges (int64/float64)
+* Gauges (uint64/int64/float64)
 * Histograms
   - Prometheus-like (`le` label style)
   - [VictoriaMetrics-like](https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) (`vmrange` label style)

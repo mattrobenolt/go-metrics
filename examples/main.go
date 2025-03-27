@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	currentTime = metrics.NewGauge("current_time", func() float64 {
+	currentTime = metrics.NewFloatFunc("current_time", func() float64 {
 		return float64(time.Now().UnixNano()) / 1e9
 	})
 	ticksA = metrics.NewCounter("tick", "variant", "a")

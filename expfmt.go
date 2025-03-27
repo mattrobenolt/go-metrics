@@ -75,6 +75,13 @@ func (w ExpfmtWriter) WriteUint64(value uint64) {
 	w.b.WriteByte('\n')
 }
 
+// WriteInt64 writes a int64 and signals the end of the metric.
+func (w ExpfmtWriter) WriteInt64(value int64) {
+	w.b.WriteByte(' ')
+	writeInt64(w.b, value)
+	w.b.WriteByte('\n')
+}
+
 // WriteFloat64 writes a float64 and signals the end of the metric.
 func (w ExpfmtWriter) WriteFloat64(value float64) {
 	w.b.WriteByte(' ')
@@ -86,6 +93,12 @@ func (w ExpfmtWriter) WriteFloat64(value float64) {
 func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
 	w.WriteMetricName(name)
 	w.WriteUint64(value)
+}
+
+// WriteMetricInt64 writes a full MetricName and int64 value.
+func (w ExpfmtWriter) WriteMetricInt64(name MetricName, value int64) {
+	w.WriteMetricName(name)
+	w.WriteInt64(value)
 }
 
 // WriteMetricFloat64 writes a full MetricName and float64 value.
@@ -134,11 +147,15 @@ func writeUint64(b *bytes.Buffer, value uint64) {
 	b.Write(strconv.AppendUint(b.AvailableBuffer(), value, 10))
 }
 
+func writeInt64(b *bytes.Buffer, value int64) {
+	b.Write(strconv.AppendInt(b.AvailableBuffer(), value, 10))
+}
+
 func writeFloat64(b *bytes.Buffer, value float64) {
 	intvalue := int64(value)
 	switch {
 	case float64(intvalue) == value:
-		b.Write(strconv.AppendInt(b.AvailableBuffer(), intvalue, 10))
+		writeInt64(b, intvalue)
 	case value < -math.MaxFloat64:
 		b.WriteString("-Inf")
 	case value > math.MaxFloat64:

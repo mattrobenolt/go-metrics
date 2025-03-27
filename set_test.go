@@ -19,8 +19,12 @@ func TestSet(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewGauge("gauge1", nil).Set(1)
-	set.NewGauge("gauge2", nil, "a", "1").Set(1)
+	set.NewUintFunc("gauge1", func() uint64 {
+		return 1
+	})
+	set.NewUintFunc("gauge2", func() uint64 {
+		return 2
+	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
 	set.NewHistogram("hist2", "a", "1").Update(1)
 
@@ -31,7 +35,7 @@ func TestSet(t *testing.T) {
 		`counter1 1`,
 		`counter2{a="1"} 1`,
 		`gauge1 1`,
-		`gauge2{a="1"} 1`,
+		`gauge2{a="1"} 2`,
 		`hist1_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
 		`hist1_sum 1`,
 		`hist1_count 1`,
@@ -52,8 +56,12 @@ func TestSetConstantTags(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewGauge("gauge1", nil).Set(1)
-	set.NewGauge("gauge2", nil, "a", "1").Set(1)
+	set.NewUintFunc("gauge1", func() uint64 {
+		return 1
+	})
+	set.NewUintFunc("gauge2", func() uint64 {
+		return 2
+	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
 	set.NewHistogram("hist2", "a", "1").Update(1)
 
@@ -75,7 +83,7 @@ func TestSetConstantTags(t *testing.T) {
 		`counter1{foo="bar"} 1`,
 		`counter2{foo="bar",a="1"} 1`,
 		`gauge1{foo="bar"} 1`,
-		`gauge2{foo="bar",a="1"} 1`,
+		`gauge2{foo="bar",a="1"} 2`,
 		`hist1_bucket{vmrange="8.799e-01...1.000e+00",foo="bar"} 1`,
 		`hist1_sum{foo="bar"} 1`,
 		`hist1_count{foo="bar"} 1`,
@@ -149,8 +157,12 @@ func TestSetMarshalConcurrent(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewGauge("gauge1", nil).Set(1)
-	set.NewGauge("gauge2", nil, "a", "1").Set(1)
+	set.NewUintFunc("gauge1", func() uint64 {
+		return 1
+	})
+	set.NewUintFunc("gauge2", func() uint64 {
+		return 2
+	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
 	set.NewHistogram("hist2", "a", "1").Update(1)
 
@@ -162,7 +174,7 @@ func TestSetMarshalConcurrent(t *testing.T) {
 			`counter1 1`,
 			`counter2{a="1"} 1`,
 			`gauge1 1`,
-			`gauge2{a="1"} 1`,
+			`gauge2{a="1"} 2`,
 			`hist1_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
 			`hist1_sum 1`,
 			`hist1_count 1`,
@@ -181,7 +193,9 @@ func TestSetConcurrent(t *testing.T) {
 
 	hammer(t, n, func(i int) {
 		set.NewCounter(fmt.Sprintf("counter%d", i)).Inc()
-		set.NewGauge(fmt.Sprintf("gauge%d", i), nil).Set(1)
+		set.NewUintFunc(fmt.Sprintf("gauge%d", i), func() uint64 {
+			return 1
+		})
 		set.NewHistogram(fmt.Sprintf("hist%d", i)).Update(1)
 
 		s2 := set.NewSet()
