@@ -52,40 +52,40 @@ goos: darwin
 goarch: arm64
 pkg: go.withmatt.com/metrics
 cpu: Apple M1 Max
-BenchmarkCounterGetOrCreate
-BenchmarkCounterGetOrCreate/hot
-BenchmarkCounterGetOrCreate/hot-10     	47642600	        24.43 ns/op	       0 B/op	       0 allocs/op
-BenchmarkCounterGetOrCreate/cold
-BenchmarkCounterGetOrCreate/cold-10    	 7289173	       165.7 ns/op	      96 B/op	       3 allocs/op
-BenchmarkCounterGetOrCreate/verycold
-BenchmarkCounterGetOrCreate/verycold-10         	  733803	      1549 ns/op	     456 B/op	      16 allocs/op
+BenchmarkCounterVec
+BenchmarkCounterVec/hot
+BenchmarkCounterVec/hot-10             	62246716	        19.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterVec/cold
+BenchmarkCounterVec/cold-10            	10332553	       115.5 ns/op	      96 B/op	       3 allocs/op
+BenchmarkCounterVec/verycold
+BenchmarkCounterVec/verycold-10        	 7860999	       150.1 ns/op	     256 B/op	       4 allocs/op
 BenchmarkCounterInc
-BenchmarkCounterInc-10                          	173853097	         6.895 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterInc-10                 	167942318	         7.146 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCounterIncParallel
-BenchmarkCounterIncParallel-10                  	16201200	        73.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterIncParallel-10         	17440750	        70.87 ns/op	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter
 BenchmarkExpfmtWriter/name
-BenchmarkExpfmtWriter/name-10                   	201310080	         5.973 ns/op	3013.66 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name-10          	194063266	         6.180 ns/op	2912.41 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_tags
-BenchmarkExpfmtWriter/name_with_tags-10         	26503352	        44.46 ns/op	 787.31 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_tags-10         	26142129	        45.79 ns/op	 764.37 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_many_tags
-BenchmarkExpfmtWriter/name_with_many_tags-10    	 6595731	       182.5 ns/op	 761.59 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_many_tags-10    	 6372046	       188.9 ns/op	 735.65 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/uint64
-BenchmarkExpfmtWriter/uint64-10                 	21459403	        56.55 ns/op	 707.33 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/uint64-10                 	20672234	        58.29 ns/op	 686.27 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/float64
-BenchmarkExpfmtWriter/float64-10                	13296459	        89.02 ns/op	 471.83 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/float64-10                	13158591	        91.23 ns/op	 460.38 MB/s	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdate
-BenchmarkHistogramUpdate-10                     	100000000	        10.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdate-10                     	100000000	        11.21 ns/op	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdateParallel
-BenchmarkHistogramUpdateParallel-10             	12915625	        94.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdateParallel-10             	12494300	        94.06 ns/op	       0 B/op	       0 allocs/op
 BenchmarkWritePrometheus
-BenchmarkWritePrometheus-10                     	  497890	      2476 ns/op	1143.52 MB/s	      64 B/op	       1 allocs/op
+BenchmarkWritePrometheus-10                     	  486064	      2487 ns/op	1141.10 MB/s	      64 B/op	       1 allocs/op
 BenchmarkValidate
 BenchmarkValidate/MustIdent
-BenchmarkValidate/MustIdent-10                  	57545100	        20.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustIdent-10                  	56637055	        21.30 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/validateIdent
-BenchmarkValidate/validateIdent-10              	79759168	        15.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/validateIdent-10              	77789694	        15.64 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/MustValue
-BenchmarkValidate/MustValue-10                  	73344400	        16.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustValue-10                  	72992882	        16.49 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	go.withmatt.com/metrics	19.263s
+ok  	go.withmatt.com/metrics	19.559s
