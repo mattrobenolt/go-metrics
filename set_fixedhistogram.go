@@ -45,33 +45,6 @@ func (s *Set) NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
 	return h
 }
 
-// GetOrCreateFixedHistogram returns registered FixedHistogram in s with the given name
-// and tags creates new Histogram if s doesn't contain FixedHistogram with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	GetOrCreateFixedHistogram("family", []float64{0.1, 0.5, 1}, "label1", "value1", "label2", "value2")
-//
-// The returned FixedHistogram is safe to use from concurrent goroutines.
-//
-// Prefer [NewFixedHistogram] or [NewFixedHistogramOpt] when performance is critical.
-//
-// This will panic if values are invalid.
-func (s *Set) GetOrCreateFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
-	hash := getHashStrings(family, tags)
-
-	s.metricsMu.Lock()
-	nm := s.metrics[hash]
-	s.metricsMu.Unlock()
-
-	if nm == nil {
-		nm = s.getOrAddMetricFromStrings(newFixedHistogram(buckets), hash, family, tags)
-	}
-	return nm.metric.(*FixedHistogram)
-}
-
 // FixedHistogramVecOpt are options for creating a new [FixedHistogramVec].
 type FixedHistogramVecOpt struct {
 	Name    VecName

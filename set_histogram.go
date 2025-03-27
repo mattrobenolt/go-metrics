@@ -33,33 +33,6 @@ func (s *Set) NewHistogramOpt(name MetricName) *Histogram {
 	return h
 }
 
-// GetOrCreateHistogram returns registered Histogram in s with the given name
-// and tags creates new Histogram if s doesn't contain Histogram with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	GetOrCreateHistogram("family", "label1", "value1", "label2", "value2")
-//
-// The returned Histogram is safe to use from concurrent goroutines.
-//
-// Prefer [NewHistogram] or [NewHistogramOpt] when performance is critical.
-//
-// This will panic if values are invalid.
-func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
-	hash := getHashStrings(family, tags)
-
-	s.metricsMu.Lock()
-	nm := s.metrics[hash]
-	s.metricsMu.Unlock()
-
-	if nm == nil {
-		nm = s.getOrAddMetricFromStrings(&Histogram{}, hash, family, tags)
-	}
-	return nm.metric.(*Histogram)
-}
-
 // A HistogramVec is a collection of Histograms that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type HistogramVec struct {

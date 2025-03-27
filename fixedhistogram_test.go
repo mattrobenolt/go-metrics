@@ -21,21 +21,6 @@ func TestFixedHistogramNew(t *testing.T) {
 	assert.Panics(t, func() { set.NewFixedHistogram("foo", nil) })
 }
 
-func TestFixedHistogramGetOrCreate(t *testing.T) {
-	set := NewSet()
-	fn := set.GetOrCreateFixedHistogram
-
-	fn("foo", nil).Update(1)
-	fn("foo", nil).Update(2)
-
-	h := fn("foo", nil)
-	assert.Equal(t, 3, h.sum())
-
-	fn("foo", nil, "a", "1").Update(1)
-	assert.Equal(t, 3, fn("foo", nil).sum())
-	assert.Equal(t, 1, fn("foo", nil, "a", "1").sum())
-}
-
 func TestFixedHistogramVec(t *testing.T) {
 	set := NewSet()
 	h := set.NewFixedHistogramVec(FixedHistogramVecOpt{
@@ -200,36 +185,5 @@ func TestFixedHistogramConcurrent(t *testing.T) {
 		`x_bucket{le="+Inf"} 40`,
 		`x_sum 38`,
 		`x_count 40`,
-	})
-}
-
-func TestFixedHistogramGetOrCreateConcurrent(t *testing.T) {
-	const n = 5
-
-	set := NewSet()
-	fn := func() *FixedHistogram {
-		return set.GetOrCreateFixedHistogram("x", nil, "a", "1")
-	}
-	hammer(t, n, func(_ int) {
-		for f := 0.6; f < 1.4; f += 0.1 {
-			fn().Update(f)
-		}
-	})
-
-	assertMarshal(t, set, []string{
-		`x_bucket{le="0.005",a="1"} 0`,
-		`x_bucket{le="0.01",a="1"} 0`,
-		`x_bucket{le="0.025",a="1"} 0`,
-		`x_bucket{le="0.05",a="1"} 0`,
-		`x_bucket{le="0.1",a="1"} 0`,
-		`x_bucket{le="0.25",a="1"} 0`,
-		`x_bucket{le="0.5",a="1"} 0`,
-		`x_bucket{le="1",a="1"} 25`,
-		`x_bucket{le="2.5",a="1"} 40`,
-		`x_bucket{le="5",a="1"} 40`,
-		`x_bucket{le="10",a="1"} 40`,
-		`x_bucket{le="+Inf",a="1"} 40`,
-		`x_sum{a="1"} 38`,
-		`x_count{a="1"} 40`,
 	})
 }

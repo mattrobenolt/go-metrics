@@ -19,17 +19,6 @@ func TestCounterNew(t *testing.T) {
 	assert.Panics(t, func() { set.NewCounter("foo") })
 }
 
-func TestCounterGetOrCreate(t *testing.T) {
-	set := NewSet()
-	set.GetOrCreateCounter("foo").Inc()
-	set.GetOrCreateCounter("foo").Inc()
-	assert.Equal(t, 2, set.GetOrCreateCounter("foo").Get())
-
-	set.GetOrCreateCounter("foo", "a", "1").Inc()
-	assert.Equal(t, 2, set.GetOrCreateCounter("foo").Get())
-	assert.Equal(t, 1, set.GetOrCreateCounter("foo", "a", "1").Get())
-}
-
 func TestCounterVec(t *testing.T) {
 	set := NewSet()
 	c := set.NewCounterVec(VecName{
@@ -81,22 +70,4 @@ func TestCounterConcurrent(t *testing.T) {
 		}
 	})
 	assert.Equal(t, c.Get(), n*inner)
-}
-
-func TestCounterGetOrCreateConcurrent(t *testing.T) {
-	const n = 1000
-	const inner = 10
-
-	set := NewSet()
-	fn := func() *Counter {
-		return set.GetOrCreateCounter("x", "a", "1")
-	}
-	hammer(t, n, func(_ int) {
-		nPrev := fn().Get()
-		for range inner {
-			fn().Inc()
-			assert.Greater(t, fn().Get(), nPrev)
-		}
-	})
-	assert.Equal(t, fn().Get(), n*inner)
 }

@@ -41,12 +41,6 @@ func NewCounterOpt(name MetricName) *Counter {
 	return defaultSet.NewCounterOpt(name)
 }
 
-// GetOrCreateCounter gets or creates a Counter on the global Set.
-// See [Set.GetOrCreateCounter].
-func GetOrCreateCounter(family string, tags ...string) *Counter {
-	return defaultSet.GetOrCreateCounter(family, tags...)
-}
-
 // NewCounterVec creates a new CounterVec on the global Set.
 // See [Set.NewCounterVec].
 func NewCounterVec(name VecName) *CounterVec {
@@ -63,12 +57,6 @@ func NewFloatCounter(family string, tags ...string) *FloatCounter {
 // See [Set.NewFloatCounterOpt].
 func NewFloatCounterOpt(name MetricName) *FloatCounter {
 	return defaultSet.NewFloatCounterOpt(name)
-}
-
-// GetOrCreateFloatCounter gets or creates a new FloatCounter on the global Set.
-// See [Set.GetOrCreateFloatCounter].
-func GetOrCreateFloatCounter(family string, tags ...string) *FloatCounter {
-	return defaultSet.GetOrCreateFloatCounter(family, tags...)
 }
 
 // NewFloatCounterVec creates a new FloatCounterVec on the global Set.
@@ -89,12 +77,6 @@ func NewHistogramOpt(name MetricName) *Histogram {
 	return defaultSet.NewHistogramOpt(name)
 }
 
-// GetOrCreateHistogram gets or creates a new Histogram on the global Set.
-// See [Set.GetOrCreateHistogram].
-func GetOrCreateHistogram(family string, tags ...string) *Histogram {
-	return defaultSet.GetOrCreateHistogram(family, tags...)
-}
-
 // NewHistogramVec creates a new HistogramVec on the global Set.
 // See [Set.NewHistogramVec].
 func NewHistogramVec(name VecName) *HistogramVec {
@@ -111,12 +93,6 @@ func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedH
 // See [Set.NewFixedHistogramOpt].
 func NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
 	return defaultSet.NewFixedHistogramOpt(opt)
-}
-
-// GetOrCreateFixedHistogram gets or creates a new FixedHistogram on the global Set.
-// See [Set.GetOrCreateFixedHistogram].
-func GetOrCreateFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
-	return defaultSet.GetOrCreateFixedHistogram(family, buckets, tags...)
 }
 
 // NewFixedHistogramVec creates a new HistogramVec on the global Set.

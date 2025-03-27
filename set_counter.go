@@ -33,33 +33,6 @@ func (s *Set) NewCounterOpt(name MetricName) *Counter {
 	return c
 }
 
-// GetOrCreateCounter returns registered Counter in s with the given name
-// and tags creates new Counter if s doesn't contain Counter with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	GetOrCreateCounter("family", "label1", "value1", "label2", "value2")
-//
-// The returned Counter is safe to use from concurrent goroutines.
-//
-// Prefer [NewCounter] or [NewCounterOpt] when performance is critical.
-//
-// This will panic if values are invalid.
-func (s *Set) GetOrCreateCounter(family string, tags ...string) *Counter {
-	hash := getHashStrings(family, tags)
-
-	s.metricsMu.Lock()
-	nm := s.metrics[hash]
-	s.metricsMu.Unlock()
-
-	if nm == nil {
-		nm = s.getOrAddMetricFromStrings(&Counter{}, hash, family, tags)
-	}
-	return nm.metric.(*Counter)
-}
-
 // A CounterVec is a collection of Counters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type CounterVec struct {

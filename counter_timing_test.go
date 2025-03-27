@@ -2,38 +2,45 @@ package metrics
 
 import "testing"
 
-func BenchmarkCounterGetOrCreate(b *testing.B) {
-	family := "http_request"
-	tags := []string{"status", "200"}
+func BenchmarkCounterVec(b *testing.B) {
+	name := VecName{
+		Family: "http_request",
+		Labels: []string{"status"},
+	}
+	value := "200"
 
 	b.Run("hot", func(b *testing.B) {
 		set := NewSet()
-		set.GetOrCreateCounter(family, tags...)
+		cv := set.NewCounterVec(name)
+		cv.WithLabelValues(value)
 
 		b.ReportAllocs()
 		for b.Loop() {
-			set.GetOrCreateCounter(family, tags...)
+			cv.WithLabelValues("200")
 		}
 	})
 
 	b.Run("cold", func(b *testing.B) {
 		set := NewSet()
+		v := set.NewCounterVec(name)
+		v.WithLabelValues(value)
 
 		b.ReportAllocs()
 		for b.Loop() {
 			set.Reset()
-			set.GetOrCreateCounter(family, tags...)
+			v.WithLabelValues(value)
 		}
 	})
 
 	b.Run("verycold", func(b *testing.B) {
 		set := NewSet()
+		v := set.NewCounterVec(name)
 
 		b.ReportAllocs()
 		for b.Loop() {
 			set.Reset()
 			identCache.Clear()
-			set.GetOrCreateCounter(family, tags...)
+			v.WithLabelValues(value)
 		}
 	})
 }

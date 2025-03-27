@@ -31,33 +31,6 @@ func (s *Set) NewFloatCounterOpt(name MetricName) *FloatCounter {
 	return c
 }
 
-// GetOrCreateFloatCounter returns registered FloatCounter in s with the given name
-// and tags creates new FloatCounter if s doesn't contain FloatCounter with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	GetOrCreateFloatCounter("family", "label1", "value1", "label2", "value2")
-//
-// The returned Counter is safe to use from concurrent goroutines.
-//
-// Prefer [NewFloatCounter] or [NewFloatCounterOpt] when performance is critical.
-//
-// This will panic if values are invalid.
-func (s *Set) GetOrCreateFloatCounter(family string, tags ...string) *FloatCounter {
-	hash := getHashStrings(family, tags)
-
-	s.metricsMu.Lock()
-	nm := s.metrics[hash]
-	s.metricsMu.Unlock()
-
-	if nm == nil {
-		nm = s.getOrAddMetricFromStrings(&FloatCounter{}, hash, family, tags)
-	}
-	return nm.metric.(*FloatCounter)
-}
-
 // A FloatCounterVec is a collection of FloatCounters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FloatCounterVec struct {

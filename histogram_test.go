@@ -23,21 +23,6 @@ func TestHistogramNew(t *testing.T) {
 	assert.Panics(t, func() { set.NewHistogram("foo") })
 }
 
-func TestHistogramGetOrCreate(t *testing.T) {
-	set := NewSet()
-	fn := set.GetOrCreateHistogram
-
-	fn("foo").Update(1)
-	fn("foo").Update(2)
-
-	h := fn("foo")
-	assert.Equal(t, 3, h.sum())
-
-	fn("foo", "a", "1").Update(1)
-	assert.Equal(t, 3, fn("foo").sum())
-	assert.Equal(t, 1, fn("foo", "a", "1").sum())
-}
-
 func TestHistogramVec(t *testing.T) {
 	set := NewSet()
 	h := set.NewHistogramVec(VecName{
@@ -178,32 +163,6 @@ func TestHistogramConcurrent(t *testing.T) {
 		`x_bucket{vmrange="1.292e+00...1.468e+00"} 5`,
 		`x_sum 38`,
 		`x_count 40`,
-	})
-}
-
-func TestHistogramGetOrCreateConcurrent(t *testing.T) {
-	const n = 5
-
-	set := NewSet()
-	fn := func() *Histogram {
-		return set.GetOrCreateHistogram("x", "a", "1")
-	}
-	hammer(t, n, func(_ int) {
-		for f := 0.6; f < 1.4; f += 0.1 {
-			fn().Update(f)
-		}
-	})
-
-	assertMarshal(t, set, []string{
-		`x_bucket{vmrange="5.995e-01...6.813e-01",a="1"} 5`,
-		`x_bucket{vmrange="6.813e-01...7.743e-01",a="1"} 5`,
-		`x_bucket{vmrange="7.743e-01...8.799e-01",a="1"} 5`,
-		`x_bucket{vmrange="8.799e-01...1.000e+00",a="1"} 10`,
-		`x_bucket{vmrange="1.000e+00...1.136e+00",a="1"} 5`,
-		`x_bucket{vmrange="1.136e+00...1.292e+00",a="1"} 5`,
-		`x_bucket{vmrange="1.292e+00...1.468e+00",a="1"} 5`,
-		`x_sum{a="1"} 38`,
-		`x_count{a="1"} 40`,
 	})
 }
 

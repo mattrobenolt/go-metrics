@@ -12,13 +12,17 @@ var (
 	currentTime = metrics.NewFloatFunc("current_time", func() float64 {
 		return float64(time.Now().UnixNano()) / 1e9
 	})
-	ticksA = metrics.NewCounter("tick", "variant", "a")
-	ticksB = metrics.NewCounter("tick", "variant", "b")
+	ticksA       = metrics.NewCounter("tick", "variant", "a")
+	ticksB       = metrics.NewCounter("tick", "variant", "b")
+	httpRequests = metrics.NewHistogramVec(metrics.VecName{
+		Family: "http_requests",
+		Labels: []string{"path"},
+	})
 )
 
 func observe(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := metrics.GetOrCreateHistogram("http_request", "path", r.URL.Path)
+		h := httpRequests.WithLabelValues(r.URL.Path)
 		start := time.Now()
 		defer func() { h.UpdateDuration(start) }()
 		next.ServeHTTP(w, r)

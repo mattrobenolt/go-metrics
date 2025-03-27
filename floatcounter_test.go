@@ -19,17 +19,6 @@ func TestFloatCounterNew(t *testing.T) {
 	assert.Panics(t, func() { set.NewFloatCounter("foo") })
 }
 
-func TestFloatCounterGetOrCreate(t *testing.T) {
-	set := NewSet()
-	set.GetOrCreateFloatCounter("foo").Inc()
-	set.GetOrCreateFloatCounter("foo").Inc()
-	assert.Equal(t, 2, set.GetOrCreateFloatCounter("foo").Get())
-
-	set.GetOrCreateFloatCounter("foo", "a", "1").Inc()
-	assert.Equal(t, 2, set.GetOrCreateFloatCounter("foo").Get())
-	assert.Equal(t, 1, set.GetOrCreateFloatCounter("foo", "a", "1").Get())
-}
-
 func TestFloatCounterVec(t *testing.T) {
 	set := NewSet()
 	c := set.NewFloatCounterVec(VecName{
@@ -81,22 +70,4 @@ func TestFloatCounterConcurrent(t *testing.T) {
 		}
 	})
 	assert.Equal(t, c.Get(), n*inner)
-}
-
-func TestFloatCounterGetOrCreateConcurrent(t *testing.T) {
-	const n = 1000
-	const inner = 10
-
-	set := NewSet()
-	fn := func() *FloatCounter {
-		return set.GetOrCreateFloatCounter("x", "a", "1")
-	}
-	hammer(t, n, func(_ int) {
-		nPrev := fn().Get()
-		for range inner {
-			fn().Inc()
-			assert.Greater(t, fn().Get(), nPrev)
-		}
-	})
-	assert.Equal(t, fn().Get(), n*inner)
 }

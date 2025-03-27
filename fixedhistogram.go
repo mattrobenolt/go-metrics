@@ -117,7 +117,7 @@ func (h *FixedHistogram) findBucket(v float64) int {
 }
 
 func (h *FixedHistogram) marshalTo(w ExpfmtWriter, name MetricName) {
-	sum := float64(h.sumInt.Load()) + h.sumFloat.Load()
+	sum := h.sum()
 	count := h.count.Load()
 	upper := h.upper.Load()
 	family := name.Family.String()

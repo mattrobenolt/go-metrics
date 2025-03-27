@@ -242,20 +242,7 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 	s.addMetricLocked(nm)
 }
 
-// getOrAddMetricFromStrings will attempt to create a new Metric or return one that
-// was potentially created in parallel. Prefer registerMetric for speed.
-func (s *Set) getOrAddMetricFromStrings(m Metric, hash metricHash, family string, tags []string) *namedMetric {
-	return s.getOrAddNamedMetric(&namedMetric{
-		id: hash,
-		name: MetricName{
-			Family: MustIdent(family),
-			Tags:   MustTags(tags...),
-		},
-		metric: m,
-	})
-}
-
-// getOrAddMetricFromVec will attempt to create a new metric or return one that
+// getOrRegisterMetricFromVec will attempt to create a new metric or return one that
 // was potentially created in parallel from a Vec which is partially materialized.
 // partialTags are tags with validated labels, but no values
 func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
