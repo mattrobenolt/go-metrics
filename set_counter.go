@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"errors"
-	"hash/maphash"
 )
 
 // NewCounter registers and returns new Counter with the given name in the s.
@@ -64,10 +63,7 @@ func (s *Set) GetOrCreateCounter(family string, tags ...string) *Counter {
 // A CounterVec is a collection of Counters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type CounterVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
+	commonVec
 }
 
 // WithLabelValues returns the Counter for the corresponding label values.
@@ -97,10 +93,10 @@ func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 func (s *Set) NewCounterVec(name VecName) *CounterVec {
 	family := MustIdent(name.Family)
 
-	return &CounterVec{
+	return &CounterVec{commonVec{
 		s:           s,
 		family:      family,
 		partialTags: makePartialTags(name.Labels),
 		partialHash: hashStart(family.String(), name.Labels),
-	}
+	}}
 }

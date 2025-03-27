@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"errors"
-	"hash/maphash"
 )
 
 // NewHistogram creates and returns new Histogram in s with the given name.
@@ -64,10 +63,7 @@ func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
 // A HistogramVec is a collection of Histograms that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type HistogramVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
+	commonVec
 }
 
 // WithLabelValues returns the Histogram for the corresponding label values.
@@ -97,10 +93,10 @@ func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 func (s *Set) NewHistogramVec(name VecName) *HistogramVec {
 	family := MustIdent(name.Family)
 
-	return &HistogramVec{
+	return &HistogramVec{commonVec{
 		s:           s,
 		family:      family,
 		partialTags: makePartialTags(name.Labels),
 		partialHash: hashStart(family.String(), name.Labels),
-	}
+	}}
 }

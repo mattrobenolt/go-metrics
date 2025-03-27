@@ -1,9 +1,6 @@
 package metrics
 
-import (
-	"errors"
-	"hash/maphash"
-)
+import "errors"
 
 // NewFloatCounter registers and returns new FloatCounter with the given name in the s.
 //
@@ -64,10 +61,7 @@ func (s *Set) GetOrCreateFloatCounter(family string, tags ...string) *FloatCount
 // A FloatCounterVec is a collection of FloatCounters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FloatCounterVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
+	commonVec
 }
 
 // WithLabelValues returns the FloatCounter for the corresponding label values.
@@ -97,10 +91,10 @@ func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
 func (s *Set) NewFloatCounterVec(name VecName) *FloatCounterVec {
 	family := MustIdent(name.Family)
 
-	return &FloatCounterVec{
+	return &FloatCounterVec{commonVec{
 		s:           s,
 		family:      family,
 		partialTags: makePartialTags(name.Labels),
 		partialHash: hashStart(family.String(), name.Labels),
-	}
+	}}
 }

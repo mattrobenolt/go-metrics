@@ -1,9 +1,6 @@
 package metrics
 
-import (
-	"errors"
-	"hash/maphash"
-)
+import "errors"
 
 // GaugeOpt are the options for creating a Gauge.
 type GaugeOpt struct {
@@ -84,11 +81,8 @@ type GaugeVecOpt struct {
 // A GaugeVec is a collection of Gauges that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type GaugeVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
-	fn          func() float64
+	commonVec
+	fn func() float64
 }
 
 // WithLabelValues returns the Gauge for the corresponding label values.
@@ -119,10 +113,12 @@ func (s *Set) NewGaugeVec(opt GaugeVecOpt) *GaugeVec {
 	family := MustIdent(opt.Name.Family)
 
 	return &GaugeVec{
-		s:           s,
-		family:      family,
-		partialTags: makePartialTags(opt.Name.Labels),
-		partialHash: hashStart(family.String(), opt.Name.Labels),
-		fn:          opt.Func,
+		commonVec: commonVec{
+			s:           s,
+			family:      family,
+			partialTags: makePartialTags(opt.Name.Labels),
+			partialHash: hashStart(family.String(), opt.Name.Labels),
+		},
+		fn: opt.Func,
 	}
 }

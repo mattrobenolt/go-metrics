@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"errors"
-	"hash/maphash"
 )
 
 // IntGaugeOpt are the options for creating a Gauge.
@@ -84,11 +83,8 @@ type IntGaugeVecOpt struct {
 // A IntGaugeVec is a collection of IntGauges that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type IntGaugeVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
-	fn          func() uint64
+	commonVec
+	fn func() uint64
 }
 
 // WithLabelValues returns the IntGauge for the corresponding label values.
@@ -119,10 +115,12 @@ func (s *Set) NewIntGaugeVec(opt IntGaugeVecOpt) *IntGaugeVec {
 	family := MustIdent(opt.Name.Family)
 
 	return &IntGaugeVec{
-		s:           s,
-		family:      family,
-		partialTags: makePartialTags(opt.Name.Labels),
-		partialHash: hashStart(family.String(), opt.Name.Labels),
-		fn:          opt.Func,
+		commonVec: commonVec{
+			s:           s,
+			family:      family,
+			partialTags: makePartialTags(opt.Name.Labels),
+			partialHash: hashStart(family.String(), opt.Name.Labels),
+		},
+		fn: opt.Func,
 	}
 }

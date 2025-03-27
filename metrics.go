@@ -7,6 +7,7 @@ package metrics
 import (
 	"bytes"
 	"cmp"
+	"hash/maphash"
 )
 
 // Metric is a single data point that can be written to the Prometheus
@@ -65,4 +66,11 @@ type VecName struct {
 	Family string
 	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
 	Labels []string
+}
+
+type commonVec struct {
+	s           *Set
+	family      Ident
+	partialTags []Tag
+	partialHash *maphash.Hash
 }

@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"errors"
-	"hash/maphash"
 	"slices"
 	"sync/atomic"
 )
@@ -82,11 +81,7 @@ type FixedHistogramVecOpt struct {
 // A FixedHistogramVec is a collection of FixedHistogramVecs that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FixedHistogramVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Tag
-	partialHash *maphash.Hash
-
+	commonVec
 	buckets []float64
 	labels  []string
 }
@@ -131,11 +126,12 @@ func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec 
 	}
 
 	return &FixedHistogramVec{
-		s:           s,
-		family:      family,
-		partialTags: makePartialTags(opt.Name.Labels),
-		partialHash: hashStart(family.String(), opt.Name.Labels),
-
+		commonVec: commonVec{
+			s:           s,
+			family:      family,
+			partialTags: makePartialTags(opt.Name.Labels),
+			partialHash: hashStart(family.String(), opt.Name.Labels),
+		},
 		buckets: buckets,
 		labels:  labelsForBuckets(buckets),
 	}
