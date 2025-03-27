@@ -100,7 +100,7 @@ func (s *Set) NewHistogramVec(name VecName) *HistogramVec {
 	return &HistogramVec{
 		s:           s,
 		family:      family,
-		partialTags: makePartialTags(opt.Labels),
-		partialHash: hashStart(family.String(), opt.Labels),
+		partialTags: makePartialTags(name.Labels),
+		partialHash: hashStart(family.String(), name.Labels),
 	}
 }

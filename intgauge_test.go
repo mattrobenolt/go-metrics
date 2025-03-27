@@ -34,8 +34,10 @@ func TestIntGaugeGetOrCreate(t *testing.T) {
 func TestIntGaugeVec(t *testing.T) {
 	set := NewSet()
 	g := set.NewIntGaugeVec(IntGaugeVecOpt{
-		Family: "foo",
-		Labels: []string{"a", "b"},
+		Name: VecName{
+			Family: "foo",
+			Labels: []string{"a", "b"},
+		},
 	})
 	g.WithLabelValues("1", "2").Set(5)
 	g.WithLabelValues("1", "2").Set(1)

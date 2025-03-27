@@ -20,8 +20,10 @@ func ExampleGauge() {
 
 func ExampleGaugeVec() {
 	metricGauge := metrics.NewGaugeVec(metrics.GaugeVecOpt{
-		Family: "metric",
-		Labels: []string{"label1", "label2"},
+		Name: metrics.VecName{
+			Family: "metric",
+			Labels: []string{"label1", "label2"},
+		},
 	})
 	for i := range 3 {
 		// Dynamically construct metric name with label values

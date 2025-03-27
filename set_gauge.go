@@ -76,10 +76,7 @@ func (s *Set) GetOrCreateGauge(family string, tags ...string) *Gauge {
 
 // GaugeVecOpt are options for creating a new [GaugeVec].
 type GaugeVecOpt struct {
-	// Family is the metric family name, e.g. `http_requests`
-	Family string
-	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
-	Labels []string
+	Name VecName
 	// Func is an optional callback for making observations.
 	Func func() float64
 }
@@ -119,13 +116,13 @@ func (g *GaugeVec) WithLabelValues(values ...string) *Gauge {
 
 // NewGaugeVec creates a new [GaugeVec] with the supplied opt.
 func (s *Set) NewGaugeVec(opt GaugeVecOpt) *GaugeVec {
-	family := MustIdent(opt.Family)
+	family := MustIdent(opt.Name.Family)
 
 	return &GaugeVec{
 		s:           s,
 		family:      family,
-		partialTags: makePartialTags(opt.Labels),
-		partialHash: hashStart(family.String(), opt.Labels),
+		partialTags: makePartialTags(opt.Name.Labels),
+		partialHash: hashStart(family.String(), opt.Name.Labels),
 		fn:          opt.Func,
 	}
 }

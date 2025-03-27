@@ -100,7 +100,7 @@ func (s *Set) NewFloatCounterVec(name VecName) *FloatCounterVec {
 	return &FloatCounterVec{
 		s:           s,
 		family:      family,
-		partialTags: makePartialTags(opt.Labels),
-		partialHash: hashStart(family.String(), opt.Labels),
+		partialTags: makePartialTags(name.Labels),
+		partialHash: hashStart(family.String(), name.Labels),
 	}
 }

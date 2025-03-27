@@ -75,8 +75,7 @@ func (s *Set) GetOrCreateFixedHistogram(family string, buckets []float64, tags .
 
 // FixedHistogramVecOpt are options for creating a new [FixedHistogramVec].
 type FixedHistogramVecOpt struct {
-	Family  string
-	Labels  []string
+	Name    VecName
 	Buckets []float64
 }
 
@@ -121,7 +120,7 @@ func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
 
 // NewFixedHistogramVec creates a new [FixedHistogramVec] with the supplied opt.
 func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec {
-	family := MustIdent(opt.Family)
+	family := MustIdent(opt.Name.Family)
 
 	buckets := opt.Buckets
 	if len(buckets) == 0 {
@@ -134,8 +133,8 @@ func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec 
 	return &FixedHistogramVec{
 		s:           s,
 		family:      family,
-		partialTags: makePartialTags(opt.Labels),
-		partialHash: hashStart(family.String(), opt.Labels),
+		partialTags: makePartialTags(opt.Name.Labels),
+		partialHash: hashStart(family.String(), opt.Name.Labels),
 
 		buckets: buckets,
 		labels:  labelsForBuckets(buckets),
