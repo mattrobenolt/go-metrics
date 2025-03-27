@@ -5,14 +5,6 @@ import (
 	"hash/maphash"
 )
 
-// CounterOpt are the options for creating a [Counter].
-type CounterOpt struct {
-	// Family is the metric Ident, see [MustIdent].
-	Family Ident
-	// Tags are optional tags for the metric, see [MustTags].
-	Tags []Tag
-}
-
 // NewCounter registers and returns new Counter with the given name in the s.
 //
 // family must be a Prometheus compatible identifier format.
@@ -25,20 +17,20 @@ type CounterOpt struct {
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewCounter(family string, tags ...string) *Counter {
-	return s.NewCounterOpt(CounterOpt{
+	return s.NewCounterOpt(MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
 }
 
-// NewCounterOpt registers and returns new Counter with the opts in the s.
+// NewCounterOpt registers and returns new Counter with the name in the s.
 //
 // The returned Counter is safe to use from concurrent goroutines.
 //
 // This will panic if already registered.
-func (s *Set) NewCounterOpt(opt CounterOpt) *Counter {
+func (s *Set) NewCounterOpt(name MetricName) *Counter {
 	c := &Counter{}
-	s.mustRegisterMetric(c, opt.Family, opt.Tags)
+	s.mustRegisterMetric(c, name)
 	return c
 }
 

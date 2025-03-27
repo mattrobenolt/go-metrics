@@ -36,9 +36,9 @@ func NewCounter(family string, tags ...string) *Counter {
 }
 
 // NewCounterOpt creates a new Counter on the global Set.
-// See [Set.NewCounter].
-func NewCounterOpt(opt CounterOpt) *Counter {
-	return defaultSet.NewCounterOpt(opt)
+// See [Set.NewCounterOpt].
+func NewCounterOpt(name MetricName) *Counter {
+	return defaultSet.NewCounterOpt(name)
 }
 
 // GetOrCreateCounter gets or creates a Counter on the global Set.
@@ -61,8 +61,8 @@ func NewFloatCounter(family string, tags ...string) *FloatCounter {
 
 // NewFloatCounterOpt creates a new FloatCounter on the global Set.
 // See [Set.NewFloatCounterOpt].
-func NewFloatCounterOpt(opt FloatCounterOpt) *FloatCounter {
-	return defaultSet.NewFloatCounterOpt(opt)
+func NewFloatCounterOpt(name MetricName) *FloatCounter {
+	return defaultSet.NewFloatCounterOpt(name)
 }
 
 // GetOrCreateFloatCounter gets or creates a new FloatCounter on the global Set.
@@ -133,8 +133,8 @@ func NewHistogram(family string, tags ...string) *Histogram {
 
 // NewHistogramOpt creates a new Histogram on the global Set.
 // See [Set.NewHistogramOpt].
-func NewHistogramOpt(opt HistogramOpt) *Histogram {
-	return defaultSet.NewHistogramOpt(opt)
+func NewHistogramOpt(name MetricName) *Histogram {
+	return defaultSet.NewHistogramOpt(name)
 }
 
 // GetOrCreateHistogram gets or creates a new Histogram on the global Set.

@@ -33,7 +33,7 @@ var globalSeed = maphash.MakeSeed()
 func getHashTags(family string, tags []Tag) metricHash {
 	// Optimize when no tags, this variant is internally optimized.
 	if len(tags) == 0 {
-		return metricHash(maphash.String(globalSeed, family))
+		return hashString(family)
 	}
 
 	var h maphash.Hash
@@ -57,7 +57,7 @@ func getHashTags(family string, tags []Tag) metricHash {
 func getHashStrings(family string, bits []string) metricHash {
 	// Optimize when no tags, this variant is internally optimized.
 	if len(bits) == 0 {
-		return metricHash(maphash.String(globalSeed, family))
+		return hashString(family)
 	}
 
 	var h maphash.Hash
@@ -104,4 +104,9 @@ func hashFinish(h *maphash.Hash, values []string) metricHash {
 		h2.WriteString(value)
 	}
 	return metricHash(h2.Sum64())
+}
+
+// hashString generates a hash for a string.
+func hashString(s string) metricHash {
+	return metricHash(maphash.String(globalSeed, s))
 }

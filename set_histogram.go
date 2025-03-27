@@ -5,14 +5,6 @@ import (
 	"hash/maphash"
 )
 
-// HistogramOpt are the options for creating a Histogram.
-type HistogramOpt struct {
-	// Family is the metric Ident, see [MustIdent].
-	Family Ident
-	// Tags are optional tags for the metric, see [MustTags].
-	Tags []Tag
-}
-
 // NewHistogram creates and returns new Histogram in s with the given name.
 //
 // family must be a Prometheus compatible identifier format.
@@ -25,20 +17,20 @@ type HistogramOpt struct {
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewHistogram(family string, tags ...string) *Histogram {
-	return s.NewHistogramOpt(HistogramOpt{
+	return s.NewHistogramOpt(MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
 }
 
-// NewHistogramOpt registers and returns new Histogram with the opts in the s.
+// NewHistogramOpt registers and returns new Histogram with the name in the s.
 //
 // The returned Histogram is safe to use from concurrent goroutines.
 //
 // This will panic if already registered.
-func (s *Set) NewHistogramOpt(opt HistogramOpt) *Histogram {
+func (s *Set) NewHistogramOpt(name MetricName) *Histogram {
 	h := &Histogram{}
-	s.mustRegisterMetric(h, opt.Family, opt.Tags)
+	s.mustRegisterMetric(h, name)
 	return h
 }
 

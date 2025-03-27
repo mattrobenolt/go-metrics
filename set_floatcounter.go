@@ -5,14 +5,6 @@ import (
 	"hash/maphash"
 )
 
-// FloatCounterOpt are the options for creating a Counter.
-type FloatCounterOpt struct {
-	// Family is the metric Ident, see [MustIdent].
-	Family Ident
-	// Tags are optional tags for the metric, see [MustTags].
-	Tags []Tag
-}
-
 // NewFloatCounter registers and returns new FloatCounter with the given name in the s.
 //
 // family must be a Prometheus compatible identifier format.
@@ -25,20 +17,20 @@ type FloatCounterOpt struct {
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFloatCounter(family string, tags ...string) *FloatCounter {
-	return s.NewFloatCounterOpt(FloatCounterOpt{
+	return s.NewFloatCounterOpt(MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
 }
 
-// NewFloatCounterOpt registers and returns new FloatCounter with the opts in the s.
+// NewFloatCounterOpt registers and returns new FloatCounter with the name in the s.
 //
 // The returned Counter is safe to use from concurrent goroutines.
 //
 // This will panic if already registered.
-func (s *Set) NewFloatCounterOpt(opt FloatCounterOpt) *FloatCounter {
+func (s *Set) NewFloatCounterOpt(name MetricName) *FloatCounter {
 	c := &FloatCounter{}
-	s.mustRegisterMetric(c, opt.Family, opt.Tags)
+	s.mustRegisterMetric(c, name)
 	return c
 }
 

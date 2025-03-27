@@ -25,8 +25,7 @@ type namedMetric struct {
 	// id is the unique hash to represent metric series.
 	// the hash is based on the family an tags
 	id     metricHash
-	family Ident
-	tags   []Tag
+	name   MetricName
 	metric Metric
 }
 
@@ -55,7 +54,7 @@ func (n MetricName) hasTags() bool {
 
 func compareNamedMetrics(a, b *namedMetric) int {
 	return cmp.Compare(
-		a.family.String(),
-		b.family.String(),
+		a.name.Family.String(),
+		b.name.Family.String(),
 	)
 }

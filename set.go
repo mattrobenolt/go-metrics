@@ -185,10 +185,7 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		if throttle {
 			runtime.Gosched()
 		}
-		nm.metric.marshalTo(exp, MetricName{
-			Family: nm.family,
-			Tags:   nm.tags,
-		})
+		nm.metric.marshalTo(exp, nm.name)
 	}
 
 	if s.hasChildren.Load() {
@@ -228,11 +225,10 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 
 // mustRegisterMetric adds a new Metric, and will panic if the metric already has
 // been registered.
-func (s *Set) mustRegisterMetric(m Metric, family Ident, tags []Tag) {
+func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 	nm := &namedMetric{
-		id:     getHashTags(family.String(), tags),
-		family: family,
-		tags:   tags,
+		id:     getHashTags(name.Family.String(), name.Tags),
+		name:   name,
 		metric: m,
 	}
 
@@ -240,10 +236,7 @@ func (s *Set) mustRegisterMetric(m Metric, family Ident, tags []Tag) {
 	defer s.metricsMu.Unlock()
 
 	if _, ok := s.metrics[nm.id]; ok {
-		panic(fmt.Errorf("metric %q is already registered", MetricName{
-			Family: family,
-			Tags:   tags,
-		}.String()))
+		panic(fmt.Errorf("metric %q is already registered", name.String()))
 	}
 
 	s.addMetricLocked(nm)
@@ -253,9 +246,11 @@ func (s *Set) mustRegisterMetric(m Metric, family Ident, tags []Tag) {
 // was potentially created in parallel. Prefer registerMetric for speed.
 func (s *Set) getOrAddMetricFromStrings(m Metric, hash metricHash, family string, tags []string) *namedMetric {
 	return s.getOrAddNamedMetric(&namedMetric{
-		id:     hash,
-		family: MustIdent(family),
-		tags:   MustTags(tags...),
+		id: hash,
+		name: MetricName{
+			Family: MustIdent(family),
+			Tags:   MustTags(tags...),
+		},
 		metric: m,
 	})
 }
@@ -270,9 +265,11 @@ func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident
 		tags[i].value = MustValue(values[i])
 	}
 	return s.getOrAddNamedMetric(&namedMetric{
-		id:     hash,
-		family: family,
-		tags:   tags,
+		id: hash,
+		name: MetricName{
+			Family: family,
+			Tags:   tags,
+		},
 		metric: m,
 	})
 }

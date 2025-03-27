@@ -9,10 +9,7 @@ import (
 
 // FixedHistogramOpt are the options for creating a [FixedHistogram].
 type FixedHistogramOpt struct {
-	// Family is the metric Ident, see [MustIdent].
-	Family Ident
-	// Tags are optional tags for the metric, see [MustTags].
-	Tags []Tag
+	Name MetricName
 	// Buckets are histogram buckets, e.g. []float64{0.1, 0.5, 1}
 	Buckets []float64
 }
@@ -30,8 +27,10 @@ type FixedHistogramOpt struct {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
 	return s.NewFixedHistogramOpt(FixedHistogramOpt{
-		Family:  MustIdent(family),
-		Tags:    MustTags(tags...),
+		Name: MetricName{
+			Family: MustIdent(family),
+			Tags:   MustTags(tags...),
+		},
 		Buckets: buckets,
 	})
 }
@@ -43,7 +42,7 @@ func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string
 // This will panic if already registered.
 func (s *Set) NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
 	h := newFixedHistogram(opt.Buckets)
-	s.mustRegisterMetric(h, opt.Family, opt.Tags)
+	s.mustRegisterMetric(h, opt.Name)
 	return h
 }
 

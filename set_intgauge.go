@@ -7,10 +7,7 @@ import (
 
 // IntGaugeOpt are the options for creating a Gauge.
 type IntGaugeOpt struct {
-	// Family is the metric Ident, see [MustIdent].
-	Family Ident
-	// Tags are optional tags for the metric, see [MustTags].
-	Tags []Tag
+	Name MetricName
 	// Func is an optional callback for making observations.
 	Func func() uint64
 }
@@ -31,9 +28,11 @@ type IntGaugeOpt struct {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewIntGauge(family string, fn func() uint64, tags ...string) *IntGauge {
 	return s.NewIntGaugeOpt(IntGaugeOpt{
-		Family: MustIdent(family),
-		Tags:   MustTags(tags...),
-		Func:   fn,
+		Name: MetricName{
+			Family: MustIdent(family),
+			Tags:   MustTags(tags...),
+		},
+		Func: fn,
 	})
 }
 
@@ -44,7 +43,7 @@ func (s *Set) NewIntGauge(family string, fn func() uint64, tags ...string) *IntG
 // This will panic if already registered.
 func (s *Set) NewIntGaugeOpt(opt IntGaugeOpt) *IntGauge {
 	g := &IntGauge{fn: opt.Func}
-	s.mustRegisterMetric(g, opt.Family, opt.Tags)
+	s.mustRegisterMetric(g, opt.Name)
 	return g
 }
 
