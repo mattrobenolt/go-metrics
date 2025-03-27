@@ -49,8 +49,8 @@ func GetOrCreateCounter(family string, tags ...string) *Counter {
 
 // NewCounterVec creates a new CounterVec on the global Set.
 // See [Set.NewCounterVec].
-func NewCounterVec(opt CounterVecOpt) *CounterVec {
-	return defaultSet.NewCounterVec(opt)
+func NewCounterVec(name VecName) *CounterVec {
+	return defaultSet.NewCounterVec(name)
 }
 
 // NewFloatCounter creates a new FloatCounter on the global Set.
@@ -73,8 +73,8 @@ func GetOrCreateFloatCounter(family string, tags ...string) *FloatCounter {
 
 // NewFloatCounterVec creates a new FloatCounterVec on the global Set.
 // See [Set.NewFloatCounterVec].
-func NewFloatCounterVec(opt FloatCounterVecOpt) *FloatCounterVec {
-	return defaultSet.NewFloatCounterVec(opt)
+func NewFloatCounterVec(name VecName) *FloatCounterVec {
+	return defaultSet.NewFloatCounterVec(name)
 }
 
 // NewGauge creates a new Gauge on the global Set.
@@ -145,8 +145,8 @@ func GetOrCreateHistogram(family string, tags ...string) *Histogram {
 
 // NewHistogramVec creates a new HistogramVec on the global Set.
 // See [Set.NewHistogramVec].
-func NewHistogramVec(opt HistogramVecOpt) *HistogramVec {
-	return defaultSet.NewHistogramVec(opt)
+func NewHistogramVec(name VecName) *HistogramVec {
+	return defaultSet.NewHistogramVec(name)
 }
 
 // NewFixedHistogram creates a new FixedHistogram on the global Set.

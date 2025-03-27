@@ -61,14 +61,6 @@ func (s *Set) GetOrCreateFloatCounter(family string, tags ...string) *FloatCount
 	return nm.metric.(*FloatCounter)
 }
 
-// FloatCounterVecOpt are options for creating a new [FloatCounterVec].
-type FloatCounterVecOpt struct {
-	// Family is the metric family name, e.g. `http_requests`
-	Family string
-	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
-	Labels []string
-}
-
 // A FloatCounterVec is a collection of FloatCounters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FloatCounterVec struct {
@@ -101,9 +93,9 @@ func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
 	return nm.metric.(*FloatCounter)
 }
 
-// NewFloatCounterVec creates a new [FloatCounterVec] with the supplied opt.
-func (s *Set) NewFloatCounterVec(opt FloatCounterVecOpt) *FloatCounterVec {
-	family := MustIdent(opt.Family)
+// NewFloatCounterVec creates a new [FloatCounterVec] with the supplied name.
+func (s *Set) NewFloatCounterVec(name VecName) *FloatCounterVec {
+	family := MustIdent(name.Family)
 
 	return &FloatCounterVec{
 		s:           s,

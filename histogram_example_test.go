@@ -20,7 +20,7 @@ func ExampleHistogram() {
 }
 
 func ExampleHistogramVec() {
-	responseSizeBytes := metrics.NewHistogramVec(metrics.HistogramVecOpt{
+	responseSizeBytes := metrics.NewHistogramVec(metrics.VecName{
 		Family: "response_size_bytes",
 		Labels: []string{"path"},
 	})

@@ -40,7 +40,7 @@ func TestHistogramGetOrCreate(t *testing.T) {
 
 func TestHistogramVec(t *testing.T) {
 	set := NewSet()
-	h := set.NewHistogramVec(HistogramVecOpt{
+	h := set.NewHistogramVec(VecName{
 		Family: "foo",
 		Labels: []string{"a", "b"},
 	})

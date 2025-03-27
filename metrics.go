@@ -58,3 +58,11 @@ func compareNamedMetrics(a, b *namedMetric) int {
 		b.name.Family.String(),
 	)
 }
+
+// VecName represents a family and labels for a metric vector.
+type VecName struct {
+	// Family is the metric family name, e.g. `http_requests`
+	Family string
+	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
+	Labels []string
+}

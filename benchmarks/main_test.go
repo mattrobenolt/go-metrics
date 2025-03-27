@@ -24,7 +24,7 @@ const (
 func BenchmarkIncWithLabelValues(b *testing.B) {
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		c := set.NewCounterVec(metrics.CounterVecOpt{
+		c := set.NewCounterVec(metrics.VecOpt{
 			Family: "foo",
 			Labels: []string{"label1", "label2", "label3"},
 		})
@@ -143,7 +143,7 @@ func BenchmarkWriteMetricsCounters(b *testing.B) {
 
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		c := set.NewCounterVec(metrics.CounterVecOpt{
+		c := set.NewCounterVec(metrics.VecOpt{
 			Family: "foo",
 			Labels: []string{"label1", "label2", "label3"},
 		})
@@ -231,7 +231,7 @@ func BenchmarkWriteMetricsVMRangeHistograms(b *testing.B) {
 
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		v := set.NewHistogramVec(metrics.HistogramVecOpt{
+		v := set.NewHistogramVec(metrics.VecOpt{
 			Family: "foo",
 			Labels: []string{"label1", "label2", "label3"},
 		})

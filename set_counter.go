@@ -61,14 +61,6 @@ func (s *Set) GetOrCreateCounter(family string, tags ...string) *Counter {
 	return nm.metric.(*Counter)
 }
 
-// CounterVecOpt are options for creating a new [CounterVec].
-type CounterVecOpt struct {
-	// Family is the metric family name, e.g. `http_requests`
-	Family string
-	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
-	Labels []string
-}
-
 // A CounterVec is a collection of Counters that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type CounterVec struct {
@@ -101,14 +93,14 @@ func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 	return nm.metric.(*Counter)
 }
 
-// NewCounterVec creates a new [CounterVec] with the supplied opt.
-func (s *Set) NewCounterVec(opt CounterVecOpt) *CounterVec {
-	family := MustIdent(opt.Family)
+// NewCounterVec creates a new [CounterVec] with the supplied name.
+func (s *Set) NewCounterVec(name VecName) *CounterVec {
+	family := MustIdent(name.Family)
 
 	return &CounterVec{
 		s:           s,
 		family:      family,
-		partialTags: makePartialTags(opt.Labels),
-		partialHash: hashStart(family.String(), opt.Labels),
+		partialTags: makePartialTags(name.Labels),
+		partialHash: hashStart(family.String(), name.Labels),
 	}
 }

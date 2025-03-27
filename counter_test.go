@@ -32,7 +32,7 @@ func TestCounterGetOrCreate(t *testing.T) {
 
 func TestCounterVec(t *testing.T) {
 	set := NewSet()
-	c := set.NewCounterVec(CounterVecOpt{
+	c := set.NewCounterVec(VecName{
 		Family: "foo",
 		Labels: []string{"a", "b"},
 	})

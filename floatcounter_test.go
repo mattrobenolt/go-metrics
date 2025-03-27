@@ -32,7 +32,7 @@ func TestFloatCounterGetOrCreate(t *testing.T) {
 
 func TestFloatCounterVec(t *testing.T) {
 	set := NewSet()
-	c := set.NewFloatCounterVec(FloatCounterVecOpt{
+	c := set.NewFloatCounterVec(VecName{
 		Family: "foo",
 		Labels: []string{"a", "b"},
 	})

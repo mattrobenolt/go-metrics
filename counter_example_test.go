@@ -27,7 +27,7 @@ func ExampleCounter() {
 }
 
 func ExampleCounterVec() {
-	metricTotal := metrics.NewCounterVec(metrics.CounterVecOpt{
+	metricTotal := metrics.NewCounterVec(metrics.VecName{
 		Family: "metric_total",
 		Labels: []string{"label1", "label2"},
 	})

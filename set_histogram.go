@@ -61,14 +61,6 @@ func (s *Set) GetOrCreateHistogram(family string, tags ...string) *Histogram {
 	return nm.metric.(*Histogram)
 }
 
-// HistogramVecOpt are options for creating a new [HistogramVec].
-type HistogramVecOpt struct {
-	// Family is the metric family name, e.g. `http_requests`
-	Family string
-	// Labels are the tag labels that you want to partition on, e.g. "status", "path"
-	Labels []string
-}
-
 // A HistogramVec is a collection of Histograms that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type HistogramVec struct {
@@ -101,9 +93,9 @@ func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 	return nm.metric.(*Histogram)
 }
 
-// NewHistogramVec creates a new [HistogramVec] with the supplied opt.
-func (s *Set) NewHistogramVec(opt HistogramVecOpt) *HistogramVec {
-	family := MustIdent(opt.Family)
+// NewHistogramVec creates a new [HistogramVec] with the supplied name.
+func (s *Set) NewHistogramVec(name VecName) *HistogramVec {
+	family := MustIdent(name.Family)
 
 	return &HistogramVec{
 		s:           s,
