@@ -6,13 +6,6 @@ import (
 	"sync/atomic"
 )
 
-// FixedHistogramOpt are the options for creating a [FixedHistogram].
-type FixedHistogramOpt struct {
-	Name MetricName
-	// Buckets are histogram buckets, e.g. []float64{0.1, 0.5, 1}
-	Buckets []float64
-}
-
 // NewFixedHistogram creates and returns new FixedHistogram in s with the given name.
 //
 // family must be a Prometheus compatible identifier format.
@@ -25,23 +18,11 @@ type FixedHistogramOpt struct {
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
-	return s.NewFixedHistogramOpt(FixedHistogramOpt{
-		Name: MetricName{
-			Family: MustIdent(family),
-			Tags:   MustTags(tags...),
-		},
-		Buckets: buckets,
+	h := newFixedHistogram(buckets)
+	s.mustRegisterMetric(h, MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
 	})
-}
-
-// NewFixedHistogramOpt registers and returns new FixedHistogram with the opts in the s.
-//
-// The returned FixedHistogram is safe to use from concurrent goroutines.
-//
-// This will panic if already registered.
-func (s *Set) NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
-	h := newFixedHistogram(opt.Buckets)
-	s.mustRegisterMetric(h, opt.Name)
 	return h
 }
 

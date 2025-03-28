@@ -35,12 +35,6 @@ func NewCounter(family string, tags ...string) *Counter {
 	return defaultSet.NewCounter(family, tags...)
 }
 
-// NewCounterOpt creates a new Counter on the global Set.
-// See [Set.NewCounterOpt].
-func NewCounterOpt(name MetricName) *Counter {
-	return defaultSet.NewCounterOpt(name)
-}
-
 // NewCounterVec creates a new CounterVec on the global Set.
 // See [Set.NewCounterVec].
 func NewCounterVec(name VecName) *CounterVec {
@@ -51,12 +45,6 @@ func NewCounterVec(name VecName) *CounterVec {
 // See [Set.NewFloatCounter].
 func NewFloatCounter(family string, tags ...string) *FloatCounter {
 	return defaultSet.NewFloatCounter(family, tags...)
-}
-
-// NewFloatCounterOpt creates a new FloatCounter on the global Set.
-// See [Set.NewFloatCounterOpt].
-func NewFloatCounterOpt(name MetricName) *FloatCounter {
-	return defaultSet.NewFloatCounterOpt(name)
 }
 
 // NewFloatCounterVec creates a new FloatCounterVec on the global Set.
@@ -71,12 +59,6 @@ func NewHistogram(family string, tags ...string) *Histogram {
 	return defaultSet.NewHistogram(family, tags...)
 }
 
-// NewHistogramOpt creates a new Histogram on the global Set.
-// See [Set.NewHistogramOpt].
-func NewHistogramOpt(name MetricName) *Histogram {
-	return defaultSet.NewHistogramOpt(name)
-}
-
 // NewHistogramVec creates a new HistogramVec on the global Set.
 // See [Set.NewHistogramVec].
 func NewHistogramVec(name VecName) *HistogramVec {
@@ -89,14 +71,8 @@ func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedH
 	return defaultSet.NewFixedHistogram(family, buckets, tags...)
 }
 
-// NewFixedHistogramOpt creates a new FixedHistogram on the global Set.
-// See [Set.NewFixedHistogramOpt].
-func NewFixedHistogramOpt(opt FixedHistogramOpt) *FixedHistogram {
-	return defaultSet.NewFixedHistogramOpt(opt)
-}
-
-// NewFixedHistogramVec creates a new HistogramVec on the global Set.
-// See [Set.NewHistogramVec].
+// NewFixedHistogramVec creates a new FixedHistogramVec on the global Set.
+// See [Set.NewFixedHistogramVec].
 func NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec {
 	return defaultSet.NewFixedHistogramVec(opt)
 }
@@ -107,32 +83,14 @@ func NewFloatFunc(name string, fn func() float64) *FloatFunc {
 	return defaultSet.NewFloatFunc(name, fn)
 }
 
-// NewFloatFuncOpt creates a new FloatFunc on the global Set.
-// See [Set.NewUintFuncVec].
-func NewFloatFuncOpt(name MetricName, fn func() float64) *FloatFunc {
-	return defaultSet.NewFloatFuncOpt(name, fn)
-}
-
 // NewIntFunc creates a new IntFunc on the global Set.
 // See [Set.NewIntFunc].
 func NewIntFunc(name string, fn func() int64) *IntFunc {
 	return defaultSet.NewIntFunc(name, fn)
 }
 
-// NewIntFunc creates a new IntFunc on the global Set.
-// See [Set.NewIntFuncOpt].
-func NewIntFuncOpt(name MetricName, fn func() int64) *IntFunc {
-	return defaultSet.NewIntFuncOpt(name, fn)
-}
-
 // NewUintFunc creates a new UintFunc on the global Set.
 // See [Set.NewUintFunc].
 func NewUintFunc(name string, fn func() uint64) *UintFunc {
 	return defaultSet.NewUintFunc(name, fn)
-}
-
-// NewUintFuncOpt creates a new UintFunc on the global Set.
-// See [Set.NewUintFuncOpt].
-func NewUintFuncOpt(name MetricName, fn func() uint64) *UintFunc {
-	return defaultSet.NewUintFuncOpt(name, fn)
 }

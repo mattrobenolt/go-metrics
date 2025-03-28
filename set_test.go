@@ -48,9 +48,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestSetConstantTags(t *testing.T) {
-	set := NewSetOpt(SetOpt{
-		ConstantTags: MustTags("foo", "bar"),
-	})
+	set := NewSet("foo", "bar")
 
 	set.RegisterCollector(&testCollector{})
 
@@ -68,15 +66,11 @@ func TestSetConstantTags(t *testing.T) {
 	s2 := set.NewSet()
 	s2.NewCounter("counter3").Inc()
 
-	s3 := set.NewSetOpt(SetOpt{
-		ConstantTags: MustTags("x", "y"),
-	})
+	s3 := set.NewSet("x", "y")
 	s3.NewCounter("counter4").Inc()
 	s3.NewCounter("counter5", "a", "1").Inc()
 
-	s4 := s3.NewSetOpt(SetOpt{
-		ConstantTags: MustTags("i", "j"),
-	})
+	s4 := s3.NewSet("i", "j")
 	s4.NewCounter("counter6", "z", "10").Inc()
 
 	assertMarshal(t, set, []string{

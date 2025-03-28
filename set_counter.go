@@ -16,20 +16,11 @@ import (
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewCounter(family string, tags ...string) *Counter {
-	return s.NewCounterOpt(MetricName{
+	c := &Counter{}
+	s.mustRegisterMetric(c, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
-}
-
-// NewCounterOpt registers and returns new Counter with the name in the s.
-//
-// The returned Counter is safe to use from concurrent goroutines.
-//
-// This will panic if already registered.
-func (s *Set) NewCounterOpt(name MetricName) *Counter {
-	c := &Counter{}
-	s.mustRegisterMetric(c, name)
 	return c
 }
 

@@ -16,20 +16,11 @@ import (
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewHistogram(family string, tags ...string) *Histogram {
-	return s.NewHistogramOpt(MetricName{
+	h := &Histogram{}
+	s.mustRegisterMetric(h, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
-}
-
-// NewHistogramOpt registers and returns new Histogram with the name in the s.
-//
-// The returned Histogram is safe to use from concurrent goroutines.
-//
-// This will panic if already registered.
-func (s *Set) NewHistogramOpt(name MetricName) *Histogram {
-	h := &Histogram{}
-	s.mustRegisterMetric(h, name)
 	return h
 }
 

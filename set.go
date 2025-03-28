@@ -14,11 +14,6 @@ import (
 
 const minimumWriteBuffer = 16 * 1024
 
-// SetOpt are the options for creating a Set.
-type SetOpt struct {
-	ConstantTags []Tag
-}
-
 // Set is a collection of metrics. A single Set may have children Sets.
 //
 // [Set.WritePrometheus] must be called for exporting metrics from the set.
@@ -40,18 +35,14 @@ type Set struct {
 }
 
 // NewSet creates new set of metrics.
-func NewSet() *Set {
-	return NewSetOpt(SetOpt{})
-}
-
-// NewSetOpt creates a new Set with the opts.
-func NewSetOpt(opt SetOpt) *Set {
+func NewSet(constantTags ...string) *Set {
 	var s Set
 	s.Reset()
 
-	if len(opt.ConstantTags) > 0 {
-		s.constantTags = materializeTags(opt.ConstantTags)
+	if len(constantTags) > 0 {
+		s.constantTags = materializeTags(MustTags(constantTags...))
 	}
+
 	return &s
 }
 
@@ -73,14 +64,16 @@ func (s *Set) Reset() {
 }
 
 // NewSet creates a new child Set in s.
-func (s *Set) NewSet() *Set {
-	return s.NewSetOpt(SetOpt{})
-}
-
-// NewSetOpt creates a new child Set with the opts in s.
-func (s *Set) NewSetOpt(opt SetOpt) *Set {
+func (s *Set) NewSet(constantTags ...string) *Set {
 	s2 := NewSet()
-	s2.constantTags = joinTags(s.constantTags, opt.ConstantTags)
+	if len(constantTags) > 0 {
+		s2.constantTags = joinTags(
+			s.constantTags,
+			MustTags(constantTags...),
+		)
+	} else {
+		s2.constantTags = s.constantTags
+	}
 	s.childrenMu.Lock()
 	s.children = append(s.children, s2)
 	s.hasChildren.Store(true)

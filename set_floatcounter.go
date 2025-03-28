@@ -14,20 +14,11 @@ import "errors"
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFloatCounter(family string, tags ...string) *FloatCounter {
-	return s.NewFloatCounterOpt(MetricName{
+	c := &FloatCounter{}
+	s.mustRegisterMetric(c, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
-}
-
-// NewFloatCounterOpt registers and returns new FloatCounter with the name in the s.
-//
-// The returned Counter is safe to use from concurrent goroutines.
-//
-// This will panic if already registered.
-func (s *Set) NewFloatCounterOpt(name MetricName) *FloatCounter {
-	c := &FloatCounter{}
-	s.mustRegisterMetric(c, name)
 	return c
 }
 
