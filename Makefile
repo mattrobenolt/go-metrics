@@ -47,7 +47,15 @@ test-race: $(BIN)/gotestsum
 test-watch: $(BIN)/gotestsum
 	$< --watch --format testname -- -v ./...
 
+update-benchmarks:
+	go -C benchmarks/ test -v -bench=. -count=10 | tee compare.txt
+	go run golang.org/x/perf/cmd/benchstat@latest -col /mod compare.txt | tee benchmarks.txt
+	echo >> benchmarks.txt
+	go test -v . -run=xxx -bench=. | tee -a benchmarks.txt
+	rm compare.txt
+
 .PHONY: clean clean-bin tools \
         fmt fmt-go \
         lint \
+        update-benchmarks \
         docs test test-watch test-race
