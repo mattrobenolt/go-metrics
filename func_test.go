@@ -9,49 +9,49 @@ import (
 
 func TestFuncNew(t *testing.T) {
 	t.Run("float", func(t *testing.T) {
-		NewSet().NewFloatFunc("foo", nil)
-		NewSet().NewFloatFunc("foo", nil, "bar", "baz")
+		NewSet().NewFloat64Func("foo", nil)
+		NewSet().NewFloat64Func("foo", nil, "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewFloatFunc("foo", nil, "bar") })
+		assert.Panics(t, func() { NewSet().NewFloat64Func("foo", nil, "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewFloatFunc("foo", nil)
-		assert.Panics(t, func() { set.NewFloatFunc("foo", nil) })
+		set.NewFloat64Func("foo", nil)
+		assert.Panics(t, func() { set.NewFloat64Func("foo", nil) })
 	})
 
 	t.Run("int", func(t *testing.T) {
-		NewSet().NewIntFunc("foo", nil)
-		NewSet().NewIntFunc("foo", nil, "bar", "baz")
+		NewSet().NewInt64Func("foo", nil)
+		NewSet().NewInt64Func("foo", nil, "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewIntFunc("foo", nil, "bar") })
+		assert.Panics(t, func() { NewSet().NewInt64Func("foo", nil, "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewIntFunc("foo", nil)
-		assert.Panics(t, func() { set.NewIntFunc("foo", nil) })
+		set.NewInt64Func("foo", nil)
+		assert.Panics(t, func() { set.NewInt64Func("foo", nil) })
 	})
 
 	t.Run("uint", func(t *testing.T) {
-		NewSet().NewUintFunc("foo", nil)
-		NewSet().NewUintFunc("foo", nil, "bar", "baz")
+		NewSet().NewUint64Func("foo", nil)
+		NewSet().NewUint64Func("foo", nil, "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewUintFunc("foo", nil, "bar") })
+		assert.Panics(t, func() { NewSet().NewUint64Func("foo", nil, "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewUintFunc("foo", nil)
-		assert.Panics(t, func() { set.NewUintFunc("foo", nil) })
+		set.NewUint64Func("foo", nil)
+		assert.Panics(t, func() { set.NewUint64Func("foo", nil) })
 	})
 }
 
 func TestFuncCallback(t *testing.T) {
 	t.Run("float", func(t *testing.T) {
 		set := NewSet()
-		set.NewFloatFunc("foo", func() float64 {
+		set.NewFloat64Func("foo", func() float64 {
 			return 1.1
 		})
 
@@ -60,7 +60,7 @@ func TestFuncCallback(t *testing.T) {
 
 	t.Run("int", func(t *testing.T) {
 		set := NewSet()
-		set.NewIntFunc("foo", func() int64 {
+		set.NewInt64Func("foo", func() int64 {
 			return -2
 		})
 
@@ -69,7 +69,7 @@ func TestFuncCallback(t *testing.T) {
 
 	t.Run("uint", func(t *testing.T) {
 		set := NewSet()
-		set.NewUintFunc("foo", func() uint64 {
+		set.NewUint64Func("foo", func() uint64 {
 			return 100
 		})
 
@@ -84,7 +84,7 @@ func TestFuncConcurrent(t *testing.T) {
 	t.Run("float", func(t *testing.T) {
 		var x float64
 		var nLock sync.Mutex
-		g := NewSet().NewFloatFunc("x", func() float64 {
+		g := NewSet().NewFloat64Func("x", func() float64 {
 			nLock.Lock()
 			defer nLock.Unlock()
 			x++
@@ -103,7 +103,7 @@ func TestFuncConcurrent(t *testing.T) {
 	t.Run("int", func(t *testing.T) {
 		var x int64
 		var nLock sync.Mutex
-		g := NewSet().NewIntFunc("x", func() int64 {
+		g := NewSet().NewInt64Func("x", func() int64 {
 			nLock.Lock()
 			defer nLock.Unlock()
 			x++
@@ -122,7 +122,7 @@ func TestFuncConcurrent(t *testing.T) {
 	t.Run("uint", func(t *testing.T) {
 		var x uint64
 		var nLock sync.Mutex
-		g := NewSet().NewUintFunc("x", func() uint64 {
+		g := NewSet().NewUint64Func("x", func() uint64 {
 			nLock.Lock()
 			defer nLock.Unlock()
 			x++

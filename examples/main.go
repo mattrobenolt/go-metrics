@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	currentTime = metrics.NewFloatFunc("current_time", func() float64 {
+	currentTime = metrics.NewFloat64Func("current_time", func() float64 {
 		return float64(time.Now().UnixNano()) / 1e9
 	})
-	ticksA       = metrics.NewCounter("tick", "variant", "a")
-	ticksB       = metrics.NewCounter("tick", "variant", "b")
+	ticksA       = metrics.NewUint64("tick", "variant", "a")
+	ticksB       = metrics.NewUint64("tick", "variant", "b")
 	httpRequests = metrics.NewHistogramVec("http_requests", "path")
 )
 

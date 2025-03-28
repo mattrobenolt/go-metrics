@@ -2,30 +2,30 @@ package metrics
 
 import "errors"
 
-// A UintVec is a collection of Uints that are partitioned
+// A Uint64Vec is a collection of Uint64s that are partitioned
 // by the same metric name and tag labels, but different tag values.
-type UintVec struct {
+type Uint64Vec struct {
 	commonVec
 }
 
-// NewUintVec creates a new UintVec on the global Set.
-// See [Set.NewUintVec].
-func NewUintVec(family string, labels ...string) *UintVec {
-	return defaultSet.NewUintVec(family, labels...)
+// NewUint64Vec creates a new Uint64Vec on the global Set.
+// See [Set.NewUint64Vec].
+func NewUint64Vec(family string, labels ...string) *Uint64Vec {
+	return defaultSet.NewUint64Vec(family, labels...)
 }
 
-// NewCounterVec creates a new UintVec on the global Set.
-// See [Set.NewUintVec].
-func NewCounterVec(family string, labels ...string) *UintVec {
+// NewCounterVec creates a new Uint64Vec on the global Set.
+// See [Set.NewUint64Vec].
+func NewCounterVec(family string, labels ...string) *Uint64Vec {
 	return defaultSet.NewCounterVec(family, labels...)
 }
 
-// WithLabelValues returns the Uint for the corresponding label values.
+// WithLabelValues returns the Uint64 for the corresponding label values.
 // If the combination of values is seen for the first time, a new Uint
 // is created.
 //
 // This will panic if the values count doesn't match the number of labels.
-func (c *UintVec) WithLabelValues(values ...string) *Uint {
+func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
 	if len(values) != len(c.partialTags) {
 		panic(errors.New("mismatch length of labels"))
 	}
@@ -37,15 +37,15 @@ func (c *UintVec) WithLabelValues(values ...string) *Uint {
 
 	if nm == nil {
 		nm = c.s.getOrRegisterMetricFromVec(
-			&Uint{}, hash, c.family, c.partialTags, values,
+			&Uint64{}, hash, c.family, c.partialTags, values,
 		)
 	}
-	return nm.metric.(*Uint)
+	return nm.metric.(*Uint64)
 }
 
-// NewUintVec creates a new [UintVec] with the supplied name.
-func (s *Set) NewUintVec(family string, labels ...string) *UintVec {
-	return &UintVec{commonVec{
+// NewUint64Vec creates a new [Uint64Vec] with the supplied name.
+func (s *Set) NewUint64Vec(family string, labels ...string) *Uint64Vec {
+	return &Uint64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
@@ -53,29 +53,29 @@ func (s *Set) NewUintVec(family string, labels ...string) *UintVec {
 	}}
 }
 
-// NewCounterVec is an alias for [Set.NewUintVec].
-func (s *Set) NewCounterVec(family string, labels ...string) *UintVec {
-	return s.NewUintVec(family, labels...)
+// NewCounterVec is an alias for [Set.NewUint64Vec].
+func (s *Set) NewCounterVec(family string, labels ...string) *Uint64Vec {
+	return s.NewUint64Vec(family, labels...)
 }
 
-// A IntVec is a collection of Ints that are partitioned
+// A Int64Vec is a collection of Int64s that are partitioned
 // by the same metric name and tag labels, but different tag values.
-type IntVec struct {
+type Int64Vec struct {
 	commonVec
 }
 
-// NewIntVec creates a new IntVec on the global Set.
-// See [Set.NewIntVec].
-func NewIntVec(family string, labels ...string) *IntVec {
-	return defaultSet.NewIntVec(family, labels...)
+// NewInt64Vec creates a new Int64Vec on the global Set.
+// See [Set.NewInt64Vec].
+func NewInt64Vec(family string, labels ...string) *Int64Vec {
+	return defaultSet.NewInt64Vec(family, labels...)
 }
 
-// WithLabelValues returns the Int for the corresponding label values.
+// WithLabelValues returns the Int64 for the corresponding label values.
 // If the combination of values is seen for the first time, a new Int
 // is created.
 //
 // This will panic if the values count doesn't match the number of labels.
-func (c *IntVec) WithLabelValues(values ...string) *Int {
+func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
 	if len(values) != len(c.partialTags) {
 		panic(errors.New("mismatch length of labels"))
 	}
@@ -87,15 +87,15 @@ func (c *IntVec) WithLabelValues(values ...string) *Int {
 
 	if nm == nil {
 		nm = c.s.getOrRegisterMetricFromVec(
-			&Int{}, hash, c.family, c.partialTags, values,
+			&Int64{}, hash, c.family, c.partialTags, values,
 		)
 	}
-	return nm.metric.(*Int)
+	return nm.metric.(*Int64)
 }
 
-// NewIntVec creates a new [IntVec] with the supplied name.
-func (s *Set) NewIntVec(family string, labels ...string) *IntVec {
-	return &IntVec{commonVec{
+// NewInt64Vec creates a new [Int64Vec] with the supplied name.
+func (s *Set) NewInt64Vec(family string, labels ...string) *Int64Vec {
+	return &Int64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
@@ -103,16 +103,16 @@ func (s *Set) NewIntVec(family string, labels ...string) *IntVec {
 	}}
 }
 
-// A FloatVec is a collection of Floats that are partitioned
+// A Float64Vec is a collection of Float64s that are partitioned
 // by the same metric name and tag labels, but different tag values.
-type FloatVec struct {
+type Float64Vec struct {
 	commonVec
 }
 
-// NewFloatVec creates a new FloatVec on the global Set.
-// See [Set.NewFloatVec].
-func NewFloatVec(family string, labels ...string) *FloatVec {
-	return defaultSet.NewFloatVec(family, labels...)
+// NewFloat64Vec creates a new Float64Vec on the global Set.
+// See [Set.NewFloat64Vec].
+func NewFloat64Vec(family string, labels ...string) *Float64Vec {
+	return defaultSet.NewFloat64Vec(family, labels...)
 }
 
 // WithLabelValues returns the Float for the corresponding label values.
@@ -120,7 +120,7 @@ func NewFloatVec(family string, labels ...string) *FloatVec {
 // is created.
 //
 // This will panic if the values count doesn't match the number of labels.
-func (c *FloatVec) WithLabelValues(values ...string) *Float {
+func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
 	if len(values) != len(c.partialTags) {
 		panic(errors.New("mismatch length of labels"))
 	}
@@ -132,15 +132,15 @@ func (c *FloatVec) WithLabelValues(values ...string) *Float {
 
 	if nm == nil {
 		nm = c.s.getOrRegisterMetricFromVec(
-			&Float{}, hash, c.family, c.partialTags, values,
+			&Float64{}, hash, c.family, c.partialTags, values,
 		)
 	}
-	return nm.metric.(*Float)
+	return nm.metric.(*Float64)
 }
 
-// NewFloatVec creates a new [FloatVec] with the supplied name.
-func (s *Set) NewFloatVec(family string, labels ...string) *FloatVec {
-	return &FloatVec{commonVec{
+// NewFloat64Vec creates a new [Float64Vec] with the supplied name.
+func (s *Set) NewFloat64Vec(family string, labels ...string) *Float64Vec {
+	return &Float64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),

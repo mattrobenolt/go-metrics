@@ -19,10 +19,10 @@ func TestSet(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewUintFunc("gauge1", func() uint64 {
+	set.NewUint64Func("gauge1", func() uint64 {
 		return 1
 	})
-	set.NewUintFunc("gauge2", func() uint64 {
+	set.NewUint64Func("gauge2", func() uint64 {
 		return 2
 	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
@@ -54,10 +54,10 @@ func TestSetConstantTags(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewUintFunc("gauge1", func() uint64 {
+	set.NewUint64Func("gauge1", func() uint64 {
 		return 1
 	})
-	set.NewUintFunc("gauge2", func() uint64 {
+	set.NewUint64Func("gauge2", func() uint64 {
 		return 2
 	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
@@ -151,10 +151,10 @@ func TestSetMarshalConcurrent(t *testing.T) {
 
 	set.NewCounter("counter1").Inc()
 	set.NewCounter("counter2", "a", "1").Inc()
-	set.NewUintFunc("gauge1", func() uint64 {
+	set.NewUint64Func("gauge1", func() uint64 {
 		return 1
 	})
-	set.NewUintFunc("gauge2", func() uint64 {
+	set.NewUint64Func("gauge2", func() uint64 {
 		return 2
 	}, "a", "1")
 	set.NewHistogram("hist1").Update(1)
@@ -187,7 +187,7 @@ func TestSetConcurrent(t *testing.T) {
 
 	hammer(t, n, func(i int) {
 		set.NewCounter(fmt.Sprintf("counter%d", i)).Inc()
-		set.NewUintFunc(fmt.Sprintf("gauge%d", i), func() uint64 {
+		set.NewUint64Func(fmt.Sprintf("gauge%d", i), func() uint64 {
 			return 1
 		})
 		set.NewHistogram(fmt.Sprintf("hist%d", i)).Update(1)

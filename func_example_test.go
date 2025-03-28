@@ -7,9 +7,9 @@ import (
 	"go.withmatt.com/metrics"
 )
 
-func ExampleIntFunc() {
+func ExampleInt64Func() {
 	// Define a function exporting the number of goroutines.
-	f := metrics.NewIntFunc("goroutines_count", func() int64 {
+	f := metrics.NewInt64Func("goroutines_count", func() int64 {
 		return int64(runtime.NumGoroutine())
 	})
 
@@ -17,9 +17,9 @@ func ExampleIntFunc() {
 	fmt.Println(f.Get())
 }
 
-func ExampleUintFunc() {
+func ExampleUint64Func() {
 	// Define a function exporting the number of goroutines.
-	f := metrics.NewUintFunc("goroutines_count", func() uint64 {
+	f := metrics.NewUint64Func("goroutines_count", func() uint64 {
 		return uint64(runtime.NumGoroutine())
 	})
 
@@ -27,9 +27,9 @@ func ExampleUintFunc() {
 	fmt.Println(f.Get())
 }
 
-func ExampleFloatFunc() {
+func ExampleFloat64Func() {
 	// Define a function exporting the number of goroutines.
-	f := metrics.NewFloatFunc("goroutines_count", func() float64 {
+	f := metrics.NewFloat64Func("goroutines_count", func() float64 {
 		return float64(runtime.NumGoroutine())
 	})
 

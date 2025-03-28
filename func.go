@@ -1,27 +1,27 @@
 package metrics
 
-// UintFunc is a uint64 value returned from a function.
-type UintFunc struct {
+// Uint64Func is a uint64 value returned from a function.
+type Uint64Func struct {
 	fn func() uint64
 }
 
 // Get returns the current value for f.
-func (f *UintFunc) Get() uint64 {
+func (f *Uint64Func) Get() uint64 {
 	return f.fn()
 }
 
-func (f *UintFunc) marshalTo(w ExpfmtWriter, name MetricName) {
+func (f *Uint64Func) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
 	w.WriteUint64(f.Get())
 }
 
-// NewUintFunc creates a new UintFunc on the global Set.
-// See [Set.NewUintFunc].
-func NewUintFunc(name string, fn func() uint64) *UintFunc {
-	return defaultSet.NewUintFunc(name, fn)
+// NewUint64Func creates a new UintFunc on the global Set.
+// See [Set.NewUint64Func].
+func NewUint64Func(name string, fn func() uint64) *Uint64Func {
+	return defaultSet.NewUint64Func(name, fn)
 }
 
-// NewUintFunc registers and returns gauge with the given name in s, which calls fn
+// NewUint64Func registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
 // family must be a Prometheus compatible identifier format.
@@ -30,13 +30,13 @@ func NewUintFunc(name string, fn func() uint64) *UintFunc {
 //
 // Optional tags must be specified in [label, value] pairs, for instance,
 //
-//	NewUintFunc("family", observeFn, "label1", "value1", "label2", "value2")
+//	NewUint64Func("family", observeFn, "label1", "value1", "label2", "value2")
 //
 // The returned UintFunc is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *Set) NewUintFunc(family string, fn func() uint64, tags ...string) *UintFunc {
-	f := &UintFunc{fn: fn}
+func (s *Set) NewUint64Func(family string, fn func() uint64, tags ...string) *Uint64Func {
+	f := &Uint64Func{fn: fn}
 	s.mustRegisterMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
@@ -44,28 +44,28 @@ func (s *Set) NewUintFunc(family string, fn func() uint64, tags ...string) *Uint
 	return f
 }
 
-// IntFunc is a int64 value returned from a function.
-type IntFunc struct {
+// Int64Func is a int64 value returned from a function.
+type Int64Func struct {
 	fn func() int64
 }
 
 // Get returns the current value for f.
-func (f *IntFunc) Get() int64 {
+func (f *Int64Func) Get() int64 {
 	return f.fn()
 }
 
-func (f *IntFunc) marshalTo(w ExpfmtWriter, name MetricName) {
+func (f *Int64Func) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
 	w.WriteInt64(f.Get())
 }
 
-// NewIntFunc creates a new IntFunc on the global Set.
-// See [Set.NewIntFunc].
-func NewIntFunc(name string, fn func() int64) *IntFunc {
-	return defaultSet.NewIntFunc(name, fn)
+// NewInt64Func creates a new Int64Func on the global Set.
+// See [Set.NewInt64Func].
+func NewInt64Func(name string, fn func() int64) *Int64Func {
+	return defaultSet.NewInt64Func(name, fn)
 }
 
-// NewIntFunc registers and returns gauge with the given name in s, which calls fn
+// NewInt64Func registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
 // family must be a Prometheus compatible identifier format.
@@ -74,13 +74,13 @@ func NewIntFunc(name string, fn func() int64) *IntFunc {
 //
 // Optional tags must be specified in [label, value] pairs, for instance,
 //
-//	NewIntFunc("family", observeFn, "label1", "value1", "label2", "value2")
+//	NewInt64Func("family", observeFn, "label1", "value1", "label2", "value2")
 //
 // The returned IntFunc is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *Set) NewIntFunc(family string, fn func() int64, tags ...string) *IntFunc {
-	f := &IntFunc{fn: fn}
+func (s *Set) NewInt64Func(family string, fn func() int64, tags ...string) *Int64Func {
+	f := &Int64Func{fn: fn}
 	s.mustRegisterMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
@@ -88,28 +88,28 @@ func (s *Set) NewIntFunc(family string, fn func() int64, tags ...string) *IntFun
 	return f
 }
 
-// FloatFunc is a float64 value returned from a function.
-type FloatFunc struct {
+// Float64Func is a float64 value returned from a function.
+type Float64Func struct {
 	fn func() float64
 }
 
 // Get returns the current value for f.
-func (f *FloatFunc) Get() float64 {
+func (f *Float64Func) Get() float64 {
 	return f.fn()
 }
 
-func (f *FloatFunc) marshalTo(w ExpfmtWriter, name MetricName) {
+func (f *Float64Func) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(f.Get())
 }
 
-// NewFloatFunc creates a new FloatFunc on the global Set.
-// See [Set.NewFloatFunc].
-func NewFloatFunc(name string, fn func() float64) *FloatFunc {
-	return defaultSet.NewFloatFunc(name, fn)
+// NewFloat64Func creates a new Float64Func on the global Set.
+// See [Set.NewFloat64Func].
+func NewFloat64Func(name string, fn func() float64) *Float64Func {
+	return defaultSet.NewFloat64Func(name, fn)
 }
 
-// NewFloatFunc registers and returns gauge with the given name in s, which calls fn
+// NewFloat64Func registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
 // family must be a Prometheus compatible identifier format.
@@ -118,13 +118,13 @@ func NewFloatFunc(name string, fn func() float64) *FloatFunc {
 //
 // Optional tags must be specified in [label, value] pairs, for instance,
 //
-//	NewFloatFunc("family", observeFn, "label1", "value1", "label2", "value2")
+//	NewFloat64Func("family", observeFn, "label1", "value1", "label2", "value2")
 //
 // The returned FloatFunc is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *Set) NewFloatFunc(family string, fn func() float64, tags ...string) *FloatFunc {
-	f := &FloatFunc{fn: fn}
+func (s *Set) NewFloat64Func(family string, fn func() float64, tags ...string) *Float64Func {
+	f := &Float64Func{fn: fn}
 	s.mustRegisterMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),

@@ -8,49 +8,49 @@ import (
 
 func TestCounterNew(t *testing.T) {
 	t.Run("uint", func(t *testing.T) {
-		NewSet().NewUint("foo")
-		NewSet().NewUint("foo", "bar", "baz")
+		NewSet().NewUint64("foo")
+		NewSet().NewUint64("foo", "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewUint("foo", "bar") })
+		assert.Panics(t, func() { NewSet().NewUint64("foo", "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewUint("foo")
-		assert.Panics(t, func() { set.NewUint("foo") })
+		set.NewUint64("foo")
+		assert.Panics(t, func() { set.NewUint64("foo") })
 	})
 
 	t.Run("int", func(t *testing.T) {
-		NewSet().NewInt("foo")
-		NewSet().NewInt("foo", "bar", "baz")
+		NewSet().NewInt64("foo")
+		NewSet().NewInt64("foo", "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewInt("foo", "bar") })
+		assert.Panics(t, func() { NewSet().NewInt64("foo", "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewInt("foo")
-		assert.Panics(t, func() { set.NewInt("foo") })
+		set.NewInt64("foo")
+		assert.Panics(t, func() { set.NewInt64("foo") })
 	})
 
 	t.Run("float", func(t *testing.T) {
-		NewSet().NewFloat("foo")
-		NewSet().NewFloat("foo", "bar", "baz")
+		NewSet().NewFloat64("foo")
+		NewSet().NewFloat64("foo", "bar", "baz")
 
 		// invalid label pairs
-		assert.Panics(t, func() { NewSet().NewFloat("foo", "bar") })
+		assert.Panics(t, func() { NewSet().NewFloat64("foo", "bar") })
 
 		// duplicate
 		set := NewSet()
-		set.NewFloat("foo")
-		assert.Panics(t, func() { set.NewFloat("foo") })
+		set.NewFloat64("foo")
+		assert.Panics(t, func() { set.NewFloat64("foo") })
 	})
 }
 
 func TestCounterVec(t *testing.T) {
 	t.Run("uint", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewUintVec("foo", "a", "b")
+		c := set.NewUint64Vec("foo", "a", "b")
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("3", "4").Inc()
@@ -67,7 +67,7 @@ func TestCounterVec(t *testing.T) {
 
 	t.Run("int", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewIntVec("foo", "a", "b")
+		c := set.NewInt64Vec("foo", "a", "b")
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("3", "4").Inc()
@@ -84,7 +84,7 @@ func TestCounterVec(t *testing.T) {
 
 	t.Run("float", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewFloatVec("foo", "a", "b")
+		c := set.NewFloat64Vec("foo", "a", "b")
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("1", "2").Inc()
 		c.WithLabelValues("3", "4").Inc()
@@ -103,7 +103,7 @@ func TestCounterVec(t *testing.T) {
 func TestCounterSerial(t *testing.T) {
 	t.Run("uint", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewUint("foo")
+		c := set.NewUint64("foo")
 		c.Inc()
 		assert.Equal(t, c.Get(), 1)
 		c.Dec()
@@ -120,7 +120,7 @@ func TestCounterSerial(t *testing.T) {
 
 	t.Run("int", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewInt("foo")
+		c := set.NewInt64("foo")
 		c.Inc()
 		assert.Equal(t, c.Get(), 1)
 		c.Dec()
@@ -138,7 +138,7 @@ func TestCounterSerial(t *testing.T) {
 
 	t.Run("float", func(t *testing.T) {
 		set := NewSet()
-		c := set.NewFloat("foo")
+		c := set.NewFloat64("foo")
 		c.Inc()
 		assert.Equal(t, c.Get(), 1)
 		c.Dec()
@@ -160,7 +160,7 @@ func TestCounterConcurrent(t *testing.T) {
 	const inner = 10
 
 	t.Run("uint", func(t *testing.T) {
-		c := NewSet().NewUint("x")
+		c := NewSet().NewUint64("x")
 		hammer(t, n, func(_ int) {
 			nPrev := c.Get()
 			for range inner {
@@ -172,7 +172,7 @@ func TestCounterConcurrent(t *testing.T) {
 	})
 
 	t.Run("int", func(t *testing.T) {
-		c := NewSet().NewInt("x")
+		c := NewSet().NewInt64("x")
 		hammer(t, n, func(_ int) {
 			nPrev := c.Get()
 			for range inner {
@@ -184,7 +184,7 @@ func TestCounterConcurrent(t *testing.T) {
 	})
 
 	t.Run("float", func(t *testing.T) {
-		c := NewSet().NewFloat("x")
+		c := NewSet().NewFloat64("x")
 		hammer(t, n, func(_ int) {
 			nPrev := c.Get()
 			for range inner {

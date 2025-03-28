@@ -23,7 +23,7 @@ func BenchmarkWritePrometheus(b *testing.B) {
 	c3 := set.NewCounter("other")
 	c3.Inc()
 
-	fc1 := set.NewFloat("floatcounter_test", "foo", "bar")
+	fc1 := set.NewFloat64("floatcounter_test", "foo", "bar")
 	fc1.Set(1.5898)
 
 	h1 := set.NewHistogram("hist_test", "foo", "bar")
