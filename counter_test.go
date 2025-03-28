@@ -21,10 +21,7 @@ func TestCounterNew(t *testing.T) {
 
 func TestCounterVec(t *testing.T) {
 	set := NewSet()
-	c := set.NewCounterVec(VecName{
-		Family: "foo",
-		Labels: []string{"a", "b"},
-	})
+	c := set.NewCounterVec("foo", "a", "b")
 	c.WithLabelValues("1", "2").Inc()
 	c.WithLabelValues("1", "2").Inc()
 	c.WithLabelValues("3", "4").Inc()

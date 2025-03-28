@@ -3,26 +3,24 @@ package metrics
 import "testing"
 
 func BenchmarkCounterVec(b *testing.B) {
-	name := VecName{
-		Family: "http_request",
-		Labels: []string{"status"},
-	}
+	family := "http_request"
+	labels := []string{"status"}
 	value := "200"
 
 	b.Run("hot", func(b *testing.B) {
 		set := NewSet()
-		cv := set.NewCounterVec(name)
-		cv.WithLabelValues(value)
+		v := set.NewCounterVec(family, labels...)
+		v.WithLabelValues(value)
 
 		b.ReportAllocs()
 		for b.Loop() {
-			cv.WithLabelValues("200")
+			v.WithLabelValues("200")
 		}
 	})
 
 	b.Run("cold", func(b *testing.B) {
 		set := NewSet()
-		v := set.NewCounterVec(name)
+		v := set.NewCounterVec(family, labels...)
 		v.WithLabelValues(value)
 
 		b.ReportAllocs()
@@ -34,7 +32,7 @@ func BenchmarkCounterVec(b *testing.B) {
 
 	b.Run("verycold", func(b *testing.B) {
 		set := NewSet()
-		v := set.NewCounterVec(name)
+		v := set.NewCounterVec(family, labels...)
 
 		b.ReportAllocs()
 		for b.Loop() {

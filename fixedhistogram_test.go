@@ -23,12 +23,7 @@ func TestFixedHistogramNew(t *testing.T) {
 
 func TestFixedHistogramVec(t *testing.T) {
 	set := NewSet()
-	h := set.NewFixedHistogramVec(FixedHistogramVecOpt{
-		Name: VecName{
-			Family: "foo",
-			Labels: []string{"a", "b"},
-		},
-	})
+	h := set.NewFixedHistogramVec("foo", DefBuckets, "a", "b")
 	h.WithLabelValues("1", "2").Update(1)
 	h.WithLabelValues("1", "2").Update(2)
 	h.WithLabelValues("3", "4").Update(1)

@@ -52,13 +52,11 @@ func (c *FloatCounterVec) WithLabelValues(values ...string) *FloatCounter {
 }
 
 // NewFloatCounterVec creates a new [FloatCounterVec] with the supplied name.
-func (s *Set) NewFloatCounterVec(name VecName) *FloatCounterVec {
-	family := MustIdent(name.Family)
-
+func (s *Set) NewFloatCounterVec(family string, labels ...string) *FloatCounterVec {
 	return &FloatCounterVec{commonVec{
 		s:           s,
-		family:      family,
-		partialTags: makePartialTags(name.Labels),
-		partialHash: hashStart(family.String(), name.Labels),
+		family:      MustIdent(family),
+		partialTags: makePartialTags(labels),
+		partialHash: hashStart(family, labels),
 	}}
 }

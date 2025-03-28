@@ -21,13 +21,11 @@ func ExampleFixedHistogram() {
 }
 
 func ExampleFixedHistogramVec() {
-	responseSizeBytes := metrics.NewFixedHistogramVec(metrics.FixedHistogramVecOpt{
-		Name: metrics.VecName{
-			Family: "response_size_bytes",
-			Labels: []string{"path"},
-		},
-		Buckets: []float64{0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1},
-	})
+	responseSizeBytes := metrics.NewFixedHistogramVec(
+		"response_size_bytes",
+		[]float64{0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1},
+		"path",
+	)
 	for range 3 {
 		response := processRequest()
 		// Dynamically construct metric name with label values

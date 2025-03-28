@@ -54,13 +54,11 @@ func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 }
 
 // NewHistogramVec creates a new [HistogramVec] with the supplied name.
-func (s *Set) NewHistogramVec(name VecName) *HistogramVec {
-	family := MustIdent(name.Family)
-
+func (s *Set) NewHistogramVec(family string, labels ...string) *HistogramVec {
 	return &HistogramVec{commonVec{
 		s:           s,
-		family:      family,
-		partialTags: makePartialTags(name.Labels),
-		partialHash: hashStart(family.String(), name.Labels),
+		family:      MustIdent(family),
+		partialTags: makePartialTags(labels),
+		partialHash: hashStart(family, labels),
 	}}
 }

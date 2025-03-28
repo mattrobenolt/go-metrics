@@ -14,10 +14,7 @@ var (
 	})
 	ticksA       = metrics.NewCounter("tick", "variant", "a")
 	ticksB       = metrics.NewCounter("tick", "variant", "b")
-	httpRequests = metrics.NewHistogramVec(metrics.VecName{
-		Family: "http_requests",
-		Labels: []string{"path"},
-	})
+	httpRequests = metrics.NewHistogramVec("http_requests", "path")
 )
 
 func observe(next http.Handler) http.Handler {

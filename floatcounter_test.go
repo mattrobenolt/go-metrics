@@ -21,10 +21,7 @@ func TestFloatCounterNew(t *testing.T) {
 
 func TestFloatCounterVec(t *testing.T) {
 	set := NewSet()
-	c := set.NewFloatCounterVec(VecName{
-		Family: "foo",
-		Labels: []string{"a", "b"},
-	})
+	c := set.NewFloatCounterVec("foo", "a", "b")
 	c.WithLabelValues("1", "2").Inc()
 	c.WithLabelValues("1", "2").Inc()
 	c.WithLabelValues("3", "4").Inc()

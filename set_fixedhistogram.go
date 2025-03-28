@@ -26,12 +26,6 @@ func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string
 	return h
 }
 
-// FixedHistogramVecOpt are options for creating a new [FixedHistogramVec].
-type FixedHistogramVecOpt struct {
-	Name    VecName
-	Buckets []float64
-}
-
 // A FixedHistogramVec is a collection of FixedHistogramVecs that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FixedHistogramVec struct {
@@ -68,10 +62,7 @@ func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
 }
 
 // NewFixedHistogramVec creates a new [FixedHistogramVec] with the supplied opt.
-func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec {
-	family := MustIdent(opt.Name.Family)
-
-	buckets := opt.Buckets
+func (s *Set) NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
 	if len(buckets) == 0 {
 		buckets = slices.Clone(DefBuckets)
 	} else {
@@ -82,9 +73,9 @@ func (s *Set) NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec 
 	return &FixedHistogramVec{
 		commonVec: commonVec{
 			s:           s,
-			family:      family,
-			partialTags: makePartialTags(opt.Name.Labels),
-			partialHash: hashStart(family.String(), opt.Name.Labels),
+			family:      MustIdent(family),
+			partialTags: makePartialTags(labels),
+			partialHash: hashStart(family, labels),
 		},
 		buckets: buckets,
 		labels:  labelsForBuckets(buckets),

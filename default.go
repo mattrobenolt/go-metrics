@@ -37,8 +37,8 @@ func NewCounter(family string, tags ...string) *Counter {
 
 // NewCounterVec creates a new CounterVec on the global Set.
 // See [Set.NewCounterVec].
-func NewCounterVec(name VecName) *CounterVec {
-	return defaultSet.NewCounterVec(name)
+func NewCounterVec(family string, labels ...string) *CounterVec {
+	return defaultSet.NewCounterVec(family, labels...)
 }
 
 // NewFloatCounter creates a new FloatCounter on the global Set.
@@ -49,8 +49,8 @@ func NewFloatCounter(family string, tags ...string) *FloatCounter {
 
 // NewFloatCounterVec creates a new FloatCounterVec on the global Set.
 // See [Set.NewFloatCounterVec].
-func NewFloatCounterVec(name VecName) *FloatCounterVec {
-	return defaultSet.NewFloatCounterVec(name)
+func NewFloatCounterVec(family string, labels ...string) *FloatCounterVec {
+	return defaultSet.NewFloatCounterVec(family, labels...)
 }
 
 // NewHistogram creates a new Histogram on the global Set.
@@ -61,8 +61,8 @@ func NewHistogram(family string, tags ...string) *Histogram {
 
 // NewHistogramVec creates a new HistogramVec on the global Set.
 // See [Set.NewHistogramVec].
-func NewHistogramVec(name VecName) *HistogramVec {
-	return defaultSet.NewHistogramVec(name)
+func NewHistogramVec(family string, labels ...string) *HistogramVec {
+	return defaultSet.NewHistogramVec(family, labels...)
 }
 
 // NewFixedHistogram creates a new FixedHistogram on the global Set.
@@ -73,8 +73,8 @@ func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedH
 
 // NewFixedHistogramVec creates a new FixedHistogramVec on the global Set.
 // See [Set.NewFixedHistogramVec].
-func NewFixedHistogramVec(opt FixedHistogramVecOpt) *FixedHistogramVec {
-	return defaultSet.NewFixedHistogramVec(opt)
+func NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
+	return defaultSet.NewFixedHistogramVec(family, buckets, labels...)
 }
 
 // NewFloatFunc creates a new FloatFunc on the global Set.

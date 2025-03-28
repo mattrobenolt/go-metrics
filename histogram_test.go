@@ -25,10 +25,7 @@ func TestHistogramNew(t *testing.T) {
 
 func TestHistogramVec(t *testing.T) {
 	set := NewSet()
-	h := set.NewHistogramVec(VecName{
-		Family: "foo",
-		Labels: []string{"a", "b"},
-	})
+	h := set.NewHistogramVec("foo", "a", "b")
 	h.WithLabelValues("1", "2").Update(1)
 	h.WithLabelValues("1", "2").Update(2)
 	h.WithLabelValues("3", "4").Update(1)

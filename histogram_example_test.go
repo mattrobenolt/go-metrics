@@ -20,10 +20,7 @@ func ExampleHistogram() {
 }
 
 func ExampleHistogramVec() {
-	responseSizeBytes := metrics.NewHistogramVec(metrics.VecName{
-		Family: "response_size_bytes",
-		Labels: []string{"path"},
-	})
+	responseSizeBytes := metrics.NewHistogramVec("response_size_bytes", "path")
 	for range 3 {
 		response := processRequest()
 		// Dynamically construct metric name with label values

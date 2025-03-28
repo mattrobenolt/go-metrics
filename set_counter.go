@@ -54,13 +54,11 @@ func (c *CounterVec) WithLabelValues(values ...string) *Counter {
 }
 
 // NewCounterVec creates a new [CounterVec] with the supplied name.
-func (s *Set) NewCounterVec(name VecName) *CounterVec {
-	family := MustIdent(name.Family)
-
+func (s *Set) NewCounterVec(family string, labels ...string) *CounterVec {
 	return &CounterVec{commonVec{
 		s:           s,
-		family:      family,
-		partialTags: makePartialTags(name.Labels),
-		partialHash: hashStart(family.String(), name.Labels),
+		family:      MustIdent(family),
+		partialTags: makePartialTags(labels),
+		partialHash: hashStart(family, labels),
 	}}
 }

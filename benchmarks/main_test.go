@@ -24,10 +24,10 @@ const (
 func BenchmarkIncWithLabelValues(b *testing.B) {
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		c := set.NewCounterVec(metrics.VecName{
-			Family: "foo",
-			Labels: []string{"label1", "label2", "label3"},
-		})
+		c := set.NewCounterVec(
+			"foo",
+			"label1", "label2", "label3",
+		)
 
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -143,10 +143,10 @@ func BenchmarkWriteMetricsCounters(b *testing.B) {
 
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		c := set.NewCounterVec(metrics.VecName{
-			Family: "foo",
-			Labels: []string{"label1", "label2", "label3"},
-		})
+		c := set.NewCounterVec(
+			"foo",
+			"label1", "label2", "label3",
+		)
 
 		for i := range numMetrics {
 			c.WithLabelValues("a", strconv.Itoa(i), "something").Inc()
@@ -231,10 +231,10 @@ func BenchmarkWriteMetricsVMRangeHistograms(b *testing.B) {
 
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		v := set.NewHistogramVec(metrics.VecName{
-			Family: "foo",
-			Labels: []string{"label1", "label2", "label3"},
-		})
+		v := set.NewHistogramVec(
+			"foo",
+			"label1", "label2", "label3",
+		)
 		for i := range numHistograms {
 			h := v.WithLabelValues("a", strconv.Itoa(i), "something")
 			for j := range numObservations {
@@ -293,12 +293,11 @@ func BenchmarkWriteMetricsPromHistograms(b *testing.B) {
 
 	b.Run(modMattware, func(b *testing.B) {
 		set := metrics.NewSet()
-		v := set.NewFixedHistogramVec(metrics.FixedHistogramVecOpt{
-			Name: metrics.VecName{
-				Family: "foo",
-				Labels: []string{"label1", "label2", "label3"},
-			},
-		})
+		v := set.NewFixedHistogramVec(
+			"foo",
+			metrics.DefBuckets,
+			"label1", "label2", "label3",
+		)
 		for i := range numHistograms {
 			h := v.WithLabelValues("a", strconv.Itoa(i), "something")
 			for j := range numObservations {

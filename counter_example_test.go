@@ -27,10 +27,10 @@ func ExampleCounter() {
 }
 
 func ExampleCounterVec() {
-	metricTotal := metrics.NewCounterVec(metrics.VecName{
-		Family: "metric_total",
-		Labels: []string{"label1", "label2"},
-	})
+	metricTotal := metrics.NewCounterVec(
+		"metric_total",
+		"label1", "label2",
+	)
 	for i := range 3 {
 		// Dynamically construct metric name with label values
 		metricTotal.WithLabelValues(
