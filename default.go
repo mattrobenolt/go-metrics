@@ -29,28 +29,52 @@ func WritePrometheus(w io.Writer) (int, error) {
 	return defaultSet.WritePrometheus(w)
 }
 
-// NewCounter creates a new Counter on the global Set.
-// See [Set.NewCounter].
-func NewCounter(family string, tags ...string) *Counter {
+// NewCounter creates a new Uint on the global Set.
+// See [Set.NewUint].
+func NewCounter(family string, tags ...string) *Uint {
 	return defaultSet.NewCounter(family, tags...)
 }
 
-// NewCounterVec creates a new CounterVec on the global Set.
-// See [Set.NewCounterVec].
-func NewCounterVec(family string, labels ...string) *CounterVec {
+// NewCounterVec creates a new UintVec on the global Set.
+// See [Set.NewUintVec].
+func NewCounterVec(family string, labels ...string) *UintVec {
 	return defaultSet.NewCounterVec(family, labels...)
 }
 
-// NewFloatCounter creates a new FloatCounter on the global Set.
-// See [Set.NewFloatCounter].
-func NewFloatCounter(family string, tags ...string) *FloatCounter {
-	return defaultSet.NewFloatCounter(family, tags...)
+// NewUint creates a new Uint on the global Set.
+// See [Set.NewUint].
+func NewUint(family string, tags ...string) *Uint {
+	return defaultSet.NewUint(family, tags...)
 }
 
-// NewFloatCounterVec creates a new FloatCounterVec on the global Set.
-// See [Set.NewFloatCounterVec].
-func NewFloatCounterVec(family string, labels ...string) *FloatCounterVec {
-	return defaultSet.NewFloatCounterVec(family, labels...)
+// NewUintVec creates a new UintVec on the global Set.
+// See [Set.NewUintVec].
+func NewUintVec(family string, labels ...string) *UintVec {
+	return defaultSet.NewUintVec(family, labels...)
+}
+
+// NewInt creates a new Int on the global Set.
+// See [Set.NewInt].
+func NewInt(family string, tags ...string) *Int {
+	return defaultSet.NewInt(family, tags...)
+}
+
+// NewIntVec creates a new IntVec on the global Set.
+// See [Set.NewIntVec].
+func NewIntVec(family string, labels ...string) *IntVec {
+	return defaultSet.NewIntVec(family, labels...)
+}
+
+// NewFloat creates a new Float on the global Set.
+// See [Set.NewFloat].
+func NewFloat(family string, tags ...string) *Float {
+	return defaultSet.NewFloat(family, tags...)
+}
+
+// NewFloatVec creates a new FloatVec on the global Set.
+// See [Set.NewFloatVec].
+func NewFloatVec(family string, labels ...string) *FloatVec {
+	return defaultSet.NewFloatVec(family, labels...)
 }
 
 // NewHistogram creates a new Histogram on the global Set.

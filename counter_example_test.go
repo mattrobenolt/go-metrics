@@ -7,9 +7,9 @@ import (
 	"go.withmatt.com/metrics"
 )
 
-func ExampleCounter() {
+func ExampleUint() {
 	// Define a counter in global scope.
-	c := metrics.NewCounter(
+	c := metrics.NewUint(
 		"metric_total",
 		"label1", "value1",
 		"label2", "value2",
@@ -26,8 +26,8 @@ func ExampleCounter() {
 	// 10
 }
 
-func ExampleCounterVec() {
-	metricTotal := metrics.NewCounterVec(
+func ExampleUintVec() {
+	metricTotal := metrics.NewUintVec(
 		"metric_total",
 		"label1", "label2",
 	)

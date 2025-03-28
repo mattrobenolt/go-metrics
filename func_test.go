@@ -78,10 +78,10 @@ func TestFuncCallback(t *testing.T) {
 }
 
 func TestFuncConcurrent(t *testing.T) {
-	t.Run("float", func(t *testing.T) {
-		const n = 1000
-		const inner = 5
+	const n = 1000
+	const inner = 5
 
+	t.Run("float", func(t *testing.T) {
 		var x float64
 		var nLock sync.Mutex
 		g := NewSet().NewFloatFunc("x", func() float64 {
@@ -101,9 +101,6 @@ func TestFuncConcurrent(t *testing.T) {
 	})
 
 	t.Run("int", func(t *testing.T) {
-		const n = 1000
-		const inner = 5
-
 		var x int64
 		var nLock sync.Mutex
 		g := NewSet().NewIntFunc("x", func() int64 {
@@ -123,9 +120,6 @@ func TestFuncConcurrent(t *testing.T) {
 	})
 
 	t.Run("uint", func(t *testing.T) {
-		const n = 1000
-		const inner = 5
-
 		var x uint64
 		var nLock sync.Mutex
 		g := NewSet().NewUintFunc("x", func() uint64 {
