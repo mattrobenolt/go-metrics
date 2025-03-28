@@ -38,6 +38,32 @@ type (
 	atomicDecimalBucket = atomic.Pointer[decimalBucket]
 )
 
+// NewHistogram creates a new Histogram on the global Set.
+// See [Set.NewHistogram].
+func NewHistogram(family string, tags ...string) *Histogram {
+	return defaultSet.NewHistogram(family, tags...)
+}
+
+// NewHistogram creates and returns new Histogram in s with the given name.
+//
+// family must be a Prometheus compatible identifier format.
+//
+// Optional tags must be specified in [label, value] pairs, for instance,
+//
+//	NewHistogram("family", "label1", "value1", "label2", "value2")
+//
+// The returned Histogram is safe to use from concurrent goroutines.
+//
+// This will panic if values are invalid or already registered.
+func (s *Set) NewHistogram(family string, tags ...string) *Histogram {
+	h := &Histogram{}
+	s.mustRegisterMetric(h, MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	})
+	return h
+}
+
 // Histogram is a histogram for non-negative values with automatically created buckets.
 //
 // See https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350

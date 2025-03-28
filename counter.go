@@ -43,6 +43,18 @@ func (c *Uint) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteUint64(c.Get())
 }
 
+// NewCounter creates a new Uint on the global Set.
+// See [Set.NewUint].
+func NewCounter(family string, tags ...string) *Uint {
+	return defaultSet.NewCounter(family, tags...)
+}
+
+// NewUint creates a new Uint on the global Set.
+// See [Set.NewUint].
+func NewUint(family string, tags ...string) *Uint {
+	return defaultSet.NewUint(family, tags...)
+}
+
 // NewUint registers and returns new Counter with the given name in the s.
 //
 // family must be a Prometheus compatible identifier format.
@@ -105,6 +117,12 @@ func (c *Int) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteInt64(c.Get())
 }
 
+// NewInt creates a new Int on the global Set.
+// See [Set.NewInt].
+func NewInt(family string, tags ...string) *Int {
+	return defaultSet.NewInt(family, tags...)
+}
+
 // NewInt registers and returns new Int with the given name in the s.
 //
 // family must be a Prometheus compatible identifier format.
@@ -160,6 +178,12 @@ func (c *Float) Set(val float64) {
 func (c *Float) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(c.Get())
+}
+
+// NewFloat creates a new Float on the global Set.
+// See [Set.NewFloat].
+func NewFloat(family string, tags ...string) *Float {
+	return defaultSet.NewFloat(family, tags...)
 }
 
 // NewFloat registers and returns new Float with the given name in the s.

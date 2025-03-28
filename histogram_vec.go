@@ -1,33 +1,17 @@
 package metrics
 
-import (
-	"errors"
-)
-
-// NewHistogram creates and returns new Histogram in s with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	NewHistogram("family", "label1", "value1", "label2", "value2")
-//
-// The returned Histogram is safe to use from concurrent goroutines.
-//
-// This will panic if values are invalid or already registered.
-func (s *Set) NewHistogram(family string, tags ...string) *Histogram {
-	h := &Histogram{}
-	s.mustRegisterMetric(h, MetricName{
-		Family: MustIdent(family),
-		Tags:   MustTags(tags...),
-	})
-	return h
-}
+import "errors"
 
 // A HistogramVec is a collection of Histograms that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type HistogramVec struct {
 	commonVec
+}
+
+// NewHistogramVec creates a new HistogramVec on the global Set.
+// See [Set.NewHistogramVec].
+func NewHistogramVec(family string, labels ...string) *HistogramVec {
+	return defaultSet.NewHistogramVec(family, labels...)
 }
 
 // WithLabelValues returns the Histogram for the corresponding label values.

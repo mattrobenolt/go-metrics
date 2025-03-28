@@ -29,10 +29,10 @@ func main() {
 	// exposes Go and process runtime metrics
 	metrics.RegisterDefaultCollectors()
 
-	// create a new counter "foo" with the tag a=b
+	// create a new uint64 counter "foo" with the tag a=b
 	// This will emit:
 	//   foo{a="b"} 1
-	c := metrics.NewCounter("foo", "a", "b")
+	c := metrics.NewUint("foo", "a", "b")
 	c.Inc()
 
 	mux := http.NewServeMux()
@@ -42,7 +42,7 @@ func main() {
 ```
 
 ## Metric Types
-* Counters (uint64/float64)
+* Counters (uint64/int64/float64)
 * Gauges (uint64/int64/float64)
 * Histograms
   - Prometheus-like (`le` label style)
@@ -63,7 +63,7 @@ func main() {
 > Updating metrics happen very typically within extremely hot paths, and
 > nanoseconds matter.
 
-Increment a counter through `CounterVec.WithLabelValue` API
+Increment a counter through `UintVec.WithLabelValue` API
 
 | package | sec/op | vs base | allocs/op |
 | :------ | :----: | :-----: | :-------: |

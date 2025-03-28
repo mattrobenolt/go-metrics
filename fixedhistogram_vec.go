@@ -6,32 +6,18 @@ import (
 	"sync/atomic"
 )
 
-// NewFixedHistogram creates and returns new FixedHistogram in s with the given name.
-//
-// family must be a Prometheus compatible identifier format.
-//
-// Optional tags must be specified in [label, value] pairs, for instance,
-//
-//	NewFixedHistogram("family", []float64{0.1, 0.5, 1}, "label1", "value1", "label2", "value2")
-//
-// The returned Histogram is safe to use from concurrent goroutines.
-//
-// This will panic if values are invalid or already registered.
-func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
-	h := newFixedHistogram(buckets)
-	s.mustRegisterMetric(h, MetricName{
-		Family: MustIdent(family),
-		Tags:   MustTags(tags...),
-	})
-	return h
-}
-
 // A FixedHistogramVec is a collection of FixedHistogramVecs that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type FixedHistogramVec struct {
 	commonVec
 	buckets []float64
 	labels  []string
+}
+
+// NewFixedHistogramVec creates a new FixedHistogramVec on the global Set.
+// See [Set.NewFixedHistogramVec].
+func NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
+	return defaultSet.NewFixedHistogramVec(family, buckets, labels...)
 }
 
 // WithLabelValues returns the FixedHistogram for the corresponding label values.

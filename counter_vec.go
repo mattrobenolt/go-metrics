@@ -8,6 +8,18 @@ type UintVec struct {
 	commonVec
 }
 
+// NewUintVec creates a new UintVec on the global Set.
+// See [Set.NewUintVec].
+func NewUintVec(family string, labels ...string) *UintVec {
+	return defaultSet.NewUintVec(family, labels...)
+}
+
+// NewCounterVec creates a new UintVec on the global Set.
+// See [Set.NewUintVec].
+func NewCounterVec(family string, labels ...string) *UintVec {
+	return defaultSet.NewCounterVec(family, labels...)
+}
+
 // WithLabelValues returns the Uint for the corresponding label values.
 // If the combination of values is seen for the first time, a new Uint
 // is created.
@@ -52,6 +64,12 @@ type IntVec struct {
 	commonVec
 }
 
+// NewIntVec creates a new IntVec on the global Set.
+// See [Set.NewIntVec].
+func NewIntVec(family string, labels ...string) *IntVec {
+	return defaultSet.NewIntVec(family, labels...)
+}
+
 // WithLabelValues returns the Int for the corresponding label values.
 // If the combination of values is seen for the first time, a new Int
 // is created.
@@ -89,6 +107,12 @@ func (s *Set) NewIntVec(family string, labels ...string) *IntVec {
 // by the same metric name and tag labels, but different tag values.
 type FloatVec struct {
 	commonVec
+}
+
+// NewFloatVec creates a new FloatVec on the global Set.
+// See [Set.NewFloatVec].
+func NewFloatVec(family string, labels ...string) *FloatVec {
+	return defaultSet.NewFloatVec(family, labels...)
 }
 
 // WithLabelValues returns the Float for the corresponding label values.

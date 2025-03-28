@@ -15,6 +15,12 @@ func (f *UintFunc) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteUint64(f.Get())
 }
 
+// NewUintFunc creates a new UintFunc on the global Set.
+// See [Set.NewUintFunc].
+func NewUintFunc(name string, fn func() uint64) *UintFunc {
+	return defaultSet.NewUintFunc(name, fn)
+}
+
 // NewUintFunc registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
@@ -53,6 +59,12 @@ func (f *IntFunc) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteInt64(f.Get())
 }
 
+// NewIntFunc creates a new IntFunc on the global Set.
+// See [Set.NewIntFunc].
+func NewIntFunc(name string, fn func() int64) *IntFunc {
+	return defaultSet.NewIntFunc(name, fn)
+}
+
 // NewIntFunc registers and returns gauge with the given name in s, which calls fn
 // to obtain gauge value.
 //
@@ -89,6 +101,12 @@ func (f *FloatFunc) Get() float64 {
 func (f *FloatFunc) marshalTo(w ExpfmtWriter, name MetricName) {
 	w.WriteMetricName(name)
 	w.WriteFloat64(f.Get())
+}
+
+// NewFloatFunc creates a new FloatFunc on the global Set.
+// See [Set.NewFloatFunc].
+func NewFloatFunc(name string, fn func() float64) *FloatFunc {
+	return defaultSet.NewFloatFunc(name, fn)
 }
 
 // NewFloatFunc registers and returns gauge with the given name in s, which calls fn

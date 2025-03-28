@@ -14,6 +14,33 @@ import (
 
 const minimumWriteBuffer = 16 * 1024
 
+var defaultSet Set
+
+// ResetDefaultSet results the default global Set.
+// See [Set.Reset].
+func ResetDefaultSet() {
+	defaultSet.Reset()
+}
+
+// RegisterDefaultCollectors registers the default Collectors
+// onto the global Set.
+func RegisterDefaultCollectors() {
+	RegisterCollector(NewGoMetricsCollector())
+	RegisterCollector(NewProcessMetricsCollector())
+}
+
+// RegisterCollector registers a Collector onto the global Set.
+// See [Set.RegisterCollector].
+func RegisterCollector(c Collector) {
+	defaultSet.RegisterCollector(c)
+}
+
+// WritePrometheus writes the global Set to io.Writer.
+// See [Set.WritePrometheus].
+func WritePrometheus(w io.Writer) (int, error) {
+	return defaultSet.WritePrometheus(w)
+}
+
 // Set is a collection of metrics. A single Set may have children Sets.
 //
 // [Set.WritePrometheus] must be called for exporting metrics from the set.

@@ -13,6 +13,32 @@ import (
 // DefBuckets is the default set of buckets used with a [FixedHistogram].
 var DefBuckets = []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
 
+// NewFixedHistogram creates a new FixedHistogram on the global Set.
+// See [Set.NewFixedHistogram].
+func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
+	return defaultSet.NewFixedHistogram(family, buckets, tags...)
+}
+
+// NewFixedHistogram creates and returns new FixedHistogram in s with the given name.
+//
+// family must be a Prometheus compatible identifier format.
+//
+// Optional tags must be specified in [label, value] pairs, for instance,
+//
+//	NewFixedHistogram("family", []float64{0.1, 0.5, 1}, "label1", "value1", "label2", "value2")
+//
+// The returned Histogram is safe to use from concurrent goroutines.
+//
+// This will panic if values are invalid or already registered.
+func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
+	h := newFixedHistogram(buckets)
+	s.mustRegisterMetric(h, MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	})
+	return h
+}
+
 // FixedHistogram is a Prometheus-like histogram with fixed buckets.
 //
 // If you would like VictoriaMetrics `vmrange` histogram buckets, see [Histogram].
