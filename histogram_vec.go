@@ -25,11 +25,8 @@ func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
 	}
 	hash := hashFinish(h.partialHash, values)
 
-	h.s.metricsMu.Lock()
-	nm := h.s.metrics[hash]
-	h.s.metricsMu.Unlock()
-
-	if nm == nil {
+	nm, ok := h.s.metrics.Load(hash)
+	if !ok {
 		nm = h.s.getOrRegisterMetricFromVec(
 			&Histogram{}, hash, h.family, h.partialTags, values,
 		)

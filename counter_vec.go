@@ -31,11 +31,8 @@ func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
 	}
 	hash := hashFinish(c.partialHash, values)
 
-	c.s.metricsMu.Lock()
-	nm := c.s.metrics[hash]
-	c.s.metricsMu.Unlock()
-
-	if nm == nil {
+	nm, ok := c.s.metrics.Load(hash)
+	if !ok {
 		nm = c.s.getOrRegisterMetricFromVec(
 			&Uint64{}, hash, c.family, c.partialTags, values,
 		)
@@ -81,11 +78,8 @@ func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
 	}
 	hash := hashFinish(c.partialHash, values)
 
-	c.s.metricsMu.Lock()
-	nm := c.s.metrics[hash]
-	c.s.metricsMu.Unlock()
-
-	if nm == nil {
+	nm, ok := c.s.metrics.Load(hash)
+	if !ok {
 		nm = c.s.getOrRegisterMetricFromVec(
 			&Int64{}, hash, c.family, c.partialTags, values,
 		)
@@ -126,11 +120,8 @@ func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
 	}
 	hash := hashFinish(c.partialHash, values)
 
-	c.s.metricsMu.Lock()
-	nm := c.s.metrics[hash]
-	c.s.metricsMu.Unlock()
-
-	if nm == nil {
+	nm, ok := c.s.metrics.Load(hash)
+	if !ok {
 		nm = c.s.getOrRegisterMetricFromVec(
 			&Float64{}, hash, c.family, c.partialTags, values,
 		)

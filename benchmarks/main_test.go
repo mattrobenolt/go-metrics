@@ -82,7 +82,7 @@ func BenchmarkUpdateVMRangeHistogram(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 
-		for i := range b.N {
+		for i := 0; b.Loop(); i++ {
 			h.Update(float64(observations[i%len(observations)]))
 		}
 	})
@@ -94,7 +94,7 @@ func BenchmarkUpdateVMRangeHistogram(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 
-		for i := range b.N {
+		for i := 0; b.Loop(); i++ {
 			h.Update(float64(observations[i%len(observations)]))
 		}
 	})
@@ -117,7 +117,7 @@ func BenchmarkUpdatePromHistogram(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 
-		for i := range b.N {
+		for i := 0; b.Loop(); i++ {
 			h.Observe(float64(observations[i%len(observations)]))
 		}
 	})
@@ -132,7 +132,7 @@ func BenchmarkUpdatePromHistogram(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 
-		for i := range b.N {
+		for i := 0; b.Loop(); i++ {
 			h.Observe(float64(observations[i%len(observations)]))
 		}
 	})

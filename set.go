@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"runtime"
 	"slices"
 	"sync"
 	"sync/atomic"
+
+	"go.withmatt.com/metrics/internal/syncx"
 )
 
 const minimumWriteBuffer = 16 * 1024
@@ -45,14 +46,9 @@ func WritePrometheus(w io.Writer) (int, error) {
 //
 // [Set.WritePrometheus] must be called for exporting metrics from the set.
 type Set struct {
-	dirty       atomic.Bool
 	hasChildren atomic.Bool
 
-	metricsMu sync.Mutex
-	metrics   map[metricHash]*namedMetric
-
-	valuesMu sync.Mutex
-	values   []*namedMetric
+	metrics syncx.SortedMap[metricHash, *namedMetric]
 
 	childrenMu sync.Mutex
 	children   []*Set
@@ -77,11 +73,8 @@ func NewSet(constantTags ...string) *Set {
 //
 // Reset retains any ConstantTags if set.
 func (s *Set) Reset() {
-	s.metricsMu.Lock()
-	clear(s.metrics)
-	s.values = s.values[:0]
-	s.dirty.Store(false)
-	s.metricsMu.Unlock()
+	s.metrics.Init(compareNamedMetrics)
+	s.metrics.Clear()
 
 	s.childrenMu.Lock()
 	s.children = s.children[:0]
@@ -170,37 +163,12 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		bb.Grow(minimumWriteBuffer)
 	}
 
-	if s.dirty.Load() {
-		s.metricsMu.Lock()
-		tmp := maps.Clone(s.metrics)
-		// mark dirty early since we've taken a clone of our
-		// metrics, which is the point we have split off.
-		s.dirty.Store(false)
-
-		// lock our values before unlocking the metrics to enforce
-		// that we run sequentially in the same goroutine.
-		s.valuesMu.Lock()
-		s.metricsMu.Unlock()
-
-		s.values = slices.Grow(s.values, len(tmp))
-		s.values = s.values[:0]
-		for _, v := range tmp {
-			s.values = append(s.values, v)
-		}
-		slices.SortStableFunc(s.values, compareNamedMetrics)
-		s.valuesMu.Unlock()
-	}
-
 	exp := ExpfmtWriter{
 		b:            bb,
 		constantTags: s.constantTags,
 	}
 
-	s.valuesMu.Lock()
-	values := slices.Clone(s.values)
-	s.valuesMu.Unlock()
-
-	for _, nm := range values {
+	for _, nm := range s.metrics.Values() {
 		// yield the scheduler for each metric to not starve CPU
 		if throttle {
 			runtime.Gosched()
@@ -252,14 +220,9 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 		metric: m,
 	}
 
-	s.metricsMu.Lock()
-	defer s.metricsMu.Unlock()
-
-	if _, ok := s.metrics[nm.id]; ok {
+	if _, loaded := s.metrics.LoadOrStore(nm.id, nm); loaded {
 		panic(fmt.Errorf("metric %q is already registered", name.String()))
 	}
-
-	s.addMetricLocked(nm)
 }
 
 // getOrRegisterMetricFromVec will attempt to create a new metric or return one that
@@ -282,25 +245,8 @@ func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident
 }
 
 func (s *Set) getOrAddNamedMetric(newNm *namedMetric) *namedMetric {
-	s.metricsMu.Lock()
-	defer s.metricsMu.Unlock()
-	nm := s.metrics[newNm.id]
-	if nm == nil {
-		nm = newNm
-		s.addMetricLocked(nm)
-	}
+	nm, _ := s.metrics.LoadOrStore(newNm.id, newNm)
 	return nm
-}
-
-func (s *Set) addMetricLocked(nm *namedMetric) {
-	if s.metrics == nil {
-		s.metrics = map[metricHash]*namedMetric{
-			nm.id: nm,
-		}
-	} else {
-		s.metrics[nm.id] = nm
-	}
-	s.dirty.Store(true)
 }
 
 func joinTags(previous string, new []Tag) string {
