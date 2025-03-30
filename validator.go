@@ -36,7 +36,7 @@ func MustTag(label, value string) Tag {
 // This will panic if s is an invalid tag value.
 func MustValue(s string) Value {
 	if !validateLabelValue(s) {
-		panic(fmt.Errorf("invalid tag value: %q", s))
+		panic(fmt.Sprintf("metrics: invalid tag value: %q", s))
 	}
 	// Values are expected to vary quite a lot, and there's no use
 	// in uniquing.
@@ -52,7 +52,7 @@ func MustTags(tags ...string) []Tag {
 	}
 
 	if len(tags)%2 != 0 {
-		panic(fmt.Errorf("tag label/values must be in pairs, got: %v", tags))
+		panic(fmt.Sprintf("metrics: tag label/values must be in pairs, got: %v", tags))
 	}
 
 	pairs := make([]Tag, 0, len(tags)/2)

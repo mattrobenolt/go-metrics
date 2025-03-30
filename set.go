@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"runtime"
@@ -116,7 +115,7 @@ func (s *Set) UnregisterSet(set *Set) {
 func (s *Set) RegisterCollector(c Collector) {
 	s.childrenMu.Lock()
 	if idx := slices.Index(s.collectors, c); idx >= 0 {
-		panic(errors.New("Collector already registered"))
+		panic("metrics: Collector already registered")
 	}
 	s.collectors = append(s.collectors, c)
 	s.hasChildren.Store(true)
@@ -221,7 +220,7 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 	}
 
 	if _, loaded := s.metrics.LoadOrStore(nm.id, nm); loaded {
-		panic(fmt.Errorf("metric %q is already registered", name.String()))
+		panic(fmt.Sprintf("metrics: metric %q is already registered", name.String()))
 	}
 }
 
@@ -230,7 +229,7 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 // partialTags are tags with validated labels, but no values
 func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
 	if len(values) != len(partialTags) {
-		panic(errors.New("mismatch length of labels and values"))
+		panic("metrics: mismatch length of labels and values")
 	}
 	// tags come in without values, so we need to stitch them together
 	tags := slices.Clone(partialTags)

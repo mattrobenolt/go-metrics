@@ -153,7 +153,7 @@ func writeRuntimeMetric(w ExpfmtWriter, name MetricName, sample *runtimemetrics.
 	kind := sample.Value.Kind()
 	switch kind {
 	case runtimemetrics.KindBad:
-		panic(fmt.Errorf("BUG: unexpected runtimemetrics.KindBad for sample.Name=%q", sample.Name))
+		panic(fmt.Sprintf("metrics: unexpected runtimemetrics.KindBad for sample.Name=%q", sample.Name))
 	case runtimemetrics.KindUint64:
 		v := sample.Value.Uint64()
 		w.WriteMetricUint64(name, v)
@@ -164,6 +164,6 @@ func writeRuntimeMetric(w ExpfmtWriter, name MetricName, sample *runtimemetrics.
 		// h := sample.Value.Float64Histogram()
 		// writeRuntimeHistogramMetric(w, name, h)
 	default:
-		panic(fmt.Errorf("unexpected metric kind=%d", kind))
+		panic(fmt.Sprintf("metrics: unexpected metric kind=%d", kind))
 	}
 }

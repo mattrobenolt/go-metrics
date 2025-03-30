@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"errors"
 	"fmt"
 	"hash/maphash"
 	"runtime"
@@ -17,10 +16,6 @@ var identCache sync.Map // map[uint64]weak.Pointer[string]
 // Caching uniqueness at this point makes it significantly faster to
 // repeatedly look up the same identifier.
 func makeIdentHandle(value string) Ident {
-	if len(value) == 0 {
-		panic(errors.New("empty identifier"))
-	}
-
 	key := maphash.String(globalSeed, value)
 
 	// Keep around any values we allocate for insertion. There
@@ -40,7 +35,7 @@ func makeIdentHandle(value string) Ident {
 			// Try to insert a new value into the map.
 			if toInsert == nil {
 				if !validateIdent(value) {
-					panic(fmt.Errorf("invalid identifier: %q", value))
+					panic(fmt.Sprintf("metrics: invalid identifier: %q", value))
 				}
 				toInsert = new(string)
 				*toInsert = strings.Clone(value)
