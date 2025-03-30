@@ -1,7 +1,5 @@
 package metrics
 
-import "errors"
-
 // A Uint64Vec is a collection of Uint64s that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type Uint64Vec struct {
@@ -26,9 +24,6 @@ func NewCounterVec(family string, labels ...string) *Uint64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
-	if len(values) != len(c.partialTags) {
-		panic(errors.New("mismatch length of labels"))
-	}
 	hash := hashFinish(c.partialHash, values)
 
 	nm, ok := c.s.metrics.Load(hash)
@@ -73,9 +68,6 @@ func NewInt64Vec(family string, labels ...string) *Int64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
-	if len(values) != len(c.partialTags) {
-		panic(errors.New("mismatch length of labels"))
-	}
 	hash := hashFinish(c.partialHash, values)
 
 	nm, ok := c.s.metrics.Load(hash)
@@ -115,9 +107,6 @@ func NewFloat64Vec(family string, labels ...string) *Float64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
-	if len(values) != len(c.partialTags) {
-		panic(errors.New("mismatch length of labels"))
-	}
 	hash := hashFinish(c.partialHash, values)
 
 	nm, ok := c.s.metrics.Load(hash)

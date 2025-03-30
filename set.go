@@ -229,6 +229,9 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 // was potentially created in parallel from a Vec which is partially materialized.
 // partialTags are tags with validated labels, but no values
 func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
+	if len(values) != len(partialTags) {
+		panic(errors.New("mismatch length of labels and values"))
+	}
 	// tags come in without values, so we need to stitch them together
 	tags := slices.Clone(partialTags)
 	for i := range tags {

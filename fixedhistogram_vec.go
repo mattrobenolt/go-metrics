@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"errors"
 	"slices"
 	"sync/atomic"
 )
@@ -26,9 +25,6 @@ func NewFixedHistogramVec(family string, buckets []float64, labels ...string) *F
 //
 // This will panic if the values count doesn't match the number of labels.
 func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
-	if len(values) != len(h.partialTags) {
-		panic(errors.New("mismatch length of labels"))
-	}
 	hash := hashFinish(h.partialHash, values)
 
 	nm, ok := h.s.metrics.Load(hash)

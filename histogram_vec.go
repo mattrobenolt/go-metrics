@@ -1,7 +1,5 @@
 package metrics
 
-import "errors"
-
 // A HistogramVec is a collection of Histograms that are partitioned
 // by the same metric name and tag labels, but different tag values.
 type HistogramVec struct {
@@ -20,9 +18,6 @@ func NewHistogramVec(family string, labels ...string) *HistogramVec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
-	if len(values) != len(h.partialTags) {
-		panic(errors.New("mismatch length of labels"))
-	}
 	hash := hashFinish(h.partialHash, values)
 
 	nm, ok := h.s.metrics.Load(hash)
