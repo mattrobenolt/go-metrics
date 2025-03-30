@@ -7,7 +7,7 @@ func BenchmarkHistogramUpdate(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := range b.N {
+	for i := 0; b.Loop(); i++ {
 		h.Update(float64(i))
 	}
 }
