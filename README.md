@@ -12,6 +12,7 @@ import "go.withmatt.com/metrics"
 
 ## Features
 * Very fast, very few allocations. [Really](benchmarks.txt).
+* Optional expiring of unobserved metrics
 * HTTP exporter
 * Built-in runtime metrics collectors
 * Easy Prometheus-like API
