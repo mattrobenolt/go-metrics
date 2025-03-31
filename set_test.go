@@ -3,9 +3,12 @@ package metrics
 import (
 	"fmt"
 	"io"
+	"sync"
 	"testing"
+	"time"
 
 	"go.withmatt.com/metrics/internal/assert"
+	"go.withmatt.com/metrics/internal/fasttime"
 )
 
 type testCollector struct{}
@@ -330,4 +333,45 @@ func TestSetVec(t *testing.T) {
 		`foo_count{type="fixedhist",label1="value1"} 1`,
 		`foo_sum{type="fixedhist",label1="value1"} 1`,
 	})
+}
+
+func stubFastClock(t *testing.T) {
+	originalFastClock := fastClock
+	testClock := fasttime.NewClock(time.Microsecond)
+	t.Cleanup(func() {
+		testClock.Stop()
+		fastClock = originalFastClock
+	})
+	fastClock = sync.OnceValue(func() *fasttime.Clock { return testClock })
+}
+
+func TestSetVecTTL(t *testing.T) {
+	stubFastClock(t)
+
+	set := NewSet()
+	sv := set.NewSetVecWithTTL("a", time.Millisecond)
+
+	sv.WithLabelValue("1").NewCounter("foo").Inc()
+	sv.WithLabelValue("2").NewCounter("foo").Inc()
+	time.Sleep(500 * time.Microsecond)
+
+	// keeps "1" alive
+	sv.WithLabelValue("1").NewCounter("bar").Inc()
+
+	assertMarshalUnordered(t, set, []string{
+		`foo{a="1"} 1`,
+		`foo{a="2"} 1`,
+		`bar{a="1"} 1`,
+	})
+
+	// "2" expired away by now
+	time.Sleep(750 * time.Microsecond)
+
+	assertMarshalUnordered(t, set, []string{
+		`foo{a="1"} 1`,
+		`bar{a="1"} 1`,
+	})
+
+	time.Sleep(500 * time.Microsecond)
+	assertMarshalUnordered(t, set, []string{})
 }

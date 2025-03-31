@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"hash/maphash"
+	"time"
 )
 
 // A SetVec is a collection of Sets partitioned by label, but different value.
@@ -11,12 +12,19 @@ type SetVec struct {
 	s           *Set
 	label       Label
 	partialHash *maphash.Hash
+	ttl         time.Duration
 }
 
 // NewSetVec creates a new SetVec on the global Set.
 // See [Set.NewSetVec].
 func NewSetVec(label string) *SetVec {
 	return defaultSet.NewSetVec(label)
+}
+
+// NewSetVecWithTTL creates a new SetVec on the global Set with a TTL.
+// See [Set.NewSetVecWithTTL].
+func NewSetVecWithTTL(label string, ttl time.Duration) *SetVec {
+	return defaultSet.NewSetVecWithTTL(label, ttl)
 }
 
 // NewSetVec creates a new [SetVec] with the given label.
@@ -28,16 +36,31 @@ func (s *Set) NewSetVec(label string) *SetVec {
 	}
 }
 
+// NewSetVecWithTTL creates a new [SetVec] with the given label and TTL.
+// See [Set.KeepAlive] to manually keep a specific Set alive.
+func (s *Set) NewSetVecWithTTL(label string, ttl time.Duration) *SetVec {
+	sv := s.NewSetVec(label)
+	sv.ttl = ttl
+	return sv
+}
+
 // WithLabelValues returns the Set for the corresponding label value.
 // If the combination of values is seen for the first time, a new Set
 // is created.
+//
+// If the SetVec was created with a TTL, the Set will be automatically kept
+// alive when this function is called. See [Set.KeepAlive] to manually keep a
+// the returned Set alive if necessary.
+//
+// See [Set.KeepAlive] to manually keep a specific Set alive.
 func (s *SetVec) WithLabelValue(value string) *Set {
 	hash := hashFinish(s.partialHash, value)
 
 	set, ok := s.s.setsByHash.Load(hash)
 	if !ok {
-		set = s.s.loadOrStoreSetFromVec(hash, s.label, value)
+		set = s.s.loadOrStoreSetFromVec(hash, s.ttl, s.label, value)
 	}
+	set.KeepAlive()
 	return set
 }
 

@@ -2,19 +2,32 @@ package metrics
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"runtime"
 	"slices"
 	"sync"
 	"sync/atomic"
+	"time"
 
+	"go.withmatt.com/metrics/internal/fasttime"
 	"go.withmatt.com/metrics/internal/syncx"
 )
 
 const minimumWriteBuffer = 16 * 1024
 
 var defaultSet = newSet()
+
+// fastClock is a clock used for TTL'ing Sets. The accuracy is
+// 1 tick per second, so it's not possible to get accuracy better than 1 second,
+// but this keeps the overhead very cheap.
+var fastClock = sync.OnceValue(func() *fasttime.Clock {
+	return fasttime.NewClock(time.Second)
+})
+
+// ErrSetExpired is returned from WritePrometheus when a Set has expired.
+var ErrSetExpired = errors.New("set expired")
 
 // ResetDefaultSet results the default global Set.
 // See [Set.Reset].
@@ -66,6 +79,9 @@ type Set struct {
 	// constantTags are tags that are constant for all metrics in the set.
 	// Children sets inherit these base tags.
 	constantTags string
+
+	ttl      time.Duration
+	lastUsed fasttime.Instant
 }
 
 // NewSet creates new set of metrics.
@@ -95,6 +111,8 @@ func (s *Set) setConstantTags(previousConstantTags string, constantTags ...strin
 //
 // Reset retains any ConstantTags if set.
 func (s *Set) Reset() {
+	defer s.KeepAlive()
+
 	s.metrics.Clear()
 	s.setsByHash.Clear()
 	s.unorderedSets.Clear()
@@ -109,6 +127,8 @@ func (s *Set) Reset() {
 // This will panic if constant tags are not unique within the parent Set. If
 // no constant tags are provided, this will never fail.
 func (s *Set) NewSet(constantTags ...string) *Set {
+	defer s.KeepAlive()
+
 	s2 := newSet()
 	s2.setConstantTags(s.constantTags, constantTags...)
 
@@ -154,6 +174,9 @@ func (s *Set) UnregisterCollector(c Collector) {
 // Metric writing and collecting is throttled by yielding the Go scheduler to
 // not starve CPU. Use WritePrometheusUnthrottled if you don't want that.
 func (s *Set) WritePrometheus(w io.Writer) (int, error) {
+	if s.isExpired() {
+		return 0, ErrSetExpired
+	}
 	return s.writePrometheus(w, true)
 }
 
@@ -162,6 +185,9 @@ func (s *Set) WritePrometheus(w io.Writer) (int, error) {
 //
 // This may starve the CPU and it's suggested to use [Set.WritePrometheus] instead.
 func (s *Set) WritePrometheusUnthrottled(w io.Writer) (int, error) {
+	if s.isExpired() {
+		return 0, ErrSetExpired
+	}
 	return s.writePrometheus(w, false)
 }
 
@@ -222,7 +248,12 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 // writeChildrenSets writes all sets to the buffer.
 func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
 	var err error
-	s.setsByHash.Range(func(_ metricHash, child *Set) bool {
+	s.setsByHash.Range(func(key metricHash, child *Set) bool {
+		if child.isExpired() {
+			s.setsByHash.Delete(key)
+			return true
+		}
+
 		_, err = child.writePrometheus(bb, throttle)
 		return err == nil
 	})
@@ -230,10 +261,21 @@ func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
 		return err
 	}
 	s.unorderedSets.Range(func(child *Set) bool {
+		if child.isExpired() {
+			s.unorderedSets.Delete(child)
+			return true
+		}
 		_, err = child.writePrometheus(bb, throttle)
 		return err == nil
 	})
 	return err
+}
+
+func (s *Set) isExpired() bool {
+	if s.ttl == 0 {
+		return false
+	}
+	return fastClock().Since(s.lastUsed) > s.ttl
 }
 
 // mustStoreSet adds a new Set, and will panic if the set has already been registered.
@@ -252,6 +294,7 @@ func (s *Set) mustStoreSet(set *Set) {
 // mustStoreMetric adds a new Metric, and will panic if the metric already has
 // been registered.
 func (s *Set) mustStoreMetric(m Metric, name MetricName) {
+	defer s.KeepAlive()
 	nm := &namedMetric{
 		id:     getHashTags(name.Family.String(), name.Tags),
 		name:   name,
@@ -290,14 +333,23 @@ func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, 
 
 // loadOrStoreSetFromVec will attempt to create a new set or return one that
 // was potentially created in parallel from a SetVec which is partially materialized.
-func (s *Set) loadOrStoreSetFromVec(hash metricHash, label Label, value string) *Set {
+func (s *Set) loadOrStoreSetFromVec(hash metricHash, ttl time.Duration, label Label, value string) *Set {
 	set := newSet()
 	set.id = hash
+	set.ttl = ttl
+	set.lastUsed = fastClock().Now()
 	set.constantTags = joinTags(s.constantTags, Tag{
 		label: label,
 		value: MustValue(value),
 	})
 	return s.loadOrStoreSet(set)
+}
+
+// KeepAlive is used to bump a Set's expiration when a TTL is set.
+func (s *Set) KeepAlive() {
+	if s.ttl > 0 {
+		s.lastUsed = fastClock().Now()
+	}
 }
 
 func (s *Set) loadOrStoreSet(newSet *Set) *Set {
