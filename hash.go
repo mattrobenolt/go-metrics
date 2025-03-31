@@ -26,6 +26,8 @@ const (
 
 type metricHash uint64
 
+const emptyHash metricHash = 0
+
 // use a consistent seed for all hashing
 var globalSeed = maphash.MakeSeed()
 
@@ -79,7 +81,7 @@ func getHashStrings(family string, bits []string) metricHash {
 
 // hashStart writes out the family + labels, and returns
 // the hash to be finished with hashFinish.
-func hashStart(family string, labels []string) *maphash.Hash {
+func hashStart(family string, labels ...string) *maphash.Hash {
 	var h maphash.Hash
 	h.SetSeed(globalSeed)
 	h.WriteString(family)
@@ -95,7 +97,7 @@ func hashStart(family string, labels []string) *maphash.Hash {
 // values, returning the resulting value. hashFinish does not mutate
 // the starting state, so it can reused with different series of
 // values.
-func hashFinish(h *maphash.Hash, values []string) metricHash {
+func hashFinish(h *maphash.Hash, values ...string) metricHash {
 	// Create a copy of our maphash so we can write to
 	// this copy without mutating the starting partial hash.
 	h2 := *h

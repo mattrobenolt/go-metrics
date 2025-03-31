@@ -6,7 +6,8 @@ import (
 	"sync/atomic"
 )
 
-// Map wraps a sync.Map and makes it typed.
+// Map wraps a sync.Map and makes it typed, would really like to use
+// internal/sync.HashTrieMap some day.
 type Map[K comparable, V any] struct {
 	m sync.Map
 }
@@ -134,11 +135,11 @@ func (m *SortedMap[K, V]) Values() []V {
 // and lost, ultimately nothing will happen. If we win the race, the values
 // list will be updated, and we will attempt to reset the dirty counter. If new
 // changes have been made since we started, we will not reset the dirty counter.
-func (m *SortedMap[K, V]) updateDirtyValues(dirty uint64) {
+func (m *SortedMap[K, V]) updateDirtyValues(oldDirty uint64) {
 	startSize := 16 // start with something sensible to avoid early resizing
-	prevValues := m.values.Load()
-	if prevValues != nil {
-		startSize = len(*prevValues)
+	oldValues := m.values.Load()
+	if oldValues != nil {
+		startSize = len(*oldValues)
 	}
 
 	newValues := make([]V, 0, startSize)
@@ -154,10 +155,10 @@ func (m *SortedMap[K, V]) updateDirtyValues(dirty uint64) {
 	newValues = slices.Clip(newValues)
 
 	// only replace the values if another thread hasn't beat us
-	if m.values.CompareAndSwap(prevValues, &newValues) {
+	if m.values.CompareAndSwap(oldValues, &newValues) {
 		// if we did win the race and updated the values list, we can now
 		// attempt to reset the dirty counter. We only want to reset the dirty
 		// counter if nothing new has dirtied since we started.
-		m.dirty.CompareAndSwap(dirty, 0)
+		m.dirty.CompareAndSwap(oldDirty, 0)
 	}
 }

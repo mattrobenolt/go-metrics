@@ -18,11 +18,11 @@ func NewHistogramVec(family string, labels ...string) *HistogramVec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (h *HistogramVec) WithLabelValues(values ...string) *Histogram {
-	hash := hashFinish(h.partialHash, values)
+	hash := hashFinish(h.partialHash, values...)
 
 	nm, ok := h.s.metrics.Load(hash)
 	if !ok {
-		nm = h.s.getOrRegisterMetricFromVec(
+		nm = h.s.loadOrStoreMetricFromVec(
 			&Histogram{}, hash, h.family, h.partialTags, values,
 		)
 	}
@@ -35,6 +35,6 @@ func (s *Set) NewHistogramVec(family string, labels ...string) *HistogramVec {
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
-		partialHash: hashStart(family, labels),
+		partialHash: hashStart(family, labels...),
 	}}
 }

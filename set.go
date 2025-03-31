@@ -14,7 +14,7 @@ import (
 
 const minimumWriteBuffer = 16 * 1024
 
-var defaultSet Set
+var defaultSet = newSet()
 
 // ResetDefaultSet results the default global Set.
 // See [Set.Reset].
@@ -45,92 +45,107 @@ func WritePrometheus(w io.Writer) (int, error) {
 //
 // [Set.WritePrometheus] must be called for exporting metrics from the set.
 type Set struct {
-	hasChildren atomic.Bool
+	// a Set gets assigned an id if it has constant tags, otherwise
+	// there is no uniqueness in a Set.
+	id metricHash
 
 	metrics syncx.SortedMap[metricHash, *namedMetric]
 
-	childrenMu sync.Mutex
-	children   []*Set
-	collectors []Collector
+	// setsByHash contains children Sets that have ids, therefore have constant
+	// tags and are unique.
+	setsByHash syncx.Map[metricHash, *Set]
 
+	// unorderedSets are children Sets that do not have ids, therefore have
+	// no constant tags.
+	unorderedSets syncx.Set[*Set]
+
+	hasCollectors atomic.Bool
+	collectorsMu  sync.Mutex
+	collectors    []Collector
+
+	// constantTags are tags that are constant for all metrics in the set.
+	// Children sets inherit these base tags.
 	constantTags string
 }
 
 // NewSet creates new set of metrics.
 func NewSet(constantTags ...string) *Set {
-	var s Set
-	s.Reset()
+	s := newSet()
+	s.setConstantTags("", constantTags...)
+	return s
+}
 
+func newSet() *Set {
+	s := &Set{}
+	s.metrics.Init(compareNamedMetrics)
+	return s
+}
+
+func (s *Set) setConstantTags(previousConstantTags string, constantTags ...string) {
+	s.metrics.Init(compareNamedMetrics)
+	s.constantTags = joinTags(previousConstantTags, MustTags(constantTags...)...)
+
+	// give the Set an id if it has new constant tags
 	if len(constantTags) > 0 {
-		s.constantTags = materializeTags(MustTags(constantTags...))
+		s.id = getHashStrings("", constantTags)
 	}
-
-	return &s
 }
 
 // Reset resets the Set and retains allocated memory for reuse.
 //
 // Reset retains any ConstantTags if set.
 func (s *Set) Reset() {
-	s.metrics.Init(compareNamedMetrics)
 	s.metrics.Clear()
+	s.setsByHash.Clear()
+	s.unorderedSets.Clear()
 
-	s.childrenMu.Lock()
-	s.children = s.children[:0]
+	s.collectorsMu.Lock()
 	s.collectors = s.collectors[:0]
-	s.hasChildren.Store(false)
-	s.childrenMu.Unlock()
+	s.hasCollectors.Store(false)
+	s.collectorsMu.Unlock()
 }
 
 // NewSet creates a new child Set in s.
+// This will panic if constant tags are not unique within the parent Set. If
+// no constant tags are provided, this will never fail.
 func (s *Set) NewSet(constantTags ...string) *Set {
-	s2 := NewSet()
-	if len(constantTags) > 0 {
-		s2.constantTags = joinTags(
-			s.constantTags,
-			MustTags(constantTags...),
-		)
-	} else {
-		s2.constantTags = s.constantTags
-	}
-	s.childrenMu.Lock()
-	s.children = append(s.children, s2)
-	s.hasChildren.Store(true)
-	s.childrenMu.Unlock()
+	s2 := newSet()
+	s2.setConstantTags(s.constantTags, constantTags...)
+
+	s.mustStoreSet(s2)
 	return s2
 }
 
 // UnregisterSet removes a previously registered child Set.
 func (s *Set) UnregisterSet(set *Set) {
-	s.childrenMu.Lock()
-	if idx := slices.Index(s.children, set); idx >= 0 {
-		s.children = slices.Delete(s.children, idx, idx+1)
+	if set.id == emptyHash {
+		s.unorderedSets.Delete(set)
+	} else {
+		s.setsByHash.Delete(set.id)
 	}
-	s.hasChildren.Store(len(s.children) > 0 || len(s.collectors) > 0)
-	s.childrenMu.Unlock()
 }
 
 // RegisterCollector registers a Collector.
 // Registering the same collector more than once will panic.
 func (s *Set) RegisterCollector(c Collector) {
-	s.childrenMu.Lock()
+	s.collectorsMu.Lock()
 	if idx := slices.Index(s.collectors, c); idx >= 0 {
 		panic("metrics: Collector already registered")
 	}
 	s.collectors = append(s.collectors, c)
-	s.hasChildren.Store(true)
-	s.childrenMu.Unlock()
+	s.hasCollectors.Store(true)
+	s.collectorsMu.Unlock()
 }
 
 // UnregisterCollector removes a previously registered Collector from
 // the Set.
 func (s *Set) UnregisterCollector(c Collector) {
-	s.childrenMu.Lock()
+	s.collectorsMu.Lock()
 	if idx := slices.Index(s.collectors, c); idx >= 0 {
 		s.collectors = slices.Delete(s.collectors, idx, idx+1)
 	}
-	s.hasChildren.Store(len(s.children) > 0 || len(s.collectors) > 0)
-	s.childrenMu.Unlock()
+	s.hasCollectors.Store(len(s.collectors) > 0)
+	s.collectorsMu.Unlock()
 }
 
 // WritePrometheus writes the metrics along with all children to the io.Writer
@@ -175,20 +190,14 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		nm.metric.marshalTo(exp, nm.name)
 	}
 
-	if s.hasChildren.Load() {
-		s.childrenMu.Lock()
-		children := slices.Clone(s.children)
-		s.childrenMu.Unlock()
+	if err := s.writeChildrenSets(bb, throttle); err != nil {
+		return 0, err
+	}
 
-		for _, s := range children {
-			if _, err := s.writePrometheus(bb, throttle); err != nil {
-				return 0, err
-			}
-		}
-
-		s.childrenMu.Lock()
+	if s.hasCollectors.Load() {
+		s.collectorsMu.Lock()
 		collectors := slices.Clone(s.collectors)
-		s.childrenMu.Unlock()
+		s.collectorsMu.Unlock()
 
 		for _, c := range collectors {
 			// yield the scheduler for each Collector to not starve CPU
@@ -210,9 +219,39 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 	return bb.Len(), nil
 }
 
-// mustRegisterMetric adds a new Metric, and will panic if the metric already has
+// writeChildrenSets writes all sets to the buffer.
+func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
+	var err error
+	s.setsByHash.Range(func(_ metricHash, child *Set) bool {
+		_, err = child.writePrometheus(bb, throttle)
+		return err == nil
+	})
+	if err != nil {
+		return err
+	}
+	s.unorderedSets.Range(func(child *Set) bool {
+		_, err = child.writePrometheus(bb, throttle)
+		return err == nil
+	})
+	return err
+}
+
+// mustStoreSet adds a new Set, and will panic if the set has already been registered.
+func (s *Set) mustStoreSet(set *Set) {
+	if set.id == emptyHash {
+		if !s.unorderedSets.Add(set) {
+			panic(fmt.Sprintf("metrics: set %v is already registered", set))
+		}
+	} else {
+		if _, loaded := s.setsByHash.LoadOrStore(set.id, set); loaded {
+			panic(fmt.Sprintf("metrics: set %q is already registered", set.constantTags))
+		}
+	}
+}
+
+// mustStoreMetric adds a new Metric, and will panic if the metric already has
 // been registered.
-func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
+func (s *Set) mustStoreMetric(m Metric, name MetricName) {
 	nm := &namedMetric{
 		id:     getHashTags(name.Family.String(), name.Tags),
 		name:   name,
@@ -224,10 +263,10 @@ func (s *Set) mustRegisterMetric(m Metric, name MetricName) {
 	}
 }
 
-// getOrRegisterMetricFromVec will attempt to create a new metric or return one that
+// loadOrStoreMetricFromVec will attempt to create a new metric or return one that
 // was potentially created in parallel from a Vec which is partially materialized.
 // partialTags are tags with validated labels, but no values
-func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
+func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
 	if len(values) != len(partialTags) {
 		panic("metrics: mismatch length of labels and values")
 	}
@@ -236,7 +275,7 @@ func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident
 	for i := range tags {
 		tags[i].value = MustValue(values[i])
 	}
-	return s.getOrAddNamedMetric(&namedMetric{
+	return s.loadOrStoreNamedMetric(&namedMetric{
 		id: hash,
 		name: MetricName{
 			Family: family,
@@ -246,12 +285,29 @@ func (s *Set) getOrRegisterMetricFromVec(m Metric, hash metricHash, family Ident
 	})
 }
 
-func (s *Set) getOrAddNamedMetric(newNm *namedMetric) *namedMetric {
+// loadOrStoreSetFromVec will attempt to create a new set or return one that
+// was potentially created in parallel from a SetVec which is partially materialized.
+func (s *Set) loadOrStoreSetFromVec(hash metricHash, label Label, value string) *Set {
+	set := newSet()
+	set.id = hash
+	set.constantTags = joinTags(
+		s.constantTags,
+		Tag{label, MustValue(value)},
+	)
+	return s.loadOrStoreSet(set)
+}
+
+func (s *Set) loadOrStoreSet(newSet *Set) *Set {
+	set, _ := s.setsByHash.LoadOrStore(newSet.id, newSet)
+	return set
+}
+
+func (s *Set) loadOrStoreNamedMetric(newNm *namedMetric) *namedMetric {
 	nm, _ := s.metrics.LoadOrStore(newNm.id, newNm)
 	return nm
 }
 
-func joinTags(previous string, new []Tag) string {
+func joinTags(previous string, new ...Tag) string {
 	switch {
 	case len(previous) == 0 && len(new) == 0:
 		return ""

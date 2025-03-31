@@ -32,7 +32,7 @@ func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedH
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
 	h := newFixedHistogram(buckets)
-	s.mustRegisterMetric(h, MetricName{
+	s.mustStoreMetric(h, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})

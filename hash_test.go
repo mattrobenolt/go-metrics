@@ -37,19 +37,19 @@ func TestHashPartial(t *testing.T) {
 	labels := []string{"a", "b"}
 	// values := []string{"foo"}
 
-	state := hashStart(family, labels)
+	state := hashStart(family, labels...)
 
 	assert.Equal(t,
-		hashFinish(state, []string{"1", "2"}),
-		hashFinish(state, []string{"1", "2"}),
+		hashFinish(state, "1", "2"),
+		hashFinish(state, "1", "2"),
 	)
 	assert.NotEqual(t,
-		hashFinish(state, []string{"1", "2"}),
-		hashFinish(state, []string{"1", "3"}),
+		hashFinish(state, "1", "2"),
+		hashFinish(state, "1", "3"),
 	)
 
 	assert.Equal(t,
-		hashFinish(state, []string{"1", "2"}),
+		hashFinish(state, "1", "2"),
 		getHashTags(family, []Tag{
 			MustTag("a", "1"),
 			MustTag("b", "2"),

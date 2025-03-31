@@ -57,7 +57,7 @@ func NewHistogram(family string, tags ...string) *Histogram {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewHistogram(family string, tags ...string) *Histogram {
 	h := &Histogram{}
-	s.mustRegisterMetric(h, MetricName{
+	s.mustStoreMetric(h, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})

@@ -191,7 +191,8 @@ func sizeOfTags(tags []Tag, constantTags string) int {
 	return size - 1
 }
 
-func writeTag(b *bytes.Buffer, tag Tag) {
+func writeTag(b bytesBufferOrStringsBuilder, tag Tag) {
+	b.Grow(len(tag.label.String()) + len(tag.value.String()) + len(`=""`))
 	b.WriteString(tag.label.String())
 	b.WriteString(`="`)
 	b.WriteString(tag.value.String())
@@ -212,7 +213,7 @@ func writeMetricName(b *bytes.Buffer, name MetricName, constantTags string) {
 	b.WriteByte('}')
 }
 
-func writeTags(b *bytes.Buffer, constantTags string, tags []Tag) {
+func writeTags(b bytesBufferOrStringsBuilder, constantTags string, tags []Tag) {
 	if len(constantTags) > 0 {
 		b.WriteString(constantTags)
 		if len(tags) == 0 {
@@ -231,14 +232,12 @@ func writeTags(b *bytes.Buffer, constantTags string, tags []Tag) {
 
 func materializeTags(tags []Tag) string {
 	var sb strings.Builder
-	for i, tag := range tags {
-		if i > 0 {
-			sb.WriteByte(',')
-		}
-		sb.WriteString(tag.label.String())
-		sb.WriteString(`="`)
-		sb.WriteString(tag.value.String())
-		sb.WriteByte('"')
-	}
+	writeTags(&sb, "", tags)
 	return sb.String()
+}
+
+type bytesBufferOrStringsBuilder interface {
+	Grow(int)
+	WriteString(string) (int, error)
+	WriteByte(byte) error
 }

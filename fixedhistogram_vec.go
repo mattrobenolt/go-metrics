@@ -25,11 +25,11 @@ func NewFixedHistogramVec(family string, buckets []float64, labels ...string) *F
 //
 // This will panic if the values count doesn't match the number of labels.
 func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
-	hash := hashFinish(h.partialHash, values)
+	hash := hashFinish(h.partialHash, values...)
 
 	nm, ok := h.s.metrics.Load(hash)
 	if !ok {
-		nm = h.s.getOrRegisterMetricFromVec(
+		nm = h.s.loadOrStoreMetricFromVec(
 			&FixedHistogram{
 				buckets:      slices.Clone(h.buckets),
 				labels:       h.labels,
@@ -54,7 +54,7 @@ func (s *Set) NewFixedHistogramVec(family string, buckets []float64, labels ...s
 			s:           s,
 			family:      MustIdent(family),
 			partialTags: makePartialTags(labels),
-			partialHash: hashStart(family, labels),
+			partialHash: hashStart(family, labels...),
 		},
 		buckets: buckets,
 		labels:  labelsForBuckets(buckets),

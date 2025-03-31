@@ -24,11 +24,11 @@ func NewCounterVec(family string, labels ...string) *Uint64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
-	hash := hashFinish(c.partialHash, values)
+	hash := hashFinish(c.partialHash, values...)
 
 	nm, ok := c.s.metrics.Load(hash)
 	if !ok {
-		nm = c.s.getOrRegisterMetricFromVec(
+		nm = c.s.loadOrStoreMetricFromVec(
 			&Uint64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -41,7 +41,7 @@ func (s *Set) NewUint64Vec(family string, labels ...string) *Uint64Vec {
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
-		partialHash: hashStart(family, labels),
+		partialHash: hashStart(family, labels...),
 	}}
 }
 
@@ -68,11 +68,11 @@ func NewInt64Vec(family string, labels ...string) *Int64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
-	hash := hashFinish(c.partialHash, values)
+	hash := hashFinish(c.partialHash, values...)
 
 	nm, ok := c.s.metrics.Load(hash)
 	if !ok {
-		nm = c.s.getOrRegisterMetricFromVec(
+		nm = c.s.loadOrStoreMetricFromVec(
 			&Int64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -85,7 +85,7 @@ func (s *Set) NewInt64Vec(family string, labels ...string) *Int64Vec {
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
-		partialHash: hashStart(family, labels),
+		partialHash: hashStart(family, labels...),
 	}}
 }
 
@@ -107,11 +107,11 @@ func NewFloat64Vec(family string, labels ...string) *Float64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
-	hash := hashFinish(c.partialHash, values)
+	hash := hashFinish(c.partialHash, values...)
 
 	nm, ok := c.s.metrics.Load(hash)
 	if !ok {
-		nm = c.s.getOrRegisterMetricFromVec(
+		nm = c.s.loadOrStoreMetricFromVec(
 			&Float64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -124,6 +124,6 @@ func (s *Set) NewFloat64Vec(family string, labels ...string) *Float64Vec {
 		s:           s,
 		family:      MustIdent(family),
 		partialTags: makePartialTags(labels),
-		partialHash: hashStart(family, labels),
+		partialHash: hashStart(family, labels...),
 	}}
 }

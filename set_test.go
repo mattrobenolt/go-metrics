@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"testing"
+
+	"go.withmatt.com/metrics/internal/assert"
 )
 
 type testCollector struct{}
@@ -31,7 +33,7 @@ func TestSet(t *testing.T) {
 	s2 := set.NewSet()
 	s2.NewCounter("counter3").Inc()
 
-	assertMarshal(t, set, []string{
+	assertMarshalUnordered(t, set, []string{
 		`counter1 1`,
 		`counter2{a="1"} 1`,
 		`gauge1 1`,
@@ -49,6 +51,9 @@ func TestSet(t *testing.T) {
 
 func TestSetConstantTags(t *testing.T) {
 	set := NewSet("foo", "bar")
+
+	// invalid label pairs
+	assert.Panics(t, func() { NewSet("foo", "bar", "baz") })
 
 	set.RegisterCollector(&testCollector{})
 
@@ -73,7 +78,10 @@ func TestSetConstantTags(t *testing.T) {
 	s4 := s3.NewSet("i", "j")
 	s4.NewCounter("counter6", "z", "10").Inc()
 
-	assertMarshal(t, set, []string{
+	// duplicate
+	assert.Panics(t, func() { s3.NewSet("i", "j") })
+
+	assertMarshalUnordered(t, set, []string{
 		`counter1{foo="bar"} 1`,
 		`counter2{foo="bar",a="1"} 1`,
 		`gauge1{foo="bar"} 1`,
@@ -209,4 +217,38 @@ func TestSetConcurrent(t *testing.T) {
 	}
 
 	assertMarshalUnordered(t, set, expected)
+}
+
+func TestSetVec(t *testing.T) {
+	set := NewSet()
+	sv := set.NewSetVec("a")
+
+	sv.WithLabelValue("1").NewCounter("foo").Inc()
+	sv.WithLabelValue("2").NewCounter("foo").Inc()
+
+	assertMarshalUnordered(t, set, []string{
+		`foo{a="1"} 1`,
+		`foo{a="2"} 1`,
+	})
+
+	sv.RemoveByLabelValue("1")
+	assertMarshalUnordered(t, set, []string{
+		`foo{a="2"} 1`,
+	})
+	sv.RemoveByLabelValue("2")
+	assertMarshalUnordered(t, set, []string{})
+
+	// should not fail
+	sv.RemoveByLabelValue("xxx")
+
+	// carry over constant labels
+	set2 := NewSet("x", "y")
+	sv2 := set2.NewSetVec("a")
+	sv2.WithLabelValue("1").NewCounter("foo").Inc()
+	sv2.WithLabelValue("2").NewCounter("foo").Inc()
+
+	assertMarshalUnordered(t, set2, []string{
+		`foo{x="y",a="1"} 1`,
+		`foo{x="y",a="2"} 1`,
+	})
 }

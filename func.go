@@ -37,7 +37,7 @@ func NewUint64Func(name string, fn func() uint64) *Uint64Func {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewUint64Func(family string, fn func() uint64, tags ...string) *Uint64Func {
 	f := &Uint64Func{fn: fn}
-	s.mustRegisterMetric(f, MetricName{
+	s.mustStoreMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
@@ -81,7 +81,7 @@ func NewInt64Func(name string, fn func() int64) *Int64Func {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewInt64Func(family string, fn func() int64, tags ...string) *Int64Func {
 	f := &Int64Func{fn: fn}
-	s.mustRegisterMetric(f, MetricName{
+	s.mustStoreMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
@@ -125,7 +125,7 @@ func NewFloat64Func(name string, fn func() float64) *Float64Func {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFloat64Func(family string, fn func() float64, tags ...string) *Float64Func {
 	f := &Float64Func{fn: fn}
-	s.mustRegisterMetric(f, MetricName{
+	s.mustStoreMetric(f, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})

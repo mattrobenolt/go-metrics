@@ -68,7 +68,7 @@ func NewUint64(family string, tags ...string) *Uint64 {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewUint64(family string, tags ...string) *Uint64 {
 	c := &Uint64{}
-	s.mustRegisterMetric(c, MetricName{
+	s.mustStoreMetric(c, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
@@ -136,7 +136,7 @@ func NewInt64(family string, tags ...string) *Int64 {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewInt64(family string, tags ...string) *Int64 {
 	c := &Int64{}
-	s.mustRegisterMetric(c, MetricName{
+	s.mustStoreMetric(c, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
@@ -199,7 +199,7 @@ func NewFloat64(family string, tags ...string) *Float64 {
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFloat64(family string, tags ...string) *Float64 {
 	c := &Float64{}
-	s.mustRegisterMetric(c, MetricName{
+	s.mustStoreMetric(c, MetricName{
 		Family: MustIdent(family),
 		Tags:   MustTags(tags...),
 	})
