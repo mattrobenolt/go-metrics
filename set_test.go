@@ -16,34 +16,77 @@ func (testCollector) Collect(w ExpfmtWriter) {
 
 func TestSet(t *testing.T) {
 	set := NewSet()
+	setvec := set.NewSetVec("setvec1")
 
 	set.RegisterCollector(&testCollector{})
 
 	set.NewCounter("counter1").Inc()
+	setvec.NewCounter("counter1", "x").Inc()
+
 	set.NewCounter("counter2", "a", "1").Inc()
+	setvec.NewCounter("counter2", "x", "a", "1").Inc()
+
 	set.NewUint64Func("gauge1", func() uint64 {
 		return 1
 	})
 	set.NewUint64Func("gauge2", func() uint64 {
 		return 2
 	}, "a", "1")
+
 	set.NewHistogram("hist1").Update(1)
+	setvec.NewHistogram("hist1", "x").Update(1)
+
 	set.NewHistogram("hist2", "a", "1").Update(1)
+	setvec.NewHistogram("hist2", "x", "a", "1").Update(1)
+
+	set.NewFixedHistogram("fixedhist1", []float64{0, 10}).Update(1)
+	setvec.NewFixedHistogram("fixedhist1", []float64{0, 10}, "x").Update(1)
+
+	set.NewFixedHistogram("fixedhist2", []float64{0, 10}, "a", "1").Update(1)
+	setvec.NewFixedHistogram("fixedhist2", []float64{0, 10}, "x", "a", "1").Update(1)
 
 	s2 := set.NewSet()
 	s2.NewCounter("counter3").Inc()
 
 	assertMarshalUnordered(t, set, []string{
 		`counter1 1`,
+		`counter1{setvec1="x"} 1`,
 		`counter2{a="1"} 1`,
+		`counter2{setvec1="x",a="1"} 1`,
 		`gauge1 1`,
 		`gauge2{a="1"} 2`,
 		`hist1_bucket{vmrange="8.799e-01...1.000e+00"} 1`,
 		`hist1_sum 1`,
 		`hist1_count 1`,
+		`hist1_bucket{vmrange="8.799e-01...1.000e+00",setvec1="x"} 1`,
+		`hist1_sum{setvec1="x"} 1`,
+		`hist1_count{setvec1="x"} 1`,
 		`hist2_bucket{vmrange="8.799e-01...1.000e+00",a="1"} 1`,
 		`hist2_sum{a="1"} 1`,
 		`hist2_count{a="1"} 1`,
+		`hist2_bucket{vmrange="8.799e-01...1.000e+00",setvec1="x",a="1"} 1`,
+		`hist2_sum{setvec1="x",a="1"} 1`,
+		`hist2_count{setvec1="x",a="1"} 1`,
+		`fixedhist1_bucket{le="0"} 0`,
+		`fixedhist1_bucket{le="10"} 1`,
+		`fixedhist1_bucket{le="+Inf"} 1`,
+		`fixedhist1_count 1`,
+		`fixedhist1_sum 1`,
+		`fixedhist1_bucket{le="0",setvec1="x"} 0`,
+		`fixedhist1_bucket{le="10",setvec1="x"} 1`,
+		`fixedhist1_bucket{le="+Inf",setvec1="x"} 1`,
+		`fixedhist1_count{setvec1="x"} 1`,
+		`fixedhist1_sum{setvec1="x"} 1`,
+		`fixedhist2_bucket{le="0",a="1"} 0`,
+		`fixedhist2_bucket{le="10",a="1"} 1`,
+		`fixedhist2_bucket{le="+Inf",a="1"} 1`,
+		`fixedhist2_count{a="1"} 1`,
+		`fixedhist2_sum{a="1"} 1`,
+		`fixedhist2_bucket{le="0",setvec1="x",a="1"} 0`,
+		`fixedhist2_bucket{le="10",setvec1="x",a="1"} 1`,
+		`fixedhist2_bucket{le="+Inf",setvec1="x",a="1"} 1`,
+		`fixedhist2_count{setvec1="x",a="1"} 1`,
+		`fixedhist2_sum{setvec1="x",a="1"} 1`,
 		`counter3 1`,
 		`collector1 10`,
 	})
@@ -110,6 +153,20 @@ func TestNewSetConcurrent(t *testing.T) {
 	expected := make([]string, n)
 	for i := range n {
 		expected[i] = fmt.Sprintf("counter%d %d", i, i)
+	}
+	assertMarshalUnordered(t, set, expected)
+}
+
+func TestNewSetVecConcurrent(t *testing.T) {
+	const n = 100
+	set := NewSet()
+	hammer(t, n, func(i int) {
+		set.NewSetVec(fmt.Sprintf("vec%d", i)).NewCounter("foo", "x").Set(uint64(i))
+	})
+
+	expected := make([]string, n)
+	for i := range n {
+		expected[i] = fmt.Sprintf(`foo{vec%d="x"} %d`, i, i)
 	}
 	assertMarshalUnordered(t, set, expected)
 }
@@ -236,19 +293,41 @@ func TestSetVec(t *testing.T) {
 		`foo{a="2"} 1`,
 	})
 	sv.RemoveByLabelValue("2")
-	assertMarshalUnordered(t, set, []string{})
+	assertMarshalUnordered(t, set, nil)
 
 	// should not fail
 	sv.RemoveByLabelValue("xxx")
 
 	// carry over constant labels
-	set2 := NewSet("x", "y")
-	sv2 := set2.NewSetVec("a")
-	sv2.WithLabelValue("1").NewCounter("foo").Inc()
-	sv2.WithLabelValue("2").NewCounter("foo").Inc()
+	set = NewSet("x", "y")
+	sv = set.NewSetVec("a")
+	sv.WithLabelValue("1").NewCounter("foo").Inc()
+	sv.WithLabelValue("2").NewCounter("foo").Inc()
 
-	assertMarshalUnordered(t, set2, []string{
+	assertMarshalUnordered(t, set, []string{
 		`foo{x="y",a="1"} 1`,
 		`foo{x="y",a="2"} 1`,
+	})
+
+	set = NewSet()
+	sv = set.NewSetVec("type")
+	sv.NewUint64Vec("foo", "label1").WithLabelValues("uint64", "value1").Inc()
+	sv.NewInt64Vec("foo", "label1").WithLabelValues("int64", "value1").Inc()
+	sv.NewFloat64Vec("foo", "label1").WithLabelValues("float64", "value1").Inc()
+	sv.NewHistogramVec("foo", "label1").WithLabelValues("hist", "value1").Update(1)
+	sv.NewFixedHistogramVec("foo", []float64{0, 10}, "label1").WithLabelValues("fixedhist", "value1").Update(1)
+
+	assertMarshalUnordered(t, set, []string{
+		`foo{type="uint64",label1="value1"} 1`,
+		`foo{type="int64",label1="value1"} 1`,
+		`foo{type="float64",label1="value1"} 1`,
+		`foo_bucket{vmrange="8.799e-01...1.000e+00",type="hist",label1="value1"} 1`,
+		`foo_count{type="hist",label1="value1"} 1`,
+		`foo_sum{type="hist",label1="value1"} 1`,
+		`foo_bucket{le="0",type="fixedhist",label1="value1"} 0`,
+		`foo_bucket{le="10",type="fixedhist",label1="value1"} 1`,
+		`foo_bucket{le="+Inf",type="fixedhist",label1="value1"} 1`,
+		`foo_count{type="fixedhist",label1="value1"} 1`,
+		`foo_sum{type="fixedhist",label1="value1"} 1`,
 	})
 }

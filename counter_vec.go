@@ -24,11 +24,20 @@ func NewCounterVec(family string, labels ...string) *Uint64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
+	set := c.set
+	if set == nil {
+		set = c.setvec.WithLabelValue(values[0])
+		values = values[1:]
+	}
+	return c.withLabelValues(set, values)
+}
+
+func (c *Uint64Vec) withLabelValues(set *Set, values []string) *Uint64 {
 	hash := hashFinish(c.partialHash, values...)
 
-	nm, ok := c.s.metrics.Load(hash)
+	nm, ok := set.metrics.Load(hash)
 	if !ok {
-		nm = c.s.loadOrStoreMetricFromVec(
+		nm = set.loadOrStoreMetricFromVec(
 			&Uint64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -37,12 +46,7 @@ func (c *Uint64Vec) WithLabelValues(values ...string) *Uint64 {
 
 // NewUint64Vec creates a new [Uint64Vec] with the supplied name.
 func (s *Set) NewUint64Vec(family string, labels ...string) *Uint64Vec {
-	return &Uint64Vec{commonVec{
-		s:           s,
-		family:      MustIdent(family),
-		partialTags: makeLabels(labels),
-		partialHash: hashStart(family, labels...),
-	}}
+	return &Uint64Vec{getCommonVecSet(s, family, labels)}
 }
 
 // NewCounterVec is an alias for [Set.NewUint64Vec].
@@ -68,11 +72,20 @@ func NewInt64Vec(family string, labels ...string) *Int64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
+	set := c.set
+	if set == nil {
+		set = c.setvec.WithLabelValue(values[0])
+		values = values[1:]
+	}
+	return c.withLabelValues(set, values)
+}
+
+func (c *Int64Vec) withLabelValues(set *Set, values []string) *Int64 {
 	hash := hashFinish(c.partialHash, values...)
 
-	nm, ok := c.s.metrics.Load(hash)
+	nm, ok := set.metrics.Load(hash)
 	if !ok {
-		nm = c.s.loadOrStoreMetricFromVec(
+		nm = set.loadOrStoreMetricFromVec(
 			&Int64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -81,12 +94,7 @@ func (c *Int64Vec) WithLabelValues(values ...string) *Int64 {
 
 // NewInt64Vec creates a new [Int64Vec] with the supplied name.
 func (s *Set) NewInt64Vec(family string, labels ...string) *Int64Vec {
-	return &Int64Vec{commonVec{
-		s:           s,
-		family:      MustIdent(family),
-		partialTags: makeLabels(labels),
-		partialHash: hashStart(family, labels...),
-	}}
+	return &Int64Vec{getCommonVecSet(s, family, labels)}
 }
 
 // A Float64Vec is a collection of Float64s that are partitioned
@@ -107,11 +115,20 @@ func NewFloat64Vec(family string, labels ...string) *Float64Vec {
 //
 // This will panic if the values count doesn't match the number of labels.
 func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
+	set := c.set
+	if set == nil {
+		set = c.setvec.WithLabelValue(values[0])
+		values = values[1:]
+	}
+	return c.withLabelValues(set, values)
+}
+
+func (c *Float64Vec) withLabelValues(set *Set, values []string) *Float64 {
 	hash := hashFinish(c.partialHash, values...)
 
-	nm, ok := c.s.metrics.Load(hash)
+	nm, ok := set.metrics.Load(hash)
 	if !ok {
-		nm = c.s.loadOrStoreMetricFromVec(
+		nm = set.loadOrStoreMetricFromVec(
 			&Float64{}, hash, c.family, c.partialTags, values,
 		)
 	}
@@ -120,10 +137,5 @@ func (c *Float64Vec) WithLabelValues(values ...string) *Float64 {
 
 // NewFloat64Vec creates a new [Float64Vec] with the supplied name.
 func (s *Set) NewFloat64Vec(family string, labels ...string) *Float64Vec {
-	return &Float64Vec{commonVec{
-		s:           s,
-		family:      MustIdent(family),
-		partialTags: makeLabels(labels),
-		partialHash: hashStart(family, labels...),
-	}}
+	return &Float64Vec{getCommonVecSet(s, family, labels)}
 }

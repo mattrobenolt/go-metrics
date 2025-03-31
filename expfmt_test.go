@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"math"
 	"testing"
+	"time"
 
 	"go.withmatt.com/metrics/internal/assert"
 )
@@ -69,6 +70,64 @@ func TestWriteMetricsFloat64(t *testing.T) {
 			Tags:   MustTags(tc.tags...),
 		})
 		w.WriteFloat64(tc.value)
+		assert.Equal(t, tc.expected+"\n", w.b.String())
+	}
+}
+
+func TestWriteMetricsInt64(t *testing.T) {
+	w := ExpfmtWriter{
+		b: bytes.NewBuffer(nil),
+	}
+	for _, tc := range []struct {
+		family       string
+		tags         []string
+		constantTags string
+		value        int64
+		expected     string
+	}{
+		{"foo", nil, "", 0, "foo 0"},
+		{"foo", nil, "", 1, "foo 1"},
+		{"foo", nil, `x="y"`, -1, `foo{x="y"} -1`},
+		{"foo", []string{"a", "1"}, "", 10, `foo{a="1"} 10`},
+		{"foo", []string{"a", "1", "b", "2"}, "", 10, `foo{a="1",b="2"} 10`},
+		{"foo", []string{"a", "1", "b", "2"}, `x="y"`, 10, `foo{x="y",a="1",b="2"} 10`},
+	} {
+		w.b.Reset()
+		w.constantTags = tc.constantTags
+		w.WriteMetricName(MetricName{
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
+		})
+		w.WriteInt64(tc.value)
+		assert.Equal(t, tc.expected+"\n", w.b.String())
+	}
+}
+
+func TestWriteMetricsDuration(t *testing.T) {
+	w := ExpfmtWriter{
+		b: bytes.NewBuffer(nil),
+	}
+	for _, tc := range []struct {
+		family       string
+		tags         []string
+		constantTags string
+		value        time.Duration
+		expected     string
+	}{
+		{"foo", nil, "", time.Duration(0), "foo 0"},
+		{"foo", nil, "", time.Second, "foo 1"},
+		{"foo", nil, `x="y"`, time.Minute, `foo{x="y"} 60`},
+		{"foo", []string{"a", "1"}, "", time.Hour, `foo{a="1"} 3600`},
+		{"foo", []string{"a", "1", "b", "2"}, "", 10 * time.Second, `foo{a="1",b="2"} 10`},
+		{"foo", []string{"a", "1", "b", "2"}, `x="y"`, 10 * time.Second, `foo{x="y",a="1",b="2"} 10`},
+	} {
+		w.b.Reset()
+		w.constantTags = tc.constantTags
+		w.WriteMetricName(MetricName{
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
+		})
+		w.WriteDuration(tc.value)
 		assert.Equal(t, tc.expected+"\n", w.b.String())
 	}
 }

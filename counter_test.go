@@ -63,6 +63,20 @@ func TestCounterVec(t *testing.T) {
 			`foo{a="1",b="2"} 2`,
 			`foo{a="3",b="4"} 1`,
 		})
+
+		set = NewSet()
+		setvec := set.NewSetVec("label1")
+		c = setvec.NewUint64Vec("foo", "a", "b")
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("y", "1", "2").Inc()
+
+		assert.Equal(t, c.WithLabelValues("x", "1", "2").Get(), 2)
+		assert.Equal(t, c.WithLabelValues("y", "1", "2").Get(), 1)
+		assertMarshalUnordered(t, set, []string{
+			`foo{label1="x",a="1",b="2"} 2`,
+			`foo{label1="y",a="1",b="2"} 1`,
+		})
 	})
 
 	t.Run("int", func(t *testing.T) {
@@ -80,6 +94,20 @@ func TestCounterVec(t *testing.T) {
 			`foo{a="1",b="2"} 2`,
 			`foo{a="3",b="4"} 1`,
 		})
+
+		set = NewSet()
+		setvec := set.NewSetVec("label1")
+		c = setvec.NewInt64Vec("foo", "a", "b")
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("y", "1", "2").Inc()
+
+		assert.Equal(t, c.WithLabelValues("x", "1", "2").Get(), 2)
+		assert.Equal(t, c.WithLabelValues("y", "1", "2").Get(), 1)
+		assertMarshalUnordered(t, set, []string{
+			`foo{label1="x",a="1",b="2"} 2`,
+			`foo{label1="y",a="1",b="2"} 1`,
+		})
 	})
 
 	t.Run("float", func(t *testing.T) {
@@ -96,6 +124,20 @@ func TestCounterVec(t *testing.T) {
 		assertMarshalUnordered(t, set, []string{
 			`foo{a="1",b="2"} 2`,
 			`foo{a="3",b="4"} 1`,
+		})
+
+		set = NewSet()
+		setvec := set.NewSetVec("label1")
+		c = setvec.NewFloat64Vec("foo", "a", "b")
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("x", "1", "2").Inc()
+		c.WithLabelValues("y", "1", "2").Inc()
+
+		assert.Equal(t, c.WithLabelValues("x", "1", "2").Get(), 2)
+		assert.Equal(t, c.WithLabelValues("y", "1", "2").Get(), 1)
+		assertMarshalUnordered(t, set, []string{
+			`foo{label1="x",a="1",b="2"} 2`,
+			`foo{label1="y",a="1",b="2"} 1`,
 		})
 	})
 }

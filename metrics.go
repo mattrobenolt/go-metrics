@@ -7,7 +7,6 @@ package metrics
 import (
 	"bytes"
 	"cmp"
-	"hash/maphash"
 )
 
 // Metric is a single data point that can be written to the Prometheus
@@ -58,11 +57,4 @@ func compareNamedMetrics(a, b *namedMetric) int {
 		a.name.Family.String(),
 		b.name.Family.String(),
 	)
-}
-
-type commonVec struct {
-	s           *Set
-	family      Ident
-	partialTags []Label
-	partialHash *maphash.Hash
 }

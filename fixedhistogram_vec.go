@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"slices"
 	"sync/atomic"
 )
 
@@ -25,13 +24,22 @@ func NewFixedHistogramVec(family string, buckets []float64, labels ...string) *F
 //
 // This will panic if the values count doesn't match the number of labels.
 func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
+	set := h.set
+	if set == nil {
+		set = h.setvec.WithLabelValue(values[0])
+		values = values[1:]
+	}
+	return h.withLabelValues(set, values)
+}
+
+func (h *FixedHistogramVec) withLabelValues(set *Set, values []string) *FixedHistogram {
 	hash := hashFinish(h.partialHash, values...)
 
-	nm, ok := h.s.metrics.Load(hash)
+	nm, ok := set.metrics.Load(hash)
 	if !ok {
-		nm = h.s.loadOrStoreMetricFromVec(
+		nm = set.loadOrStoreMetricFromVec(
 			&FixedHistogram{
-				buckets:      slices.Clone(h.buckets),
+				buckets:      h.buckets,
 				labels:       h.labels,
 				observations: make([]atomic.Uint64, len(h.buckets)),
 			}, hash, h.family, h.partialTags, values,
@@ -42,21 +50,11 @@ func (h *FixedHistogramVec) WithLabelValues(values ...string) *FixedHistogram {
 
 // NewFixedHistogramVec creates a new [FixedHistogramVec] with the supplied opt.
 func (s *Set) NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
-	if len(buckets) == 0 {
-		buckets = slices.Clone(DefBuckets)
-	} else {
-		buckets = slices.Clone(buckets)
-		slices.Sort(buckets)
-	}
+	buckets = getBuckets(buckets)
 
 	return &FixedHistogramVec{
-		commonVec: commonVec{
-			s:           s,
-			family:      MustIdent(family),
-			partialTags: makeLabels(labels),
-			partialHash: hashStart(family, labels...),
-		},
-		buckets: buckets,
-		labels:  labelsForBuckets(buckets),
+		commonVec: getCommonVecSet(s, family, labels),
+		buckets:   buckets,
+		labels:    labelsForBuckets(buckets),
 	}
 }

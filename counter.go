@@ -55,7 +55,7 @@ func NewUint64(family string, tags ...string) *Uint64 {
 	return defaultSet.NewUint64(family, tags...)
 }
 
-// NewUint64 registers and returns new Counter with the given name in the s.
+// NewUint64 registers and returns new Uint64 with the given name in the s.
 //
 // family must be a Prometheus compatible identifier format.
 //
@@ -63,7 +63,7 @@ func NewUint64(family string, tags ...string) *Uint64 {
 //
 //	NewUint64("family", "label1", "value1", "label2", "value2")
 //
-// The returned Uint is safe to use from concurrent goroutines.
+// The returned Uint64 is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewUint64(family string, tags ...string) *Uint64 {

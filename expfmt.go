@@ -89,6 +89,13 @@ func (w ExpfmtWriter) WriteFloat64(value float64) {
 	w.b.WriteByte('\n')
 }
 
+// WriteDuration writes a time.Duration and signals the end of the metric.
+func (w ExpfmtWriter) WriteDuration(value time.Duration) {
+	w.b.WriteByte(' ')
+	writeDuration(w.b, value)
+	w.b.WriteByte('\n')
+}
+
 // WriteMetricUint64 writes a full MetricName and uint64 value.
 func (w ExpfmtWriter) WriteMetricUint64(name MetricName, value uint64) {
 	w.WriteMetricName(name)
@@ -110,7 +117,7 @@ func (w ExpfmtWriter) WriteMetricFloat64(name MetricName, value float64) {
 // WriteMetricDuration writes a full MetricName and time.Duration value as seconds.
 func (w ExpfmtWriter) WriteMetricDuration(name MetricName, value time.Duration) {
 	w.WriteMetricName(name)
-	w.WriteFloat64(value.Seconds())
+	w.WriteDuration(value)
 }
 
 // WriteLazyMetricUint64 writes a full metric name and uint64 value.
@@ -149,6 +156,10 @@ func writeUint64(b *bytes.Buffer, value uint64) {
 
 func writeInt64(b *bytes.Buffer, value int64) {
 	b.Write(strconv.AppendInt(b.AvailableBuffer(), value, 10))
+}
+
+func writeDuration(b *bytes.Buffer, value time.Duration) {
+	writeFloat64(b, value.Seconds())
 }
 
 func writeFloat64(b *bytes.Buffer, value float64) {

@@ -27,7 +27,7 @@ func NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedH
 //
 //	NewFixedHistogram("family", []float64{0.1, 0.5, 1}, "label1", "value1", "label2", "value2")
 //
-// The returned Histogram is safe to use from concurrent goroutines.
+// The returned FixedHistogram is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
 func (s *Set) NewFixedHistogram(family string, buckets []float64, tags ...string) *FixedHistogram {
@@ -244,4 +244,14 @@ func labelsForBuckets(buckets []float64) []string {
 		labels[i] = strconv.FormatFloat(v, 'f', -1, 64)
 	}
 	return labels
+}
+
+func getBuckets(buckets []float64) []float64 {
+	if len(buckets) == 0 {
+		return slices.Clone(DefBuckets)
+	}
+
+	buckets = slices.Clone(buckets)
+	slices.Sort(buckets)
+	return buckets
 }

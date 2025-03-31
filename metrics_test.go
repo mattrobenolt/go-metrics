@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bytes"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -34,6 +35,8 @@ func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
 }
 
 func hammer(t testing.TB, n int, f func(int)) {
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4))
+
 	var wg sync.WaitGroup
 	for i := range n {
 		wg.Add(1)
