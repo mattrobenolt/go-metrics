@@ -53,7 +53,7 @@ func (s *Set) NewFixedHistogramVec(family string, buckets []float64, labels ...s
 		commonVec: commonVec{
 			s:           s,
 			family:      MustIdent(family),
-			partialTags: makePartialTags(labels),
+			partialTags: makeLabels(labels),
 			partialHash: hashStart(family, labels...),
 		},
 		buckets: buckets,

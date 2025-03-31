@@ -40,7 +40,7 @@ func (s *Set) NewUint64Vec(family string, labels ...string) *Uint64Vec {
 	return &Uint64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
-		partialTags: makePartialTags(labels),
+		partialTags: makeLabels(labels),
 		partialHash: hashStart(family, labels...),
 	}}
 }
@@ -84,7 +84,7 @@ func (s *Set) NewInt64Vec(family string, labels ...string) *Int64Vec {
 	return &Int64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
-		partialTags: makePartialTags(labels),
+		partialTags: makeLabels(labels),
 		partialHash: hashStart(family, labels...),
 	}}
 }
@@ -123,7 +123,7 @@ func (s *Set) NewFloat64Vec(family string, labels ...string) *Float64Vec {
 	return &Float64Vec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
-		partialTags: makePartialTags(labels),
+		partialTags: makeLabels(labels),
 		partialHash: hashStart(family, labels...),
 	}}
 }

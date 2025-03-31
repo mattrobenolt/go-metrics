@@ -63,6 +63,6 @@ func compareNamedMetrics(a, b *namedMetric) int {
 type commonVec struct {
 	s           *Set
 	family      Ident
-	partialTags []Tag
+	partialTags []Label
 	partialHash *maphash.Hash
 }

@@ -34,7 +34,7 @@ func (s *Set) NewHistogramVec(family string, labels ...string) *HistogramVec {
 	return &HistogramVec{commonVec{
 		s:           s,
 		family:      MustIdent(family),
-		partialTags: makePartialTags(labels),
+		partialTags: makeLabels(labels),
 		partialHash: hashStart(family, labels...),
 	}}
 }

@@ -266,14 +266,17 @@ func (s *Set) mustStoreMetric(m Metric, name MetricName) {
 // loadOrStoreMetricFromVec will attempt to create a new metric or return one that
 // was potentially created in parallel from a Vec which is partially materialized.
 // partialTags are tags with validated labels, but no values
-func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Tag, values []string) *namedMetric {
+func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Label, values []string) *namedMetric {
 	if len(values) != len(partialTags) {
 		panic("metrics: mismatch length of labels and values")
 	}
 	// tags come in without values, so we need to stitch them together
-	tags := slices.Clone(partialTags)
-	for i := range tags {
-		tags[i].value = MustValue(values[i])
+	tags := make([]Tag, len(partialTags))
+	for i, label := range partialTags {
+		tags[i] = Tag{
+			label: label,
+			value: MustValue(values[i]),
+		}
 	}
 	return s.loadOrStoreNamedMetric(&namedMetric{
 		id: hash,
@@ -290,10 +293,10 @@ func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, 
 func (s *Set) loadOrStoreSetFromVec(hash metricHash, label Label, value string) *Set {
 	set := newSet()
 	set.id = hash
-	set.constantTags = joinTags(
-		s.constantTags,
-		Tag{label, MustValue(value)},
-	)
+	set.constantTags = joinTags(s.constantTags, Tag{
+		label: label,
+		value: MustValue(value),
+	})
 	return s.loadOrStoreSet(set)
 }
 
@@ -320,12 +323,11 @@ func joinTags(previous string, new ...Tag) string {
 	}
 }
 
-// makePartialTags copy labels into partial tags. partial tags
-// have a validated label, but no value.
-func makePartialTags(labels []string) []Tag {
-	partialTags := make([]Tag, len(labels))
+// makeLabels converts a list of string labels into a list of Label objects.
+func makeLabels(labels []string) []Label {
+	new := make([]Label, len(labels))
 	for i, label := range labels {
-		partialTags[i].label = MustIdent(label)
+		new[i] = MustLabel(label)
 	}
-	return partialTags
+	return new
 }
