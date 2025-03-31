@@ -2,6 +2,7 @@ package metrics_test
 
 import (
 	"fmt"
+	"time"
 
 	"go.withmatt.com/metrics"
 )
@@ -27,4 +28,22 @@ func ExampleSetVec() {
 	// Output:
 	// 1
 	// 0
+}
+
+func ExampleNewSetVecWithTTL() {
+	// Create a Set faceted by unique user ID, and expires after an hour.
+	byUserID := metrics.NewSetVecWithTTL("user_id", time.Hour)
+	// Define a histogram for page view durations by user ID, path, and status.
+	pageviewDurationByUserID := byUserID.NewHistogramVec(
+		"pageview_duration_seconds",
+		"path", "status",
+	)
+
+	userID := "1234"
+	startTime := time.Now()
+	processRequest()
+
+	pageviewDurationByUserID.WithLabelValues(
+		userID, "/foo/bar", "200",
+	).UpdateDuration(startTime)
 }
