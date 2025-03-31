@@ -3,6 +3,8 @@ package atomicx
 import (
 	"math"
 	"sync/atomic"
+
+	"go.withmatt.com/metrics/internal/fasttime"
 )
 
 // An Float64 is an atomic float64. The zero value is zero.
@@ -29,4 +31,17 @@ func (x *Float64) Add(val float64) {
 			return
 		}
 	}
+}
+
+// An Instant is an atomic fasttime.Instant. The zero value is zero.
+type Instant struct {
+	v atomic.Int64
+}
+
+func (x *Instant) Load() fasttime.Instant {
+	return fasttime.Instant(x.v.Load())
+}
+
+func (x *Instant) Store(val fasttime.Instant) {
+	x.v.Store(int64(val))
 }

@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.withmatt.com/metrics/internal/atomicx"
 	"go.withmatt.com/metrics/internal/fasttime"
 	"go.withmatt.com/metrics/internal/syncx"
 )
@@ -81,7 +82,7 @@ type Set struct {
 	constantTags string
 
 	ttl      time.Duration
-	lastUsed fasttime.Instant
+	lastUsed atomicx.Instant
 }
 
 // NewSet creates new set of metrics.
@@ -275,7 +276,7 @@ func (s *Set) isExpired() bool {
 	if s.ttl == 0 {
 		return false
 	}
-	return fastClock().Since(s.lastUsed) > s.ttl
+	return fastClock().Since(s.lastUsed.Load()) > s.ttl
 }
 
 // mustStoreSet adds a new Set, and will panic if the set has already been registered.
@@ -337,7 +338,7 @@ func (s *Set) loadOrStoreSetFromVec(hash metricHash, ttl time.Duration, label La
 	set := newSet()
 	set.id = hash
 	set.ttl = ttl
-	set.lastUsed = fastClock().Now()
+	set.KeepAlive()
 	set.constantTags = joinTags(s.constantTags, Tag{
 		label: label,
 		value: MustValue(value),
@@ -348,7 +349,7 @@ func (s *Set) loadOrStoreSetFromVec(hash metricHash, ttl time.Duration, label La
 // KeepAlive is used to bump a Set's expiration when a TTL is set.
 func (s *Set) KeepAlive() {
 	if s.ttl > 0 {
-		s.lastUsed = fastClock().Now()
+		s.lastUsed.Store(fastClock().Now())
 	}
 }
 
