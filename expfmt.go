@@ -248,7 +248,7 @@ func materializeTags(tags []Tag) string {
 }
 
 type bytesBufferOrStringsBuilder interface {
-	Grow(int)
-	WriteString(string) (int, error)
-	WriteByte(byte) error
+	Grow(n int)
+	WriteString(s string) (n int, err error)
+	WriteByte(b byte) error
 }

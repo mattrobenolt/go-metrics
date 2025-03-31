@@ -16,7 +16,7 @@ const (
 	bucketsPerDecimal   = 18
 	decimalBucketsCount = e10Max - e10Min
 
-	// histBuckets is number of buckets within a single histogram
+	// histBuckets is number of buckets within a single histogram.
 	histBuckets = decimalBucketsCount * bucketsPerDecimal
 
 	// totalBuckets is histogram buckets + lower and upper buckets

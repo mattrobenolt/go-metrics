@@ -175,6 +175,7 @@ func isNil(got any) bool {
 	// likely that we've gotten a non-nil type and a nil value. This makes got
 	// itself non-nil, but the user's code passed a nil value.
 	val := reflect.ValueOf(got)
+	//nolint:exhaustive
 	switch val.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		return val.IsNil()

@@ -59,9 +59,32 @@ func collectStatMetrics(w ExpfmtWriter) {
 
 	var p procStat
 	bb := bytes.NewBuffer(data)
-	_, err = fmt.Fscanf(bb, "%c %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-		&p.State, &p.Ppid, &p.Pgrp, &p.Session, &p.TtyNr, &p.Tpgid, &p.Flags, &p.Minflt, &p.Cminflt, &p.Majflt, &p.Cmajflt,
-		&p.Utime, &p.Stime, &p.Cutime, &p.Cstime, &p.Priority, &p.Nice, &p.NumThreads, &p.ItrealValue, &p.Starttime, &p.Vsize, &p.Rss)
+	_, err = fmt.Fscanf(
+		bb,
+		"%c %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+		&p.State,
+		&p.Ppid,
+		&p.Pgrp,
+		&p.Session,
+		&p.TtyNr,
+		&p.Tpgid,
+		&p.Flags,
+		&p.Minflt,
+		&p.Cminflt,
+		&p.Majflt,
+		&p.Cmajflt,
+		&p.Utime,
+		&p.Stime,
+		&p.Cutime,
+		&p.Cstime,
+		&p.Priority,
+		&p.Nice,
+		&p.NumThreads,
+		&p.ItrealValue,
+		&p.Starttime,
+		&p.Vsize,
+		&p.Rss,
+	)
 	if err != nil {
 		return
 	}

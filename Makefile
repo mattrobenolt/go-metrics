@@ -8,10 +8,7 @@ $(BIN):
 TOOL_INSTALL := env GOBIN=$(PWD)/$(BIN) go install
 
 $(BIN)/golangci-lint: Makefile | $(BIN)
-	wget -qO- https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b bin v1.64.8
-
-$(BIN)/gofumpt: Makefile | $(BIN)
-	$(TOOL_INSTALL) mvdan.cc/gofumpt@v0.7.0
+	wget -qO- https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b bin v2.0.2
 
 $(BIN)/godoc: | $(BIN)
 	$(TOOL_INSTALL) golang.org/x/tools/cmd/godoc@latest
@@ -22,18 +19,15 @@ $(BIN)/gotestsum: Makefile | $(BIN)
 $(BIN)/benchstat: $(BIN)
 	$(TOOL_INSTALL) golang.org/x/perf/cmd/benchstat@latest
 
-tools: $(BIN)/golangci-lint $(BIN)/gofumpt $(BIN)/godoc $(BIN)/gotestsum $(BIN)/benchstat
+tools: $(BIN)/golangci-lint $(BIN)/godoc $(BIN)/gotestsum $(BIN)/benchstat
 
 fmt: fmt-go
 
-fmt-go: $(BIN)/gofumpt
-	$< -l -w .
+fmt-go: $(BIN)/golangci-lint
+	$< fmt
 
 lint: $(BIN)/golangci-lint
-	$< run \
-	  --show-stats --no-config \
-	  -E gofumpt,govet,noctx,perfsprint,unconvert \
-	  -D errcheck
+	$< run --show-stats
 
 docs: $(BIN)/godoc
 	$< -http=127.0.0.1:6060

@@ -18,7 +18,9 @@ var (
 		MustTag("quantile", "0.75"),
 		MustTag("quantile", "1"),
 	}
-	goCollectorDefaultRuntimeMetrics = regexp.MustCompile(`/gc/gogc:percent|/gc/gomemlimit:bytes|/sched/gomaxprocs:threads`)
+	goCollectorDefaultRuntimeMetrics = regexp.MustCompile(
+		`/gc/gogc:percent|/gc/gomemlimit:bytes|/sched/gomaxprocs:threads`,
+	)
 )
 
 // NewGoMetricsCollector is a Collector that yields Go runtime metrics.

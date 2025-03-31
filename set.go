@@ -310,7 +310,13 @@ func (s *Set) mustStoreMetric(m Metric, name MetricName) {
 // loadOrStoreMetricFromVec will attempt to create a new metric or return one that
 // was potentially created in parallel from a Vec which is partially materialized.
 // partialTags are tags with validated labels, but no values
-func (s *Set) loadOrStoreMetricFromVec(m Metric, hash metricHash, family Ident, partialTags []Label, values []string) *namedMetric {
+func (s *Set) loadOrStoreMetricFromVec(
+	m Metric,
+	hash metricHash,
+	family Ident,
+	partialTags []Label,
+	values []string,
+) *namedMetric {
 	if len(values) != len(partialTags) {
 		panic("metrics: mismatch length of labels and values")
 	}

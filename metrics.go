@@ -12,12 +12,12 @@ import (
 // Metric is a single data point that can be written to the Prometheus
 // text format.
 type Metric interface {
-	marshalTo(ExpfmtWriter, MetricName)
+	marshalTo(w ExpfmtWriter, name MetricName)
 }
 
 // Collector is custom data collector that is called during [Set.WritePrometheus].
 type Collector interface {
-	Collect(ExpfmtWriter)
+	Collect(w ExpfmtWriter)
 }
 
 // namedMetric is a single data point.

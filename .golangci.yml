@@ -1,0 +1,36 @@
+version: "2"
+
+linters:
+  enable:
+    - exhaustive
+    - goconst
+    - gocritic
+    - gosec
+    - grouper
+    - inamedparam
+    - makezero
+    - noctx
+    - perfsprint
+    - thelper
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+  disable:
+    - errcheck
+
+  settings:
+    gosec:
+      excludes:
+        - G104
+        - G115
+
+formatters:
+  enable:
+    - gofumpt
+    - golines
+
+  settings:
+    golines:
+      max-len: 120
+      chain-split-dots: false

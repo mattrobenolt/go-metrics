@@ -13,6 +13,7 @@ import (
 
 // assertMarshal compares lines of output ignoring order
 func assertMarshal(tb testing.TB, set *Set, expected []string) {
+	tb.Helper()
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
 	lines := strings.Split(strings.Trim(b.String(), "\n"), "\n")
@@ -23,6 +24,7 @@ func assertMarshal(tb testing.TB, set *Set, expected []string) {
 }
 
 func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
+	tb.Helper()
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
 	lines := strings.Split(strings.Trim(b.String(), "\n"), "\n")
@@ -34,7 +36,8 @@ func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
 	)
 }
 
-func hammer(t testing.TB, n int, f func(int)) {
+func hammer(tb testing.TB, n int, f func(int)) {
+	tb.Helper()
 	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(4))
 
 	var wg sync.WaitGroup
@@ -42,7 +45,7 @@ func hammer(t testing.TB, n int, f func(int)) {
 		wg.Add(1)
 		go func(i int) {
 			defer func() {
-				assert.Nil(t, recover())
+				assert.Nil(tb, recover())
 				wg.Done()
 			}()
 			f(i)
