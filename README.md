@@ -24,6 +24,7 @@ import "go.withmatt.com/metrics"
 import (
 	"net/http"
 	"go.withmatt.com/metrics"
+	"go.withmatt.com/metrics/promhttp"
 )
 
 func main() {
