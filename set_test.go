@@ -311,6 +311,7 @@ func TestSetVec(t *testing.T) {
 
 	set = NewSet()
 	sv = set.NewSetVec("type")
+	sv.NewUint64Vec("foo").WithLabelValues("uint64").Inc()
 	sv.NewUint64Vec("foo", "label1").WithLabelValues("uint64", "value1").Inc()
 	sv.NewInt64Vec("foo", "label1").WithLabelValues("int64", "value1").Inc()
 	sv.NewFloat64Vec("foo", "label1").WithLabelValues("float64", "value1").Inc()
@@ -318,6 +319,7 @@ func TestSetVec(t *testing.T) {
 	sv.NewFixedHistogramVec("foo", []float64{0, 10}, "label1").WithLabelValues("fixedhist", "value1").Update(1)
 
 	assertMarshalUnordered(t, set, []string{
+		`foo{type="uint64"} 1`,
 		`foo{type="uint64",label1="value1"} 1`,
 		`foo{type="int64",label1="value1"} 1`,
 		`foo{type="float64",label1="value1"} 1`,
