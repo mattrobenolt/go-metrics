@@ -132,6 +132,27 @@ func TestWriteMetricsDuration(t *testing.T) {
 	}
 }
 
+func TestWriteLine(t *testing.T) {
+	w := ExpfmtWriter{
+		b: bytes.NewBuffer(nil),
+	}
+	for _, tc := range []struct {
+		in, constantTags, expected string
+	}{
+		{"foo 1", "", "foo 1"},
+		{"# HELP foo", `x="y"`, "# HELP foo"},
+		{"foo 1", `x="y"`, `foo{x="y"} 1`},
+		{`foo{a="b"} 1`, `x="y"`, `foo{x="y",a="b"} 1`},
+		{`xxx`, `x="y"`, `xxx`},
+		{``, `x="y"`, ``},
+	} {
+		w.b.Reset()
+		w.constantTags = tc.constantTags
+		w.WriteLine([]byte(tc.in))
+		assert.Equal(t, tc.expected, w.b.String())
+	}
+}
+
 func TestSizeOf(t *testing.T) {
 	for _, tc := range []struct {
 		family       string

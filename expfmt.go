@@ -150,6 +150,37 @@ func (w ExpfmtWriter) WriteLazyMetricDuration(family string, value time.Duration
 	w.WriteLazyMetricFloat64(family, value.Seconds(), tags...)
 }
 
+// WriteLine writes a line of already formatted expfmt data, appending constant
+// tags if necessary.
+func (w ExpfmtWriter) WriteLine(line []byte) {
+	if len(line) == 0 {
+		return
+	}
+
+	if w.constantTags == "" || line[0] == '#' {
+		w.b.Write(line)
+		return
+	}
+
+	idx := bytes.IndexAny(line, "{ ")
+	switch {
+	case idx == -1:
+		w.b.Write(line)
+	case line[idx] == '{':
+		idx++
+		w.b.Write(line[:idx])
+		w.b.WriteString(w.constantTags)
+		w.b.WriteByte(',')
+		w.b.Write(line[idx:])
+	case line[idx] == ' ':
+		w.b.Write(line[:idx])
+		w.b.WriteByte('{')
+		w.b.WriteString(w.constantTags)
+		w.b.WriteByte('}')
+		w.b.Write(line[idx:])
+	}
+}
+
 func writeUint64(b *bytes.Buffer, value uint64) {
 	b.Write(strconv.AppendUint(b.AvailableBuffer(), value, 10))
 }
