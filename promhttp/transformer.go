@@ -5,8 +5,10 @@ import (
 	"io"
 	"slices"
 	"strings"
+	"sync"
 )
 
+// Type is a metric type to be described
 type Type uint8
 
 const (
@@ -14,6 +16,7 @@ const (
 	Counter
 	Gauge
 	Histogram
+	Summary
 	Info
 )
 
@@ -27,6 +30,8 @@ func (t Type) String() string {
 		return "gauge"
 	case Histogram:
 		return "histogram"
+	case Summary:
+		return "summary"
 	case Info:
 		return "info"
 	default:
@@ -34,38 +39,81 @@ func (t Type) String() string {
 	}
 }
 
+// Desc is a description of a metric family
 type Desc struct {
-	Type Type
 	Help string
+	Type Type
 }
 
+// Mapping is a map of metric family names to their descriptions
 type Mapping map[string]Desc
 
+// A Transformer accepts Prometheus metrics written in, and can read out
+// metrics augmented by a [Mapping]. If a mapping does not exist for a metric
+// family, it is assumed to be [Untyped].
+//
+// A zero value Transformer is usable with no [Mapping].
 type Transformer struct {
-	pr      *io.PipeReader
-	pw      *io.PipeWriter
-	scanner *bufio.Scanner
-	mapping Mapping
+	pr           io.ReadCloser
+	pw           io.WriteCloser
+	mapping      Mapping
+	initR, initW sync.Once
 }
 
+type eofReadWriter struct{}
+
+func (eofReadWriter) Read(p []byte) (n int, err error)  { return 0, io.EOF }
+func (eofReadWriter) Write(p []byte) (n int, err error) { return 0, io.EOF }
+func (eofReadWriter) Close() error                      { return nil }
+
+// Read must not be called concurrently with Write. Read also must not
+// be called before writing has completed.
 func (t *Transformer) Read(p []byte) (n int, err error) {
+	t.initR.Do(func() {
+		if t.pw == nil {
+			t.pr = eofReadWriter{}
+		} else {
+			t.pw.Close()
+		}
+	})
 	return t.pr.Read(p)
 }
 
-func (t *Transformer) run() {
-	defer t.pw.Close()
+// Write must not be called concurrently with Read. The data must be fully
+// written before calling Read.
+func (t *Transformer) Write(p []byte) (n int, err error) {
+	t.initW.Do(func() {
+		if t.pr == nil {
+			input, inWriter := io.Pipe()
+			output, outWriter := io.Pipe()
+			t.pr = output
+			t.pw = inWriter
+			go handleTransform(input, outWriter, t.mapping)
+		} else {
+			t.pw = eofReadWriter{}
+		}
+	})
+	return t.pw.Write(p)
+}
 
+func handleTransform(in *io.PipeReader, out *io.PipeWriter, mapping Mapping) {
 	var lines []string
-	for t.scanner.Scan() {
-		line := t.scanner.Text()
+	scanner := bufio.NewScanner(in)
+	for scanner.Scan() {
+		line := scanner.Text()
 
-		// skip comment lines
-		if strings.HasPrefix(line, "# ") {
+		// skip empty lines
+		if len(line) == 0 {
 			continue
 		}
 
-		// skip empty lines
+		// skip lines that start with a space
 		if strings.HasPrefix(line, " ") {
+			continue
+		}
+
+		// skip comment lines
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
 
@@ -74,36 +122,46 @@ func (t *Transformer) run() {
 		lines = slices.Insert(lines, idx, line)
 	}
 
-	out := t.pw
+	if err := scanner.Err(); err != nil {
+		out.CloseWithError(err)
+		return
+	}
+
+	buf := bufio.NewWriter(out)
+
+	defer func() {
+		// flush our buffer and close our pipe writer
+		out.CloseWithError(buf.Flush())
+	}()
+
 	var lastFamily string
 	for _, line := range lines {
 		family := getFamily(line)
 		if family != lastFamily {
 			lastFamily = family
-			m := t.mapping[family]
-			io.WriteString(out, "# HELP ")
-			io.WriteString(out, family)
+			m := mapping[family]
+			buf.WriteString("# HELP ")
+			buf.WriteString(family)
 			if m.Help != "" {
-				io.WriteString(out, " "+m.Help)
+				buf.WriteByte(' ')
+				buf.WriteString(m.Help)
 			}
-			io.WriteString(out, "\n# TYPE ")
-			io.WriteString(out, family)
-			io.WriteString(out, " "+m.Type.String()+"\n")
+			buf.WriteString("\n# TYPE ")
+			buf.WriteString(family)
+			buf.WriteByte(' ')
+			buf.WriteString(m.Type.String())
+			buf.WriteByte('\n')
 		}
-		io.WriteString(out, line+"\n")
+		buf.WriteString(line)
+		buf.WriteByte('\n')
 	}
 }
 
-func NewTransformer(in io.Reader, mapping Mapping) *Transformer {
-	pr, pw := io.Pipe()
-	t := &Transformer{
-		pr:      pr,
-		pw:      pw,
-		scanner: bufio.NewScanner(in),
+// NewTransformer creates a new Transformer with an optional Mapping.
+func NewTransformer(mapping Mapping) *Transformer {
+	return &Transformer{
 		mapping: mapping,
 	}
-	go t.run()
-	return t
 }
 
 // compareLines compares two metric lines based on their family name
