@@ -1,9 +1,6 @@
 package metrics
 
-import (
-	"fmt"
-	"unicode/utf8"
-)
+import "fmt"
 
 // MustIdent ensures that s is a valid identifier and returns an Ident.
 //
@@ -73,7 +70,7 @@ func MustTags(tags ...string) []Tag {
 func validateLabelValue(s string) bool {
 	// XXX: This is marginally faster to do in two passes since
 	// utf8.ValidString is so optimized.
-	if !utf8.ValidString(s) {
+	if !utf8ValidString(s) {
 		return false
 	}
 
