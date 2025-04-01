@@ -45,6 +45,14 @@ func (v Value) String() string {
 	return v.v
 }
 
+// NewTestingExpfmtWriter is to help when writing Collector tests.
+func NewTestingExpfmtWriter(constantTags ...string) ExpfmtWriter {
+	return ExpfmtWriter{
+		b:            bytes.NewBuffer(nil),
+		constantTags: materializeTags(MustTags(constantTags...)),
+	}
+}
+
 // ExpfmtWriter wraps a [bytes.Buffer] adds functionality to write
 // the Prometheus text exposition format.
 type ExpfmtWriter struct {
