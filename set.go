@@ -390,3 +390,12 @@ func makeLabels(labels []string) []Label {
 	}
 	return new
 }
+
+// makeValues converts a list of string values into a list of Value objects.
+func makeValues(values []string) []Value {
+	new := make([]Value, len(values))
+	for i, value := range values {
+		new[i] = MustValue(value)
+	}
+	return new
+}

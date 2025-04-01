@@ -153,6 +153,35 @@ func TestWriteLine(t *testing.T) {
 	}
 }
 
+func TestWriteMetricNameWithVariableTags(t *testing.T) {
+	w := ExpfmtWriter{
+		b: bytes.NewBuffer(nil),
+	}
+	for _, tc := range []struct {
+		family         string
+		tags           []string
+		constantTags   string
+		labels, values []string
+		expected       string
+	}{
+		{"foo", nil, "", nil, nil, `foo`},
+		{"foo", nil, `x="y"`, nil, nil, `foo{x="y"}`},
+		{"foo", nil, `x="y"`, []string{"label1"}, []string{"value1"}, `foo{x="y",label1="value1"}`},
+		{"foo", []string{"a", "1"}, `x="y"`, []string{"label1"}, []string{"value1"}, `foo{x="y",a="1",label1="value1"}`},
+		{"foo", []string{"a", "1"}, `x="y"`, nil, nil, `foo{x="y",a="1"}`},
+		{"foo", nil, "", []string{"label1"}, []string{"value1"}, `foo{label1="value1"}`},
+		{"foo", nil, "", []string{"label1", "label2"}, []string{"value1", "value2"}, `foo{label1="value1",label2="value2"}`},
+	} {
+		w.b.Reset()
+		w.constantTags = tc.constantTags
+		w.WriteMetricNameWithVariableTags(MetricName{
+			Family: MustIdent(tc.family),
+			Tags:   MustTags(tc.tags...),
+		}, makeLabels(tc.labels), makeValues(tc.values))
+		assert.Equal(t, w.b.String(), tc.expected)
+	}
+}
+
 func TestSizeOf(t *testing.T) {
 	for _, tc := range []struct {
 		family       string

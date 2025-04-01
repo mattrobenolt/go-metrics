@@ -20,10 +20,10 @@ func (i Ident) String() string {
 // Label is also an Ident.
 type Label = Ident
 
-// WithValueUnsafe joins a Label with value that _must_ already be known
+// WithUnsafeValue joins a Label with value that _must_ already be known
 // to be valid. No validation is done on the value and this will perform faster.
-func (l Label) WithValueUnsafe(val string) Tag {
-	return Tag{l, Value{val}}
+func (l Label) WithUnsafeValue(val string) Tag {
+	return Tag{l, UnsafeValue(val)}
 }
 
 // Tag represents a label/value pair for a metric.
@@ -68,6 +68,12 @@ func (w ExpfmtWriter) WriteMetricName(name MetricName) {
 	writeMetricName(w.b, name, w.constantTags)
 }
 
+// WriteMetricNameWithVariableTags writes the family name, optional tags,
+// constant tags and extra variable labels and values.
+func (w ExpfmtWriter) WriteMetricNameWithVariableTags(name MetricName, labels []Label, values []Value) {
+	writeMetricNameWithVariableTags(w.b, name, w.constantTags, labels, values)
+}
+
 // WriteUint64 writes a uint64 and signals the end of the metric.
 func (w ExpfmtWriter) WriteUint64(value uint64) {
 	w.b.WriteByte(' ')
@@ -94,6 +100,15 @@ func (w ExpfmtWriter) WriteDuration(value time.Duration) {
 	w.b.WriteByte(' ')
 	writeDuration(w.b, value)
 	w.b.WriteByte('\n')
+}
+
+// WriteDuration writes a bool and signals the end of the metric.
+func (w ExpfmtWriter) WriteBool(value bool) {
+	if value {
+		w.b.WriteString(" 1\n")
+	} else {
+		w.b.WriteString(" 0\n")
+	}
 }
 
 // WriteMetricUint64 writes a full MetricName and uint64 value.
@@ -252,6 +267,45 @@ func writeMetricName(b *bytes.Buffer, name MetricName, constantTags string) {
 	b.WriteString(name.Family.String())
 	b.WriteByte('{')
 	writeTags(b, constantTags, name.Tags)
+	b.WriteByte('}')
+}
+
+func writeMetricNameWithVariableTags(
+	b *bytes.Buffer,
+	name MetricName,
+	constantTags string,
+	labels []Label,
+	values []Value,
+) {
+	if !name.hasTags() && len(constantTags) == 0 && len(labels) == 0 {
+		b.WriteString(name.Family.String())
+		return
+	}
+
+	if len(labels) != len(values) {
+		panic("metrics: must have equal number of labels and values")
+	}
+
+	var variableLabelsSize int
+	for i := range labels {
+		variableLabelsSize += len(labels[i].String()) + len(values[i].String()) + len(`="",`)
+	}
+
+	b.Grow(sizeOfMetricName(name, constantTags) + variableLabelsSize)
+
+	b.WriteString(name.Family.String())
+	b.WriteByte('{')
+	writeTags(b, constantTags, name.Tags)
+
+	if (len(constantTags) > 0 || name.hasTags()) && len(labels) > 0 {
+		b.WriteByte(',')
+	}
+	for i := range labels {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		writeTag(b, Tag{labels[i], values[i]})
+	}
 	b.WriteByte('}')
 }
 

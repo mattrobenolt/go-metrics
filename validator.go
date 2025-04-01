@@ -31,6 +31,11 @@ func MustTag(label, value string) Tag {
 	}
 }
 
+// UnsafeValue creates a Value, but does not validate it.
+func UnsafeValue(s string) Value {
+	return Value{s}
+}
+
 // MustValue ensures that s is a valid tag value.
 //
 // This will panic if s is an invalid tag value.
