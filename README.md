@@ -34,7 +34,7 @@ func main() {
 	// create a new uint64 counter "foo" with the tag a=b
 	// This will emit:
 	//   foo{a="b"} 1
-	c := metrics.NewUint("foo", "a", "b")
+	c := metrics.NewUint64("foo", "a", "b")
 	c.Inc()
 
 	mux := http.NewServeMux()
