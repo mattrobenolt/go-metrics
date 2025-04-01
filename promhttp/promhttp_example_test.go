@@ -1,9 +1,6 @@
 package promhttp_test
 
 import (
-	"bytes"
-	"fmt"
-	"io"
 	"net/http"
 
 	"go.withmatt.com/metrics"
@@ -23,9 +20,9 @@ func ExampleHandlerFor() {
 	http.Handle("/metrics", promhttp.HandlerFor(set))
 }
 
-func ExampleTransformer() {
-	set := metrics.NewSet()
-	set.NewCounter("foo").Inc()
+func ExampleAnnotatedHandler() {
+	// Export all globally registered metrics with default mappings.
+	http.Handle("/metrics", promhttp.AnnotatedHandler(nil))
 
 	// Create a Mapping for our metrics families.
 	mapping := promhttp.Mapping{
@@ -35,19 +32,6 @@ func ExampleTransformer() {
 		},
 	}
 
-	// Create a Transformer for our metrics.
-	tr := promhttp.NewTransformer(mapping)
-
-	// Write our metrics into the transformer.
-	set.WritePrometheus(tr)
-
-	// Write transformed data from the transformer to a buffer.
-	var bb bytes.Buffer
-	io.Copy(&bb, tr)
-
-	fmt.Println(bb.String())
-	// Output:
-	// # HELP foo This is a counter
-	// # TYPE foo counter
-	// foo 1
+	// Export all globally registered metrics with our mapping.
+	http.Handle("/metrics", promhttp.AnnotatedHandler(mapping))
 }
