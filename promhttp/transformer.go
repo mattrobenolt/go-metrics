@@ -87,7 +87,8 @@ func (t *Transformer) run() {
 				io.WriteString(out, " "+m.Help)
 			}
 			io.WriteString(out, "\n# TYPE ")
-			io.WriteString(out, m.Type.String()+"\n")
+			io.WriteString(out, family)
+			io.WriteString(out, " "+m.Type.String()+"\n")
 		}
 		io.WriteString(out, line+"\n")
 	}
