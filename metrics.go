@@ -29,6 +29,14 @@ type namedMetric struct {
 	metric Metric
 }
 
+// NewMetricName creates a new [MetricName] with the given family and optional tags.
+func NewMetricName(family string, tags ...string) MetricName {
+	return MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	}
+}
+
 // MetricName represents a fully qualified name of a metric in pieces.
 type MetricName struct {
 	// Family is the metric Ident, see [MustIdent].
