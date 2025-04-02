@@ -4,13 +4,13 @@ pkg: x
 cpu: Apple M1 Max
                                  │  mattware   │                vmmetrics                │                prometheus                │
                                  │   sec/op    │    sec/op     vs base                   │    sec/op     vs base                    │
-IncWithLabelValues-10              41.53n ± 2%    97.82n ± 2%  +135.51% (p=0.000 n=10)      47.25n ± 0%    +13.76% (p=0.000 n=10)
-UpdateVMRangeHistogram-10          16.28n ± 0%    17.10n ± 2%    +5.04% (p=0.000 n=10)
-UpdatePromHistogram-10             15.11n ± 2%                                              10.25n ± 0%    -32.14% (p=0.000 n=10)
-WriteMetricsCounters-10            781.0µ ± 4%   1024.0µ ± 2%   +31.10% (p=0.000 n=10)     9633.3µ ± 5%  +1133.40% (p=0.000 n=10)
-WriteMetricsVMRangeHistograms-10   495.0µ ± 1%   2404.7µ ± 2%  +385.83% (p=0.000 n=10)
-WriteMetricsPromHistograms-10      118.8µ ± 3%                                              460.4µ ± 3%   +287.41% (p=0.000 n=10)
-geomean                            2.788µ         8.011µ        +99.23%                ¹    6.808µ        +146.44%                ¹
+IncWithLabelValues-10              41.91n ± 1%    95.16n ± 0%  +127.06% (p=0.000 n=10)      47.03n ± 0%    +12.22% (p=0.000 n=10)
+UpdateVMRangeHistogram-10          16.16n ± 0%    17.05n ± 0%    +5.51% (p=0.000 n=10)
+UpdatePromHistogram-10             14.74n ± 2%                                              10.03n ± 0%    -31.95% (p=0.000 n=10)
+WriteMetricsCounters-10            762.7µ ± 1%   1003.5µ ± 3%   +31.56% (p=0.000 n=10)     9782.2µ ± 0%  +1182.55% (p=0.000 n=10)
+WriteMetricsVMRangeHistograms-10   497.2µ ± 0%   2373.3µ ± 0%  +377.31% (p=0.000 n=10)
+WriteMetricsPromHistograms-10      119.4µ ± 0%                                              436.5µ ± 0%   +265.58% (p=0.000 n=10)
+geomean                            2.770µ         7.884µ        +96.94%                ¹    6.699µ        +144.61%                ¹
 ¹ benchmark set differs from baseline; geomeans may not be comparable
 
                                  │    mattware    │             vmmetrics              │             prometheus             │
@@ -41,10 +41,10 @@ geomean                                        ²                ?              
 
                                  │   mattware    │                vmmetrics                │               prometheus               │
                                  │      B/s      │      B/s       vs base                  │     B/s       vs base                  │
-WriteMetricsCounters-10            621.38Mi ± 4%   483.27Mi ± 2%  -22.23% (p=0.000 n=10)     50.38Mi ± 5%  -91.89% (p=0.000 n=10)
-WriteMetricsVMRangeHistograms-10   1000.3Mi ± 1%    205.8Mi ± 2%  -79.42% (p=0.000 n=10)
-WriteMetricsPromHistograms-10       737.9Mi ± 2%                                             190.5Mi ± 3%  -74.18% (p=0.000 n=10)
-geomean                             771.2Mi         315.4Mi       -60.00%                ¹   97.98Mi       -85.53%                ¹
+WriteMetricsCounters-10            636.30Mi ± 1%   493.15Mi ± 3%  -22.50% (p=0.000 n=10)     49.61Mi ± 0%  -92.20% (p=0.000 n=10)
+WriteMetricsVMRangeHistograms-10    995.7Mi ± 0%    208.6Mi ± 0%  -79.05% (p=0.000 n=10)
+WriteMetricsPromHistograms-10       734.5Mi ± 0%                                             201.0Mi ± 0%  -72.64% (p=0.000 n=10)
+geomean                             774.9Mi         320.7Mi       -59.71%                ¹   99.86Mi       -85.39%                ¹
 ¹ benchmark set differs from baseline; geomeans may not be comparable
 
 goos: darwin
@@ -53,38 +53,38 @@ pkg: go.withmatt.com/metrics
 cpu: Apple M1 Max
 BenchmarkCounterVec
 BenchmarkCounterVec/hot
-BenchmarkCounterVec/hot-10             	50953520	        23.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterVec/hot-10             	51857587	        22.99 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCounterVec/cold
-BenchmarkCounterVec/cold-10            	 4616402	       251.9 ns/op	     632 B/op	       8 allocs/op
+BenchmarkCounterVec/cold-10            	 5433336	       215.1 ns/op	     632 B/op	       8 allocs/op
 BenchmarkCounterVec/verycold
-BenchmarkCounterVec/verycold-10        	 4790407	       255.2 ns/op	     792 B/op	       9 allocs/op
+BenchmarkCounterVec/verycold-10        	 4892782	       242.2 ns/op	     792 B/op	       9 allocs/op
 BenchmarkCounterInc
-BenchmarkCounterInc-10                 	174086478	         6.894 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterInc-10                 	175412512	         6.841 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCounterIncParallel
-BenchmarkCounterIncParallel-10         	16364119	        72.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCounterIncParallel-10         	15129514	        79.28 ns/op	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter
 BenchmarkExpfmtWriter/name
-BenchmarkExpfmtWriter/name-10          	189757533	         6.397 ns/op	2813.64 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name-10          	202540020	         5.916 ns/op	3042.78 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_tags
-BenchmarkExpfmtWriter/name_with_tags-10         	23596731	        52.28 ns/op	 669.52 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_tags-10         	24801693	        48.56 ns/op	 720.75 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/name_with_many_tags
-BenchmarkExpfmtWriter/name_with_many_tags-10    	 5181501	       229.7 ns/op	 605.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/name_with_many_tags-10    	 5423385	       221.6 ns/op	 627.21 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/uint64
-BenchmarkExpfmtWriter/uint64-10                 	18360566	        65.81 ns/op	 607.86 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/uint64-10                 	19684070	        60.76 ns/op	 658.35 MB/s	       0 B/op	       0 allocs/op
 BenchmarkExpfmtWriter/float64
-BenchmarkExpfmtWriter/float64-10                	12436532	       100.1 ns/op	 419.38 MB/s	       0 B/op	       0 allocs/op
+BenchmarkExpfmtWriter/float64-10                	12990562	        92.51 ns/op	 453.99 MB/s	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdate
-BenchmarkHistogramUpdate-10                     	95807104	        12.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdate-10                     	100000000	        11.64 ns/op	       0 B/op	       0 allocs/op
 BenchmarkHistogramUpdateParallel
-BenchmarkHistogramUpdateParallel-10             	12525321	        94.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistogramUpdateParallel-10             	11641730	       103.5 ns/op	       0 B/op	       0 allocs/op
 BenchmarkWritePrometheus
-BenchmarkWritePrometheus-10                     	  483369	      2481 ns/op	1143.70 MB/s	       0 B/op	       0 allocs/op
+BenchmarkWritePrometheus-10                     	  494320	      2415 ns/op	1175.00 MB/s	       0 B/op	       0 allocs/op
 BenchmarkValidate
 BenchmarkValidate/MustIdent
-BenchmarkValidate/MustIdent-10                  	48058070	        24.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustIdent-10                  	54872506	        21.77 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/validateIdent
-BenchmarkValidate/validateIdent-10              	79755193	        15.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/validateIdent-10              	78790776	        15.14 ns/op	       0 B/op	       0 allocs/op
 BenchmarkValidate/MustValue
-BenchmarkValidate/MustValue-10                  	75002535	        15.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkValidate/MustValue-10                  	74829295	        15.92 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	go.withmatt.com/metrics	19.377s
+ok  	go.withmatt.com/metrics	19.504s
