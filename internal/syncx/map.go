@@ -51,6 +51,10 @@ func (m *Map[K, V]) LoadAndDelete(key K) (value V, loaded bool) {
 	return v.(V), loaded
 }
 
+func (m *Map[K, V]) CompareAndDelete(key K, old V) (deleted bool) {
+	return m.m.CompareAndDelete(key, old)
+}
+
 func (m *Map[K, V]) Range(f func(key K, value V) bool) {
 	m.m.Range(func(key, value any) bool {
 		return f(key.(K), value.(V))

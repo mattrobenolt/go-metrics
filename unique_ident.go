@@ -5,11 +5,12 @@ import (
 	"hash/maphash"
 	"runtime"
 	"strings"
-	"sync"
 	"weak"
+
+	"go.withmatt.com/metrics/internal/syncx"
 )
 
-var identCache sync.Map // map[uint64]weak.Pointer[string]
+var identCache syncx.Map[uint64, weak.Pointer[string]]
 
 // makeIdentHandle is a specialized version of unique.Make[string]
 // that also caches the fact that a given Ident is a valid identifier.
@@ -45,7 +46,7 @@ func makeIdentHandle(value string) Ident {
 		}
 		// Now that we're sure there's a value in the map, let's
 		// try to get the pointer we need out of it.
-		ptr = wp.(weak.Pointer[string]).Value()
+		ptr = wp.Value()
 		if ptr != nil {
 			break
 		}
@@ -55,4 +56,16 @@ func makeIdentHandle(value string) Ident {
 	}
 	runtime.KeepAlive(toInsert)
 	return Ident{ptr}
+}
+
+func rangeIdentCache(f func(uint64, weak.Pointer[string]) bool) {
+	identCache.Range(func(key uint64, wp weak.Pointer[string]) bool {
+		// while we are iterating, we might as well clean up any dead pointers
+		if ptr := wp.Value(); ptr == nil {
+			if identCache.CompareAndDelete(key, wp) {
+				return true
+			}
+		}
+		return f(key, wp)
+	})
 }
