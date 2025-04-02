@@ -5,6 +5,9 @@ clean: clean-bin
 $(BIN):
 	mkdir -p $(BIN)
 
+clean-bin:
+	rm -rf $(BIN)
+
 TOOL_INSTALL := env GOBIN=$(PWD)/$(BIN) go install
 
 TEST_FLAGS := --rerun-fails=5 --packages=./... --format testname

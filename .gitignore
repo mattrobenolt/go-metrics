@@ -1,2 +1,6 @@
 bin/
 examples/victoria-metrics-*
+before.txt
+after.txt
+compare.txt
+coverage.out
