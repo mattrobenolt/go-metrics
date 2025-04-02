@@ -104,8 +104,7 @@ type Histogram struct {
 	upper atomic.Uint64
 
 	// sum is the sum of all the values put into Histogram
-	sumInt   atomic.Uint64
-	sumFloat atomicx.Float64
+	sum atomicx.Sum
 }
 
 // Reset resets the given histogram.
@@ -113,8 +112,7 @@ func (h *Histogram) Reset() {
 	clear(h.buckets[:])
 	h.lower.Store(0)
 	h.upper.Store(0)
-	h.sumInt.Store(0)
-	h.sumFloat.Store(0)
+	h.sum.Reset()
 }
 
 // Update updates h with val.
@@ -157,13 +155,7 @@ func (h *Histogram) Update(val float64) {
 		db[offset].Add(1)
 	}
 
-	if val > 0 {
-		if intval := uint64(val); float64(intval) == val {
-			h.sumInt.Add(intval)
-		} else {
-			h.sumFloat.Add(val)
-		}
-	}
+	h.sum.Add(val)
 }
 
 // Observe updates h with val, identical to [Histogram.Update].
@@ -177,8 +169,7 @@ func (h *Histogram) Observe(val float64) {
 func (h *Histogram) Merge(src *Histogram) {
 	h.lower.Add(src.lower.Load())
 	h.upper.Add(src.upper.Load())
-	h.sumInt.Add(src.sumInt.Load())
-	h.sumFloat.Add(src.sumFloat.Load())
+	h.sum.Add(src.sum.Load())
 
 	for i := range src.buckets {
 		if dbSrc := src.buckets[i].Load(); dbSrc != nil {
@@ -216,7 +207,7 @@ func (h *Histogram) marshalTo(w ExpfmtWriter, name MetricName) {
 		return
 	}
 
-	sum := h.sum()
+	sum := h.sum.Load()
 	family := name.Family.String()
 
 	// 1 extra because we're always adding in the vmrange tag
@@ -327,10 +318,6 @@ func (h *Histogram) punchBuckets(c *punchCard) (total uint64, punches int) {
 	}
 
 	return
-}
-
-func (h *Histogram) sum() float64 {
-	return float64(h.sumInt.Load()) + h.sumFloat.Load()
 }
 
 // punchCard is used internally to track counts per bucket when computing

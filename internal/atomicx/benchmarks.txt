@@ -1,0 +1,12 @@
+$ benchstat -col /type compare.txt
+goos: darwin
+goarch: arm64
+pkg: go.withmatt.com/metrics/internal/atomicx
+cpu: Apple M1 Max
+                       │   Float64    │                 Sum                 │
+                       │    sec/op    │   sec/op     vs base                │
+AddParallel/float-10      336.3n ± 7%   270.2n ± 3%  -19.64% (p=0.000 n=10)
+AddParallel/integer-10   331.75n ± 5%   80.38n ± 2%  -75.77% (p=0.000 n=10)
+Add/float-10             10.180n ± 1%   9.612n ± 1%   -5.58% (p=0.000 n=10)
+Add/integer-10           10.075n ± 1%   6.883n ± 0%  -31.69% (p=0.000 n=10)
+geomean                   58.16n        34.62n       -40.47%
