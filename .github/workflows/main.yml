@@ -18,5 +18,7 @@ jobs:
           go-version: ${{ matrix.go }}
       - run: go mod download
       - run: go build
-      - run: make lint
+      - uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.0.2
       - run: make test test-race

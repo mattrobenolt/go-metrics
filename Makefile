@@ -7,8 +7,10 @@ $(BIN):
 
 TOOL_INSTALL := env GOBIN=$(PWD)/$(BIN) go install
 
+TEST_FLAGS := --rerun-fails=5 --packages=./... --format testname
+
 $(BIN)/golangci-lint: Makefile | $(BIN)
-	wget -qO- https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b bin v2.0.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b bin v2.0.2
 
 $(BIN)/godoc: | $(BIN)
 	$(TOOL_INSTALL) golang.org/x/tools/cmd/godoc@latest
@@ -33,13 +35,13 @@ docs: $(BIN)/godoc
 	$< -http=127.0.0.1:6060
 
 test: $(BIN)/gotestsum
-	GOEXPERIMENT=synctest $< --format testname -- -v ./...
+	GOEXPERIMENT=synctest $< $(TEST_FLAGS)
 
 test-race: $(BIN)/gotestsum
-	GOEXPERIMENT=synctest $< --format testname -- -v -race ./...
+	GOEXPERIMENT=synctest $< $(TEST_FLAGS) -- -race
 
 test-watch: $(BIN)/gotestsum
-	GOEXPERIMENT=synctest $< --watch --format testname -- -v ./...
+	GOEXPERIMENT=synctest $< --watch $(TEST_FLAGS)
 
 update-benchmarks:
 	go -C benchmarks/ test -v -bench=. -count=10 | tee compare.txt
