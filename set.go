@@ -73,9 +73,7 @@ type Set struct {
 	// no constant tags.
 	unorderedSets syncx.Set[*Set]
 
-	hasCollectors atomic.Bool
-	collectorsMu  sync.Mutex
-	collectors    []Collector
+	collectors atomic.Pointer[[]Collector]
 
 	// constantTags are tags that are constant for all metrics in the set.
 	// Children sets inherit these base tags.
@@ -117,11 +115,7 @@ func (s *Set) Reset() {
 	s.metrics.Clear()
 	s.setsByHash.Clear()
 	s.unorderedSets.Clear()
-
-	s.collectorsMu.Lock()
-	s.collectors = s.collectors[:0]
-	s.hasCollectors.Store(false)
-	s.collectorsMu.Unlock()
+	s.collectors.Store(nil)
 }
 
 // NewSet creates a new child Set in s.
@@ -149,24 +143,47 @@ func (s *Set) UnregisterSet(set *Set) {
 // RegisterCollector registers a Collector.
 // Registering the same collector more than once will panic.
 func (s *Set) RegisterCollector(c Collector) {
-	s.collectorsMu.Lock()
-	if idx := slices.Index(s.collectors, c); idx >= 0 {
-		panic("metrics: Collector already registered")
+	var newValues []Collector
+	var oldValues *[]Collector
+
+	for {
+		oldValues = s.collectors.Load()
+		if oldValues != nil {
+			if slices.Contains(*oldValues, c) {
+				panic("metrics: Collector already registered")
+			}
+			newValues = slices.Clone(*oldValues)
+		} else {
+			newValues = nil
+		}
+		newValues = append(newValues, c)
+		if s.collectors.CompareAndSwap(oldValues, &newValues) {
+			return
+		}
 	}
-	s.collectors = append(s.collectors, c)
-	s.hasCollectors.Store(true)
-	s.collectorsMu.Unlock()
 }
 
 // UnregisterCollector removes a previously registered Collector from
 // the Set.
 func (s *Set) UnregisterCollector(c Collector) {
-	s.collectorsMu.Lock()
-	if idx := slices.Index(s.collectors, c); idx >= 0 {
-		s.collectors = slices.Delete(s.collectors, idx, idx+1)
+	var newValues []Collector
+	var oldValues *[]Collector
+
+	for {
+		oldValues = s.collectors.Load()
+		if oldValues == nil {
+			return
+		}
+		idx := slices.Index(*oldValues, c)
+		if idx == -1 {
+			return
+		}
+
+		newValues = slices.Clone(slices.Delete(*oldValues, idx, idx+1))
+		if s.collectors.CompareAndSwap(oldValues, &newValues) {
+			return
+		}
 	}
-	s.hasCollectors.Store(len(s.collectors) > 0)
-	s.collectorsMu.Unlock()
 }
 
 // WritePrometheus writes the metrics along with all children to the io.Writer
@@ -221,12 +238,8 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		return 0, err
 	}
 
-	if s.hasCollectors.Load() {
-		s.collectorsMu.Lock()
-		collectors := slices.Clone(s.collectors)
-		s.collectorsMu.Unlock()
-
-		for _, c := range collectors {
+	if collectors := s.collectors.Load(); collectors != nil {
+		for _, c := range *collectors {
 			// yield the scheduler for each Collector to not starve CPU
 			if throttle {
 				runtime.Gosched()
