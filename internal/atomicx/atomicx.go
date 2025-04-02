@@ -35,9 +35,14 @@ func (x *Float64) Store(val float64) {
 }
 
 // A Sum is an atomic float64 that can only Add. The zero value is zero.
+// Values cannot be negative.
 type Sum struct {
+	// the integer part of the sum
 	i atomic.Uint64
-	v [2]atomic.Uint64
+
+	// the floating point part of the sum, but this is split
+	// across two atomic.Uint64 values to avoid contention
+	f [2]atomic.Uint64
 }
 
 func (x *Sum) AddUint64(val uint64) {
@@ -52,31 +57,40 @@ func (x *Sum) Add(val float64) {
 		return
 	}
 
+	// Fast path to first check if the value is actually a whole number in
+	// disguise. This extra check is a few nanoseconds cost, but the benefit
+	// of avoiding the CAS loop is significant especially under pressure.
 	if intval := uint64(val); val == float64(intval) {
 		x.i.Add(intval)
 		return
 	}
 
+	// Choose a random index to update the floating point part of the sum.
+	// This is done to avoid contention when multiple goroutines are trying
+	// to update the sum concurrently.
+	//
 	//nolint:gosec
-	idx := rand.Uint64() & 1
+	idx := rand.Uint64() & 1 // & 1 is getting us 0 or 1, with a single CPU instruction
+
 	for {
-		oldBits := x.v[idx].Load()
+		oldBits := x.f[idx].Load()
 		newBits := math.Float64bits(math.Float64frombits(oldBits) + val)
-		if x.v[idx].CompareAndSwap(oldBits, newBits) {
+		if x.f[idx].CompareAndSwap(oldBits, newBits) {
 			return
 		}
 	}
 }
 
+// Reset resets the sum to zero.
 func (x *Sum) Reset() {
 	x.i.Store(0)
-	clear(x.v[:])
+	clear(x.f[:])
 }
 
 func (x *Sum) Load() float64 {
 	return float64(x.i.Load()) +
-		math.Float64frombits(x.v[0].Load()) +
-		math.Float64frombits(x.v[1].Load())
+		math.Float64frombits(x.f[0].Load()) +
+		math.Float64frombits(x.f[1].Load())
 }
 
 // An Instant is an atomic fasttime.Instant. The zero value is zero.
