@@ -9,6 +9,7 @@ func BenchmarkCollectors(b *testing.B) {
 }
 
 func benchmarkCollector(b *testing.B, name string, c Collector) {
+	b.Helper()
 	b.Run(name, func(b *testing.B) {
 		w := NewTestingExpfmtWriter()
 		b.ReportAllocs()
@@ -16,6 +17,5 @@ func benchmarkCollector(b *testing.B, name string, c Collector) {
 			w.b.Reset()
 			c.Collect(w)
 		}
-
 	})
 }
