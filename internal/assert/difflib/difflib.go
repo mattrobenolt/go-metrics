@@ -31,13 +31,13 @@ func calculateRatio(matches, length int) float64 {
 	return 1.0
 }
 
-type Match struct {
+type match struct {
 	A    int
 	B    int
 	Size int
 }
 
-type OpCode struct {
+type opCode struct {
 	Tag byte
 	I1  int
 	I2  int
@@ -45,7 +45,7 @@ type OpCode struct {
 	J2  int
 }
 
-// SequenceMatcher compares sequence of strings. The basic
+// sequenceMatcher compares sequence of strings. The basic
 // algorithm predates, and is a little fancier than, an algorithm
 // published in the late 1980's by Ratcliff and Obershelp under the
 // hyperbolic name "gestalt pattern matching".  The basic idea is to find
@@ -55,7 +55,7 @@ type OpCode struct {
 // of the matching subsequence.  This does not yield minimal edit
 // sequences, but does tend to yield matches that "look right" to people.
 //
-// SequenceMatcher tries to compute a "human-friendly diff" between two
+// sequenceMatcher tries to compute a "human-friendly diff" between two
 // sequences.  Unlike e.g. UNIX(tm) diff, the fundamental notion is the
 // longest *contiguous* & junk-free matching subsequence.  That's what
 // catches peoples' eyes.  The Windows(tm) windiff has another interesting
@@ -68,38 +68,30 @@ type OpCode struct {
 // "junk" <wink>.
 //
 // Timing:  Basic R-O is cubic time worst case and quadratic time expected
-// case.  SequenceMatcher is quadratic time for the worst case and has
+// case.  sequenceMatcher is quadratic time for the worst case and has
 // expected-case behavior dependent in a complicated way on how many
 // elements the sequences have in common; best case time is linear.
-type SequenceMatcher struct {
+type sequenceMatcher struct {
 	a              []string
 	b              []string
 	b2j            map[string][]int
 	IsJunk         func(string) bool
 	autoJunk       bool
 	bJunk          map[string]struct{}
-	matchingBlocks []Match
+	matchingBlocks []match
 	fullBCount     map[string]int
 	bPopular       map[string]struct{}
-	opCodes        []OpCode
+	opCodes        []opCode
 }
 
-func NewMatcher(a, b []string) *SequenceMatcher {
-	m := SequenceMatcher{autoJunk: true}
-	m.SetSeqs(a, b)
-	return &m
-}
-
-func NewMatcherWithJunk(a, b []string, autoJunk bool,
-	isJunk func(string) bool,
-) *SequenceMatcher {
-	m := SequenceMatcher{IsJunk: isJunk, autoJunk: autoJunk}
+func newMatcher(a, b []string) *sequenceMatcher {
+	m := sequenceMatcher{autoJunk: true}
 	m.SetSeqs(a, b)
 	return &m
 }
 
 // Set two sequences to be compared.
-func (m *SequenceMatcher) SetSeqs(a, b []string) {
+func (m *sequenceMatcher) SetSeqs(a, b []string) {
 	m.SetSeq1(a)
 	m.SetSeq2(b)
 }
@@ -113,7 +105,7 @@ func (m *SequenceMatcher) SetSeqs(a, b []string) {
 // sequences.
 //
 // See also SetSeqs() and SetSeq2().
-func (m *SequenceMatcher) SetSeq1(a []string) {
+func (m *sequenceMatcher) SetSeq1(a []string) {
 	if &a == &m.a {
 		return
 	}
@@ -124,7 +116,7 @@ func (m *SequenceMatcher) SetSeq1(a []string) {
 
 // Set the second sequence to be compared. The first sequence to be compared is
 // not changed.
-func (m *SequenceMatcher) SetSeq2(b []string) {
+func (m *sequenceMatcher) SetSeq2(b []string) {
 	if &b == &m.b {
 		return
 	}
@@ -135,7 +127,7 @@ func (m *SequenceMatcher) SetSeq2(b []string) {
 	m.chainB()
 }
 
-func (m *SequenceMatcher) chainB() {
+func (m *sequenceMatcher) chainB() {
 	// Populate line -> index mapping
 	b2j := map[string][]int{}
 	for i, s := range m.b {
@@ -176,7 +168,7 @@ func (m *SequenceMatcher) chainB() {
 	m.b2j = b2j
 }
 
-func (m *SequenceMatcher) isBJunk(s string) bool {
+func (m *sequenceMatcher) isBJunk(s string) bool {
 	_, ok := m.bJunk[s]
 	return ok
 }
@@ -208,7 +200,7 @@ func (m *SequenceMatcher) isBJunk(s string) bool {
 // happens to be adjacent to an "interesting" match.
 //
 // If no blocks match, return (alo, blo, 0).
-func (m *SequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) Match {
+func (m *sequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) match {
 	// CAUTION:  stripping common prefix or suffix would be incorrect.
 	// E.g.,
 	//    ab
@@ -278,7 +270,7 @@ func (m *SequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) Match {
 		bestsize += 1
 	}
 
-	return Match{A: besti, B: bestj, Size: bestsize}
+	return match{A: besti, B: bestj, Size: bestsize}
 }
 
 // Return list of triples describing matching subsequences.
@@ -292,13 +284,13 @@ func (m *SequenceMatcher) findLongestMatch(alo, ahi, blo, bhi int) Match {
 //
 // The last triple is a dummy, (len(a), len(b), 0), and is the only
 // triple with n==0.
-func (m *SequenceMatcher) GetMatchingBlocks() []Match {
+func (m *sequenceMatcher) GetMatchingBlocks() []match {
 	if m.matchingBlocks != nil {
 		return m.matchingBlocks
 	}
 
-	var matchBlocks func(alo, ahi, blo, bhi int, matched []Match) []Match
-	matchBlocks = func(alo, ahi, blo, bhi int, matched []Match) []Match {
+	var matchBlocks func(alo, ahi, blo, bhi int, matched []match) []match
+	matchBlocks = func(alo, ahi, blo, bhi int, matched []match) []match {
 		match := m.findLongestMatch(alo, ahi, blo, bhi)
 		i, j, k := match.A, match.B, match.Size
 		if match.Size > 0 {
@@ -316,7 +308,7 @@ func (m *SequenceMatcher) GetMatchingBlocks() []Match {
 
 	// It's possible that we have adjacent equal blocks in the
 	// matching_blocks list now.
-	nonAdjacent := []Match{}
+	nonAdjacent := []match{}
 	i1, j1, k1 := 0, 0, 0
 	for _, b := range matched {
 		// Is this block adjacent to i1, j1, k1?
@@ -331,16 +323,16 @@ func (m *SequenceMatcher) GetMatchingBlocks() []Match {
 			// the dummy we started with), and make the second block the
 			// new block to compare against.
 			if k1 > 0 {
-				nonAdjacent = append(nonAdjacent, Match{i1, j1, k1})
+				nonAdjacent = append(nonAdjacent, match{i1, j1, k1})
 			}
 			i1, j1, k1 = i2, j2, k2
 		}
 	}
 	if k1 > 0 {
-		nonAdjacent = append(nonAdjacent, Match{i1, j1, k1})
+		nonAdjacent = append(nonAdjacent, match{i1, j1, k1})
 	}
 
-	nonAdjacent = append(nonAdjacent, Match{len(m.a), len(m.b), 0})
+	nonAdjacent = append(nonAdjacent, match{len(m.a), len(m.b), 0})
 	m.matchingBlocks = nonAdjacent
 	return m.matchingBlocks
 }
@@ -360,13 +352,13 @@ func (m *SequenceMatcher) GetMatchingBlocks() []Match {
 // 'i' (insert):   b[j1:j2] should be inserted at a[i1:i1], i1==i2 in this case.
 //
 // 'e' (equal):    a[i1:i2] == b[j1:j2]
-func (m *SequenceMatcher) GetOpCodes() []OpCode {
+func (m *sequenceMatcher) GetOpCodes() []opCode {
 	if m.opCodes != nil {
 		return m.opCodes
 	}
 	i, j := 0, 0
 	matching := m.GetMatchingBlocks()
-	opCodes := make([]OpCode, 0, len(matching))
+	opCodes := make([]opCode, 0, len(matching))
 	for _, m := range matching {
 		//  invariant:  we've pumped out correct diffs to change
 		//  a[:i] into b[:j], and the next matching block is
@@ -384,13 +376,13 @@ func (m *SequenceMatcher) GetOpCodes() []OpCode {
 			tag = 'i'
 		}
 		if tag > 0 {
-			opCodes = append(opCodes, OpCode{tag, i, ai, j, bj})
+			opCodes = append(opCodes, opCode{tag, i, ai, j, bj})
 		}
 		i, j = ai+size, bj+size
 		// the list of matching blocks is terminated by a
 		// sentinel with size 0
 		if size > 0 {
-			opCodes = append(opCodes, OpCode{'e', ai, i, bj, j})
+			opCodes = append(opCodes, opCode{'e', ai, i, bj, j})
 		}
 	}
 	m.opCodes = opCodes
@@ -401,42 +393,42 @@ func (m *SequenceMatcher) GetOpCodes() []OpCode {
 //
 // Return a generator of groups with up to n lines of context.
 // Each group is in the same format as returned by GetOpCodes().
-func (m *SequenceMatcher) GetGroupedOpCodes(n int) [][]OpCode {
+func (m *sequenceMatcher) GetGroupedOpCodes(n int) [][]opCode {
 	if n < 0 {
 		n = 3
 	}
 	codes := m.GetOpCodes()
 	if len(codes) == 0 {
-		codes = []OpCode{{'e', 0, 1, 0, 1}}
+		codes = []opCode{{'e', 0, 1, 0, 1}}
 	}
 	// Fixup leading and trailing groups if they show no changes.
 	if codes[0].Tag == 'e' {
 		c := codes[0]
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
-		codes[0] = OpCode{c.Tag, max(i1, i2-n), i2, max(j1, j2-n), j2}
+		codes[0] = opCode{c.Tag, max(i1, i2-n), i2, max(j1, j2-n), j2}
 	}
 	if codes[len(codes)-1].Tag == 'e' {
 		c := codes[len(codes)-1]
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
-		codes[len(codes)-1] = OpCode{c.Tag, i1, min(i2, i1+n), j1, min(j2, j1+n)}
+		codes[len(codes)-1] = opCode{c.Tag, i1, min(i2, i1+n), j1, min(j2, j1+n)}
 	}
 	nn := n + n
-	groups := [][]OpCode{}
-	group := []OpCode{}
+	groups := [][]opCode{}
+	group := []opCode{}
 	for _, c := range codes {
 		i1, i2, j1, j2 := c.I1, c.I2, c.J1, c.J2
 		// End the current group and start a new one whenever
 		// there is a large range with no changes.
 		if c.Tag == 'e' && i2-i1 > nn {
-			group = append(group, OpCode{
+			group = append(group, opCode{
 				c.Tag, i1, min(i2, i1+n),
 				j1, min(j2, j1+n),
 			})
 			groups = append(groups, group)
-			group = []OpCode{}
+			group = []opCode{}
 			i1, j1 = max(i1, i2-n), max(j1, j2-n)
 		}
-		group = append(group, OpCode{c.Tag, i1, i2, j1, j2})
+		group = append(group, opCode{c.Tag, i1, i2, j1, j2})
 	}
 	if len(group) > 0 && (len(group) != 1 || group[0].Tag != 'e') {
 		groups = append(groups, group)
@@ -455,7 +447,7 @@ func (m *SequenceMatcher) GetGroupedOpCodes(n int) [][]OpCode {
 // .GetMatchingBlocks() or .GetOpCodes(), in which case you may
 // want to try .QuickRatio() or .RealQuickRation() first to get an
 // upper bound.
-func (m *SequenceMatcher) Ratio() float64 {
+func (m *sequenceMatcher) Ratio() float64 {
 	matches := 0
 	for _, m := range m.GetMatchingBlocks() {
 		matches += m.Size
@@ -467,7 +459,7 @@ func (m *SequenceMatcher) Ratio() float64 {
 //
 // This isn't defined beyond that it is an upper bound on .Ratio(), and
 // is faster to compute.
-func (m *SequenceMatcher) QuickRatio() float64 {
+func (m *sequenceMatcher) QuickRatio() float64 {
 	// viewing a and b as multisets, set matches to the cardinality
 	// of their intersection; this counts the number of matches
 	// without regard to order, so is clearly an upper bound
@@ -499,7 +491,7 @@ func (m *SequenceMatcher) QuickRatio() float64 {
 //
 // This isn't defined beyond that it is an upper bound on .Ratio(), and
 // is faster to compute than either .Ratio() or .QuickRatio().
-func (m *SequenceMatcher) RealQuickRatio() float64 {
+func (m *sequenceMatcher) RealQuickRatio() float64 {
 	la, lb := len(m.a), len(m.b)
 	return calculateRatio(min(la, lb), la+lb)
 }
@@ -566,7 +558,7 @@ func WriteUnifiedDiff(writer io.Writer, diff UnifiedDiff) error {
 	}
 
 	started := false
-	m := NewMatcher(diff.A, diff.B)
+	m := newMatcher(diff.A, diff.B)
 	for _, g := range m.GetGroupedOpCodes(diff.Context) {
 		if !started {
 			started = true
