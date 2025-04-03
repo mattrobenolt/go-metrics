@@ -45,6 +45,14 @@ type Sum struct {
 	f [2]atomic.Uint64
 }
 
+func (x *Sum) Inc() {
+	x.i.Add(1)
+}
+
+func (x *Sum) Dec() {
+	x.i.Add(^uint64(0))
+}
+
 func (x *Sum) AddUint64(val uint64) {
 	if val == 0 {
 		return
@@ -54,6 +62,11 @@ func (x *Sum) AddUint64(val uint64) {
 
 func (x *Sum) Add(val float64) {
 	if val <= 0 {
+		return
+	}
+
+	if val == 1 {
+		x.Inc()
 		return
 	}
 
