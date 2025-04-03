@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -33,6 +34,15 @@ func Equal[T comparable](tb testing.TB, got, want T, options ...Option) bool {
 		return true
 	}
 	report(tb, got, want, "assert.Equal", true /* showWant */, options...)
+	return false
+}
+
+func SlicesEqual[S ~[]E, E comparable](tb testing.TB, got, want S, options ...Option) bool {
+	tb.Helper()
+	if slices.Equal(got, want) {
+		return true
+	}
+	report(tb, got, want, "assert.SlicesEqual", true /* showWant */, options...)
 	return false
 }
 
@@ -158,11 +168,53 @@ func report(tb testing.TB, got, want any, desc string, showWant bool, options ..
 	}
 	buffer.WriteString("\n")
 	fmt.Fprintf(&buffer, "assertion:\t%s\n", desc)
-	fmt.Fprintf(&buffer, "got:\t%+v\n", got)
-	if showWant {
-		fmt.Fprintf(&buffer, "want:\t%+v\n", want)
+	switch {
+	case isStringSlice(got):
+		reportStringSlice(&buffer, got.([]string), want.([]string))
+	case isSlice(got):
+		fmt.Fprintf(&buffer, "got (len=%d):\n %#v\n", reflect.ValueOf(got).Len(), got)
+		if showWant {
+			fmt.Fprintf(&buffer, "\nwant (len=%d):\n %#v\n", reflect.ValueOf(want).Len(), want)
+		}
+	default:
+		fmt.Fprintf(&buffer, "got:\t%+v\n", got)
+		if showWant {
+			fmt.Fprintf(&buffer, "want:\t%+v\n", want)
+		}
 	}
 	tb.Error(buffer.String())
+}
+
+func reportStringSlice(buffer *strings.Builder, got, want []string) {
+	if len(got) == len(want) {
+		for i := range got {
+			if got[i] != want[i] {
+				fmt.Fprintf(buffer, "(line %d)\n", i+1)
+				fmt.Fprintf(buffer, "  \033[0;31m-`%s`\033[0m\n", want[i])
+				fmt.Fprintf(buffer, "  \033[0;32m+`%s`\033[0m\n", got[i])
+			}
+		}
+	} else {
+		fmt.Fprintf(buffer, "got (len=%d):\n", len(got))
+		for i, line := range got {
+			fmt.Fprintf(buffer, "  %3d | `%s`\n", i+1, line)
+		}
+
+		fmt.Fprintf(buffer, "\nwant (len=%d):\n", len(want))
+		for i, line := range want {
+			fmt.Fprintf(buffer, "  %3d | `%s`\n", i+1, line)
+		}
+	}
+}
+
+func isSlice(got any) bool {
+	val := reflect.ValueOf(got)
+	return val.Kind() == reflect.Slice
+}
+
+func isStringSlice(got any) bool {
+	val := reflect.ValueOf(got)
+	return val.Kind() == reflect.Slice && val.Type().Elem().Kind() == reflect.String
 }
 
 func isNil(got any) bool {

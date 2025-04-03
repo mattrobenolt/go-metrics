@@ -16,24 +16,26 @@ func assertMarshal(tb testing.TB, set *Set, expected []string) {
 	tb.Helper()
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
-	lines := strings.Split(strings.Trim(b.String(), "\n"), "\n")
-	assert.Equal(tb,
-		strings.Join(lines, "\n"),
-		strings.Join(expected, "\n"),
-	)
+	out := strings.Trim(b.String(), "\n")
+	var lines []string
+	if out != "" {
+		lines = strings.Split(out, "\n")
+	}
+	assert.SlicesEqual(tb, lines, expected)
 }
 
 func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
 	tb.Helper()
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
-	lines := strings.Split(strings.Trim(b.String(), "\n"), "\n")
+	out := strings.Trim(b.String(), "\n")
+	var lines []string
+	if out != "" {
+		lines = strings.Split(out, "\n")
+	}
 	slices.Sort(lines)
 	slices.Sort(expected)
-	assert.Equal(tb,
-		strings.Join(lines, "\n"),
-		strings.Join(expected, "\n"),
-	)
+	assert.SlicesEqual(tb, lines, expected)
 }
 
 func hammer(tb testing.TB, n int, f func(int)) {
