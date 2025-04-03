@@ -3,22 +3,45 @@ on:
   - push
   - pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  tests:
+  test:
     strategy:
       matrix:
         go: ["1.24"]
         os: [ubuntu, macos]
     runs-on: ${{ matrix.os }}-latest
-    name: go${{ matrix.go }}-${{ matrix.os }}
+    name: test (go${{ matrix.go }}-${{ matrix.os }})
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
       - run: go mod download
-      - run: go build
+      - run: go build -v
+      - run: make test
+
+  test-race:
+    strategy:
+      matrix:
+        go: ["1.24"]
+        os: [ubuntu, macos]
+    runs-on: ${{ matrix.os }}-latest
+    name: test-race (go${{ matrix.go }}-${{ matrix.os }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - run: make test-race
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.0.2
-      - run: make test test-race
