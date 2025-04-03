@@ -17,11 +17,9 @@ func assertMarshal(tb testing.TB, set *Set, expected []string) {
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
 	out := strings.Trim(b.String(), "\n")
-	var lines []string
-	if out != "" {
-		lines = strings.Split(out, "\n")
-	}
-	assert.SlicesEqual(tb, lines, expected)
+	lines := splitLines(out)
+	expected = splitLines(strings.Join(expected, "\n"))
+	assert.LinesEqual(tb, lines, expected)
 }
 
 func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
@@ -29,13 +27,11 @@ func assertMarshalUnordered(tb testing.TB, set *Set, expected []string) {
 	var b bytes.Buffer
 	set.WritePrometheusUnthrottled(&b)
 	out := strings.Trim(b.String(), "\n")
-	var lines []string
-	if out != "" {
-		lines = strings.Split(out, "\n")
-	}
+	lines := splitLines(out)
+	expected = splitLines(strings.Join(expected, "\n"))
 	slices.Sort(lines)
 	slices.Sort(expected)
-	assert.SlicesEqual(tb, lines, expected)
+	assert.LinesEqual(tb, lines, expected)
 }
 
 func hammer(tb testing.TB, n int, f func(int)) {
@@ -54,4 +50,10 @@ func hammer(tb testing.TB, n int, f func(int)) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+func splitLines(s string) []string {
+	lines := strings.SplitAfter(s, "\n")
+	lines[len(lines)-1] += "\n"
+	return lines
 }

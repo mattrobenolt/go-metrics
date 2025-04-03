@@ -25,6 +25,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"go.withmatt.com/metrics/internal/assert/difflib"
 )
 
 // Equal asserts that two values are equal.
@@ -34,6 +36,15 @@ func Equal[T comparable](tb testing.TB, got, want T, options ...Option) bool {
 		return true
 	}
 	report(tb, got, want, "assert.Equal", true /* showWant */, options...)
+	return false
+}
+
+func LinesEqual(tb testing.TB, got, want []string, options ...Option) bool {
+	tb.Helper()
+	if slices.Equal(got, want) {
+		return true
+	}
+	reportDiff(tb, got, want)
 	return false
 }
 
@@ -185,26 +196,29 @@ func report(tb testing.TB, got, want any, desc string, showWant bool, options ..
 	tb.Error(buffer.String())
 }
 
-func reportStringSlice(buffer *strings.Builder, got, want []string) {
-	if len(got) == len(want) {
-		for i := range got {
-			if got[i] != want[i] {
-				fmt.Fprintf(buffer, "(line %d)\n", i+1)
-				fmt.Fprintf(buffer, "  \033[0;31m-`%s`\033[0m\n", want[i])
-				fmt.Fprintf(buffer, "  \033[0;32m+`%s`\033[0m\n", got[i])
-			}
-		}
-	} else {
-		fmt.Fprintf(buffer, "got (len=%d):\n", len(got))
-		for i, line := range got {
-			fmt.Fprintf(buffer, "  %3d | `%s`\n", i+1, line)
-		}
+func reportDiff(tb testing.TB, got, want []string) {
+	tb.Helper()
+	var buffer strings.Builder
+	buffer.WriteString("\n")
+	fmt.Fprintf(&buffer, "assertion:\tassert.LinesEqual\n")
+	difflib.WriteUnifiedDiff(&buffer, difflib.UnifiedDiff{
+		A:        got,
+		B:        want,
+		FromFile: "got",
+		ToFile:   "want",
+		Context:  2,
+	})
+	tb.Error(buffer.String())
+}
 
-		fmt.Fprintf(buffer, "\nwant (len=%d):\n", len(want))
-		for i, line := range want {
-			fmt.Fprintf(buffer, "  %3d | `%s`\n", i+1, line)
-		}
-	}
+func reportStringSlice(buffer *strings.Builder, got, want []string) {
+	difflib.WriteUnifiedDiff(buffer, difflib.UnifiedDiff{
+		A:        got,
+		B:        want,
+		FromFile: "got",
+		ToFile:   "want",
+		Context:  2,
+	})
 }
 
 func isSlice(got any) bool {
