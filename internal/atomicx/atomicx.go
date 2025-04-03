@@ -57,12 +57,15 @@ func (x *Sum) Add(val float64) {
 		return
 	}
 
-	// Fast path to first check if the value is actually a whole number in
-	// disguise. This extra check is a few nanoseconds cost, but the benefit
-	// of avoiding the CAS loop is significant especially under pressure.
-	if intval := uint64(val); val == float64(intval) {
-		x.i.Add(intval)
-		return
+	// if we're less than 1, we must be a float
+	if val >= 1 {
+		// Fast path to first check if the value is actually a whole number in
+		// disguise. This extra check is a few nanoseconds cost, but the benefit
+		// of avoiding the CAS loop is significant especially under pressure.
+		if intval := uint64(val); val == float64(intval) {
+			x.i.Add(intval)
+			return
+		}
 	}
 
 	// Choose a random index to update the floating point part of the sum.
