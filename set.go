@@ -211,7 +211,9 @@ func (s *Set) UnregisterCollector(c Collector) {
 			return
 		}
 
-		newValues = slices.Clone(slices.Delete(*oldValues, idx, idx+1))
+		newValues = slices.Clone(*oldValues)
+		newValues = slices.Delete(newValues, idx, idx+1)
+		newValues = slices.Clip(newValues)
 		if s.collectors.CompareAndSwap(oldValues, &newValues) {
 			return
 		}
