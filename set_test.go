@@ -141,6 +141,42 @@ func TestSetConstantTags(t *testing.T) {
 		`counter6{foo="bar",x="y",i="j",z="10"} 1`,
 		`collector1{foo="bar"} 10`,
 	})
+
+	s5 := NewSet()
+	s5.NewCounter("counter1").Inc()
+
+	assertMarshalUnordered(t, s5, []string{
+		`counter1 1`,
+	})
+
+	s5.AppendConstantTags("a", "b")
+	assertMarshalUnordered(t, s5, []string{
+		`counter1{a="b"} 1`,
+	})
+
+	s5.AppendConstantTags("c", "d")
+	assertMarshalUnordered(t, s5, []string{
+		`counter1{a="b",c="d"} 1`,
+	})
+
+	s6 := s5.NewSet()
+	s6.NewCounter("counter2").Inc()
+	assertMarshalUnordered(t, s5, []string{
+		`counter1{a="b",c="d"} 1`,
+		`counter2{a="b",c="d"} 1`,
+	})
+
+	s5.AppendConstantTags("e", "f")
+	assertMarshalUnordered(t, s5, []string{
+		`counter1{a="b",c="d",e="f"} 1`,
+		`counter2{a="b",c="d",e="f"} 1`,
+	})
+
+	s6.AppendConstantTags("g", "h")
+	assertMarshalUnordered(t, s5, []string{
+		`counter1{a="b",c="d",e="f"} 1`,
+		`counter2{a="b",c="d",e="f",g="h"} 1`,
+	})
 }
 
 func TestNewSetConcurrent(t *testing.T) {

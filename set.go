@@ -96,6 +96,34 @@ func newSet() *Set {
 	return s
 }
 
+// AppendConstantTags appends constant tags to the Set.
+// The new tags will descend into any children sets.
+// This is not thread-safe and should only be done as a part of initial
+// metrics setup.
+//
+// This can also panic if any new child sets with the new tags become non-unique.
+func (s *Set) AppendConstantTags(constantTags ...string) {
+	if len(constantTags) == 0 {
+		return
+	}
+
+	s.setConstantTags(s.constantTags, constantTags...)
+
+	// We also need to descend into all children sets and append the new tags
+	// there as well.
+	s.rangeChildrenSets(func(child *Set) bool {
+		if child.id == emptyHash {
+			s.unorderedSets.Delete(child)
+		} else {
+			s.setsByHash.Delete(child.id)
+		}
+
+		child.AppendConstantTags(constantTags...)
+		s.mustStoreSet(child)
+		return true
+	})
+}
+
 func (s *Set) setConstantTags(previousConstantTags string, constantTags ...string) {
 	s.metrics.Init(compareNamedMetrics)
 	s.constantTags = joinTags(previousConstantTags, MustTags(constantTags...)...)
@@ -259,26 +287,35 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 	return bb.Len(), nil
 }
 
-// writeChildrenSets writes all sets to the buffer.
-func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
-	var err error
+// rangeChildrenSets iterates over all child sets with a single
+// callback function. rangeChildrenSets also maintains expiration
+// and deletes expired sets if applicable.
+func (s *Set) rangeChildrenSets(f func(s *Set) bool) {
+	keepGoing := true
 	s.setsByHash.Range(func(key metricHash, child *Set) bool {
 		if child.isExpired() {
 			s.setsByHash.Delete(key)
 			return true
 		}
-
-		_, err = child.writePrometheus(bb, throttle)
-		return err == nil
+		keepGoing = f(child)
+		return keepGoing
 	})
-	if err != nil {
-		return err
+	if !keepGoing {
+		return
 	}
 	s.unorderedSets.Range(func(child *Set) bool {
 		if child.isExpired() {
 			s.unorderedSets.Delete(child)
 			return true
 		}
+		return f(child)
+	})
+}
+
+// writeChildrenSets writes all sets to the buffer.
+func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
+	var err error
+	s.rangeChildrenSets(func(child *Set) bool {
 		_, err = child.writePrometheus(bb, throttle)
 		return err == nil
 	})
