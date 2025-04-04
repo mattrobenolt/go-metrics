@@ -110,7 +110,7 @@ func (w ExpfmtWriter) WriteDuration(value time.Duration) {
 	w.b.WriteByte('\n')
 }
 
-// WriteDuration writes a bool and signals the end of the metric.
+// WriteBool writes a bool and signals the end of the metric.
 func (w ExpfmtWriter) WriteBool(value bool) {
 	if value {
 		w.b.WriteString(" 1\n")

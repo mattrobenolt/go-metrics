@@ -44,7 +44,7 @@ func (s *Set) NewSetVecWithTTL(label string, ttl time.Duration) *SetVec {
 	return sv
 }
 
-// WithLabelValues returns the Set for the corresponding label value.
+// WithLabelValue returns the Set for the corresponding label value.
 // If the combination of values is seen for the first time, a new Set
 // is created.
 //
@@ -53,20 +53,20 @@ func (s *Set) NewSetVecWithTTL(label string, ttl time.Duration) *SetVec {
 // the returned Set alive if necessary.
 //
 // See [Set.KeepAlive] to manually keep a specific Set alive.
-func (s *SetVec) WithLabelValue(value string) *Set {
-	hash := hashFinish(s.partialHash, value)
+func (sv *SetVec) WithLabelValue(value string) *Set {
+	hash := hashFinish(sv.partialHash, value)
 
-	set, ok := s.s.setsByHash.Load(hash)
+	set, ok := sv.s.setsByHash.Load(hash)
 	if !ok {
-		set = s.s.loadOrStoreSetFromVec(hash, s.ttl, s.label, value)
+		set = sv.s.loadOrStoreSetFromVec(hash, sv.ttl, sv.label, value)
 	}
 	set.KeepAlive()
 	return set
 }
 
 // RemoveByLabelValue removes the Set for the corresponding label value.
-func (s *SetVec) RemoveByLabelValue(value string) {
-	s.s.setsByHash.Delete(hashFinish(s.partialHash, value))
+func (sv *SetVec) RemoveByLabelValue(value string) {
+	sv.s.setsByHash.Delete(hashFinish(sv.partialHash, value))
 }
 
 // NewUint64Vec creates a new [Uint64Vec] with the supplied name.
@@ -83,13 +83,13 @@ func (sv *SetVec) NewUint64Vec(family string, labels ...string) *Uint64Vec {
 // The returned Uint64 is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *SetVec) NewUint64(family string, value string, tags ...string) *Uint64 {
-	return s.WithLabelValue(value).NewUint64(family, tags...)
+func (sv *SetVec) NewUint64(family string, value string, tags ...string) *Uint64 {
+	return sv.WithLabelValue(value).NewUint64(family, tags...)
 }
 
 // NewCounter is an alias for [SetVec.NewUint64].
-func (s *SetVec) NewCounter(family string, value string, tags ...string) *Uint64 {
-	return s.WithLabelValue(value).NewCounter(family, tags...)
+func (sv *SetVec) NewCounter(family string, value string, tags ...string) *Uint64 {
+	return sv.WithLabelValue(value).NewCounter(family, tags...)
 }
 
 // NewInt64Vec creates a new [Int64Vec] with the supplied name.
@@ -106,8 +106,8 @@ func (sv *SetVec) NewInt64Vec(family string, labels ...string) *Int64Vec {
 // The returned Int64 is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *SetVec) NewInt64(family string, value string, tags ...string) *Int64 {
-	return s.WithLabelValue(value).NewInt64(family, tags...)
+func (sv *SetVec) NewInt64(family string, value string, tags ...string) *Int64 {
+	return sv.WithLabelValue(value).NewInt64(family, tags...)
 }
 
 // NewFloat64Vec creates a new [Float64Vec] with the supplied name.
@@ -124,8 +124,8 @@ func (sv *SetVec) NewFloat64Vec(family string, labels ...string) *Float64Vec {
 // The returned Float64 is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *SetVec) NewFloat64(family string, value string, tags ...string) *Float64 {
-	return s.WithLabelValue(value).NewFloat64(family, tags...)
+func (sv *SetVec) NewFloat64(family string, value string, tags ...string) *Float64 {
+	return sv.WithLabelValue(value).NewFloat64(family, tags...)
 }
 
 // NewFixedHistogram creates and returns new FixedHistogram using the label from the SetVec.
@@ -137,16 +137,16 @@ func (s *SetVec) NewFloat64(family string, value string, tags ...string) *Float6
 // The returned FixedHistogram is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *SetVec) NewFixedHistogram(family string, buckets []float64, value string, tags ...string) *FixedHistogram {
-	return s.WithLabelValue(value).NewFixedHistogram(family, buckets, tags...)
+func (sv *SetVec) NewFixedHistogram(family string, buckets []float64, value string, tags ...string) *FixedHistogram {
+	return sv.WithLabelValue(value).NewFixedHistogram(family, buckets, tags...)
 }
 
 // NewFixedHistogramVec creates a new [FixedHistogramVec] with the supplied opt.
-func (s *SetVec) NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
+func (sv *SetVec) NewFixedHistogramVec(family string, buckets []float64, labels ...string) *FixedHistogramVec {
 	buckets = getBuckets(buckets)
 
 	return &FixedHistogramVec{
-		commonVec: getCommonVecSetVec(s, family, labels),
+		commonVec: getCommonVecSetVec(sv, family, labels),
 		buckets:   buckets,
 		labels:    labelsForBuckets(buckets),
 	}
@@ -161,8 +161,8 @@ func (s *SetVec) NewFixedHistogramVec(family string, buckets []float64, labels .
 // The returned Histogram is safe to use from concurrent goroutines.
 //
 // This will panic if values are invalid or already registered.
-func (s *SetVec) NewHistogram(family string, value string, tags ...string) *Histogram {
-	return s.WithLabelValue(value).NewHistogram(family, tags...)
+func (sv *SetVec) NewHistogram(family string, value string, tags ...string) *Histogram {
+	return sv.WithLabelValue(value).NewHistogram(family, tags...)
 }
 
 // NewHistogramVec creates a new [HistogramVec] with the supplied name.

@@ -1,4 +1,6 @@
 // See: https://go.withmatt.com/fasttime
+//
+//nolint:staticcheck
 package fasttime
 
 import (

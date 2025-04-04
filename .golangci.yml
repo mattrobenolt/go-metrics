@@ -1,4 +1,4 @@
-version: "2"
+version: '2'
 
 linters:
   enable:
@@ -20,6 +20,9 @@ linters:
     - errcheck
 
   settings:
+    staticcheck:
+      checks:
+        - all
     gosec:
       excludes:
         - G104

@@ -1,3 +1,4 @@
+// Package atomicx provides additional atomic types.
 package atomicx
 
 import (

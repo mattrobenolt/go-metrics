@@ -24,7 +24,7 @@ import (
 	"go.withmatt.com/metrics"
 )
 
-// HTTP Content-Type header for this format.
+// ContentType is the HTTP Content-Type header for this format.
 const ContentType = "text/plain; version=0.0.4"
 
 // Handler returns an http.Handler for the global metrics Set.

@@ -15,6 +15,8 @@
 // are no guarantees generated diffs are consumable by patch(1).
 //
 // Taken from https://github.com/pmezard/go-difflib see LICENSE.
+//
+//nolint:staticcheck
 package difflib
 
 import (
