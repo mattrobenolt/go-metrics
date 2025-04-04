@@ -39,14 +39,16 @@ func ResetDefaultSet() {
 // RegisterDefaultCollectors registers the default Collectors
 // onto the global Set.
 func RegisterDefaultCollectors() {
-	RegisterCollector(NewGoMetricsCollector())
-	RegisterCollector(NewProcessMetricsCollector())
+	RegisterCollector(
+		NewGoMetricsCollector(),
+		NewProcessMetricsCollector(),
+	)
 }
 
-// RegisterCollector registers a Collector onto the global Set.
+// RegisterCollector registers one or more Collectors onto the global Set.
 // See [Set.RegisterCollector].
-func RegisterCollector(c Collector) {
-	defaultSet.RegisterCollector(c)
+func RegisterCollector(cs ...Collector) {
+	defaultSet.RegisterCollector(cs...)
 }
 
 // WritePrometheus writes the global Set to io.Writer.
@@ -168,23 +170,25 @@ func (s *Set) UnregisterSet(set *Set) {
 	}
 }
 
-// RegisterCollector registers a Collector.
+// RegisterCollector registers one or more Collectors.
 // Registering the same collector more than once will panic.
-func (s *Set) RegisterCollector(c Collector) {
+func (s *Set) RegisterCollector(cs ...Collector) {
 	var newValues []Collector
 	var oldValues *[]Collector
 
 	for {
 		oldValues = s.collectors.Load()
 		if oldValues != nil {
-			if slices.Contains(*oldValues, c) {
-				panic("metrics: Collector already registered")
+			for _, c := range cs {
+				if slices.Contains(*oldValues, c) {
+					panic("metrics: Collector already registered")
+				}
 			}
 			newValues = slices.Clone(*oldValues)
 		} else {
 			newValues = nil
 		}
-		newValues = append(newValues, c)
+		newValues = append(newValues, cs...)
 		if s.collectors.CompareAndSwap(oldValues, &newValues) {
 			return
 		}
