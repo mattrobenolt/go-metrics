@@ -71,6 +71,15 @@ func (w ExpfmtWriter) ConstantTags() string {
 	return w.constantTags
 }
 
+// AppendConstantTags returns a copy of ExpfmtWriter with new constant tags
+// appended and share the same underlying [bytes.Buffer].
+func (w ExpfmtWriter) AppendConstantTags(constantTags ...string) ExpfmtWriter {
+	return ExpfmtWriter{
+		b:            w.b,
+		constantTags: joinTags(w.constantTags, MustTags(constantTags...)...),
+	}
+}
+
 // WriteMetricName writes the family name, optional tags, and constant tags.
 func (w ExpfmtWriter) WriteMetricName(name MetricName) {
 	writeMetricName(w.b, name, w.constantTags)

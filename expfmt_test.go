@@ -3,6 +3,7 @@ package metrics
 import (
 	"bytes"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -200,4 +201,22 @@ func TestSizeOf(t *testing.T) {
 			Tags:   MustTags(tc.tags...),
 		}, tc.constantTags))
 	}
+}
+
+func TestAppendConstantTags(t *testing.T) {
+	w := ExpfmtWriter{
+		b: bytes.NewBuffer(nil),
+	}
+	w2 := w.AppendConstantTags("foo", "bar")
+
+	w.WriteLazyMetricUint64("a", 1)
+	w2.WriteLazyMetricUint64("b", 2)
+
+	assert.LinesEqual(t,
+		splitLines(strings.Trim(w.b.String(), "\n")),
+		[]string{
+			"a 1\n",
+			"b{foo=\"bar\"} 2\n",
+		},
+	)
 }
