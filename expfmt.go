@@ -163,6 +163,17 @@ func (w ExpfmtWriter) WriteLazyMetricUint64(family string, value uint64, tags ..
 	}, value)
 }
 
+// WriteLazyMetricInt64 writes a full metric name and int64 value.
+// Tags are passed as interleaving [label value] pairs.
+// Prefer [ExpfmtWriter.WriteMetricInt64] when performance is critical.
+// This will panic if family or tag labels are invalid.
+func (w ExpfmtWriter) WriteLazyMetricInt64(family string, value int64, tags ...string) {
+	w.WriteMetricInt64(MetricName{
+		Family: MustIdent(family),
+		Tags:   MustTags(tags...),
+	}, value)
+}
+
 // WriteLazyMetricFloat64 writes a full metric name and float64 value.
 // Tags are passed as interleaving [label value] pairs.
 // Prefer [ExpfmtWriter.WriteMetricFloat64] when performance is critical.
