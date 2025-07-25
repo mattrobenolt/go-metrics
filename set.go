@@ -455,3 +455,65 @@ func makeValues(values []string) []Value {
 	}
 	return new
 }
+
+// Collect implements the Collector interface, allowing a Set to be used as a Collector.
+// It writes all metrics in the Set and its children to the provided ExpfmtWriter.
+func (s *Set) Collect(w ExpfmtWriter) {
+	// Append this Set's constant tags to the writer's existing tags
+	constantTags := w.ConstantTags()
+	if s.constantTags != "" {
+		if constantTags != "" {
+			constantTags = constantTags + "," + s.constantTags
+		} else {
+			constantTags = s.constantTags
+		}
+	}
+	exp := ExpfmtWriter{
+		b:            w.Buffer(),
+		constantTags: constantTags,
+	}
+
+	// Write all metrics in this set
+	for _, nm := range s.metrics.Values() {
+		nm.metric.marshalTo(exp, nm.name)
+	}
+
+	// Write all children sets recursively
+	s.collectChildrenSets(exp)
+
+	// Collect from any registered collectors
+	if collectors := s.collectors.Load(); collectors != nil {
+		for _, c := range *collectors {
+			c.Collect(exp)
+		}
+	}
+}
+
+// collectChildrenSets writes all child sets using the provided ExpfmtWriter,
+// preserving any existing constant tags in the writer.
+func (s *Set) collectChildrenSets(w ExpfmtWriter) {
+	s.rangeChildrenSets(func(child *Set) bool {
+		// Create a new writer with the child's tags appended to the current writer's tags
+		childWriter := ExpfmtWriter{
+			b:            w.Buffer(),
+			constantTags: child.constantTags,
+		}
+
+		// Write child's metrics
+		for _, nm := range child.metrics.Values() {
+			nm.metric.marshalTo(childWriter, nm.name)
+		}
+
+		// Recursively collect from child's children
+		child.collectChildrenSets(childWriter)
+
+		// Collect from child's collectors
+		if collectors := child.collectors.Load(); collectors != nil {
+			for _, c := range *collectors {
+				c.Collect(childWriter)
+			}
+		}
+
+		return true
+	})
+}

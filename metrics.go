@@ -20,6 +20,16 @@ type Collector interface {
 	Collect(w ExpfmtWriter)
 }
 
+// CollectorFunc is an adapter to allow the use of ordinary functions as Collectors.
+// If f is a function with the appropriate signature, CollectorFunc(f) is a
+// Collector that calls f.
+type CollectorFunc func(w ExpfmtWriter)
+
+// Collect calls f(w).
+func (f CollectorFunc) Collect(w ExpfmtWriter) {
+	f(w)
+}
+
 // namedMetric is a single data point.
 type namedMetric struct {
 	// id is the unique hash to represent metric series.

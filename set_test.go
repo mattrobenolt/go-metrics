@@ -369,3 +369,122 @@ func TestSetVec(t *testing.T) {
 		`foo_sum{type="fixedhist",label1="value1"} 1`,
 	})
 }
+
+func TestSetAsCollector(t *testing.T) {
+	// Create a parent set with some metrics
+	parentSet := NewSet("env", "test")
+	parentCounter := parentSet.NewCounter("parent_counter")
+	parentCounter.Inc()
+
+	// Create a child set with metrics
+	childSet := parentSet.NewSet("service", "api")
+	childCounter := childSet.NewCounter("child_counter")
+	childCounter.Add(5)
+
+	// Create another set that will use the parent set as a collector
+	collectorSet := NewSet()
+	collectorSet.RegisterCollector(parentSet)
+
+	// Write metrics using the collector set
+	assertMarshalUnordered(t, collectorSet, []string{
+		`parent_counter{env="test"} 1`,
+		`child_counter{env="test",service="api"} 5`,
+	})
+}
+
+func TestSetAsCollectorWithNestedCollectors(t *testing.T) {
+	// Create a set with a custom collector
+	customCollector := CollectorFunc(func(w ExpfmtWriter) {
+		w.WriteMetricFloat64(NewMetricName("custom_metric", "type", "test"), 42)
+	})
+
+	set1 := NewSet("level", "1")
+	set1.RegisterCollector(customCollector)
+	counter1 := set1.NewCounter("counter_1")
+	counter1.Inc()
+
+	// Create another set that uses set1 as a collector
+	set2 := NewSet("level", "2")
+	set2.RegisterCollector(set1)
+	counter2 := set2.NewCounter("counter_2")
+	counter2.Add(2)
+
+	// Write metrics
+	// Note: When set1 is used as a collector within set2, it inherits set2's tags
+	assertMarshalUnordered(t, set2, []string{
+		`counter_2{level="2"} 2`,
+		`counter_1{level="2",level="1"} 1`,
+		`custom_metric{level="2",level="1",type="test"} 42`,
+	})
+}
+
+func TestSetAsCollectorPreservesWriterTags(t *testing.T) {
+	// Create a set with metrics
+	metricSet := NewSet("component", "api")
+	counter := metricSet.NewCounter("api_calls")
+	counter.Add(10)
+
+	// Create a custom collector that adds a metric
+	customCollector := CollectorFunc(func(w ExpfmtWriter) {
+		w.WriteMetricUint64(NewMetricName("custom_metric"), 100)
+	})
+	metricSet.RegisterCollector(customCollector)
+
+	// Create a main set with existing tags and use metricSet as a collector
+	mainSet := NewSet("env", "prod", "region", "us-west")
+	mainSet.RegisterCollector(metricSet)
+
+	// Verify the metrics are written with all tags combined
+	assertMarshalUnordered(t, mainSet, []string{
+		`api_calls{env="prod",region="us-west",component="api"} 10`,
+		`custom_metric{env="prod",region="us-west",component="api"} 100`,
+	})
+}
+
+func TestSetCollectWithAppendConstantTags(t *testing.T) {
+	// Create submodule sets representing different parts of an application
+	authModule := NewSet()
+	authCounter := authModule.NewCounter("auth_requests")
+	authCounter.Add(100)
+	authErrors := authModule.NewCounter("auth_errors")
+	authErrors.Add(5)
+
+	apiModule := NewSet()
+	apiCounter := apiModule.NewCounter("api_requests")
+	apiCounter.Add(500)
+	apiLatency := apiModule.NewHistogram("api_latency")
+	apiLatency.Update(0.025)
+
+	dbModule := NewSet()
+	dbQueries := dbModule.NewCounter("db_queries")
+	dbQueries.Add(1000)
+	dbModule.NewUint64Func("db_connections", func() uint64 { return 10 })
+
+	// Create a main collector that collects from each module with unique tags
+	mainCollector := CollectorFunc(func(w ExpfmtWriter) {
+		// Collect auth module metrics with module="auth" tag
+		authModule.Collect(w.AppendConstantTags("module", "auth"))
+
+		// Collect API module metrics with module="api" tag
+		apiModule.Collect(w.AppendConstantTags("module", "api"))
+
+		// Collect DB module metrics with module="database" tag
+		dbModule.Collect(w.AppendConstantTags("module", "database"))
+	})
+
+	// Create the main application set
+	appSet := NewSet("app", "myapp", "env", "prod")
+	appSet.RegisterCollector(mainCollector)
+
+	// Verify all metrics have the correct tags
+	assertMarshalUnordered(t, appSet, []string{
+		`auth_requests{app="myapp",env="prod",module="auth"} 100`,
+		`auth_errors{app="myapp",env="prod",module="auth"} 5`,
+		`api_requests{app="myapp",env="prod",module="api"} 500`,
+		`api_latency_bucket{vmrange="2.448e-02...2.783e-02",app="myapp",env="prod",module="api"} 1`,
+		`api_latency_count{app="myapp",env="prod",module="api"} 1`,
+		`api_latency_sum{app="myapp",env="prod",module="api"} 0.025`,
+		`db_queries{app="myapp",env="prod",module="database"} 1000`,
+		`db_connections{app="myapp",env="prod",module="database"} 10`,
+	})
+}
