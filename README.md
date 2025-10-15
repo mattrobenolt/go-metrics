@@ -12,11 +12,17 @@ import "go.withmatt.com/metrics"
 
 ## Features
 * Very fast, very few allocations. [Really](benchmarks.txt).
-* Optional expiring of unobserved metrics
+* Optional expiring of unobserved metrics (TTL support)
 * HTTP exporter
 * Built-in runtime metrics collectors
 * Easy Prometheus-like API
 * No dependencies
+
+## Behavior Notes
+
+**Duplicate Registration**: Registering the same metric name twice will panic. This is intentional to catch programming errors early during development.
+
+**TTL/Expiration**: Metrics created through `SetVec` with a TTL will automatically expire if not accessed. See [TTL example](https://pkg.go.dev/go.withmatt.com/metrics#example-NewSetVecWithTTL).
 
 ## Quick Start
 
@@ -44,14 +50,20 @@ func main() {
 ```
 
 ## Metric Types
-* Counters (uint64/int64/float64)
-* Gauges (uint64/int64/float64)
-* Histograms
+* **Counters** (uint64/int64/float64) - Monotonically increasing values (e.g., request count, bytes sent)
+* **Gauges** (uint64/int64/float64) - Values that can increase or decrease (e.g., memory usage, active connections)
+* **Histograms**
   - Prometheus-like (`le` label style)
   - [VictoriaMetrics-like](https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) (`vmrange` label style)
 
 > [!NOTE]
 > Summary type has not been implemented.
+
+### Counter vs Gauge
+
+While this library allows both counter and gauge types to increment/decrement, you should follow Prometheus semantics:
+- **Use Counters** for values that only increase (resets to 0 on restart). Prometheus queries use `rate()` and `increase()` functions.
+- **Use Gauges** for current measurements that can go up or down. Despite the naming, `Uint64`/`Int64`/`Float64` types can be used as gauges.
 
 ## Performance
 
