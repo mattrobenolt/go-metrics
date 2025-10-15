@@ -30,6 +30,14 @@ var fastClock = sync.OnceValue(func() *fasttime.Clock {
 // ErrSetExpired is returned from WritePrometheus when a Set has expired.
 var ErrSetExpired = errors.New("set expired")
 
+// IsActiveFunc determines if a [Set] is considered "active" and should be kept alive.
+//
+// Return true to keep the [Set] alive (prevents expiration even if the TTL has passed).
+// Return false to allow normal TTL-based expiration.
+//
+// See [SetVec.SetIsActive].
+type IsActiveFunc func(s *Set) bool
+
 // ResetDefaultSet results the default global Set.
 // See [Set.Reset].
 func ResetDefaultSet() {
@@ -83,6 +91,10 @@ type Set struct {
 
 	ttl      time.Duration
 	lastUsed atomicx.Instant
+
+	// isActive is an optional callback to determine if this Set should be kept alive.
+	// If set, it will be called during expiration checks.
+	isActive IsActiveFunc
 }
 
 // NewSet creates new set of metrics.
@@ -330,6 +342,13 @@ func (s *Set) isExpired() bool {
 	if s.ttl == 0 {
 		return false
 	}
+
+	// Check if user considers this Set "active"
+	if s.isActive != nil && s.isActive(s) {
+		s.KeepAlive() // Bump lastUsed since it's active
+		return false  // Don't expire while active
+	}
+
 	return fastClock().Since(s.lastUsed.Load()) > s.ttl
 }
 
@@ -394,10 +413,17 @@ func (s *Set) loadOrStoreMetricFromVec(
 
 // loadOrStoreSetFromVec will attempt to create a new set or return one that
 // was potentially created in parallel from a SetVec which is partially materialized.
-func (s *Set) loadOrStoreSetFromVec(hash metricHash, ttl time.Duration, label Label, value string) *Set {
+func (s *Set) loadOrStoreSetFromVec(
+	hash metricHash,
+	ttl time.Duration,
+	isActive IsActiveFunc,
+	label Label,
+	value string,
+) *Set {
 	set := newSet()
 	set.id = hash
 	set.ttl = ttl
+	set.isActive = isActive
 	set.KeepAlive()
 	set.constantTags = joinTags(s.constantTags, Tag{
 		label: label,
@@ -490,13 +516,47 @@ func (s *Set) collectChildrenSets(w ExpfmtWriter, throttle bool) {
 	})
 }
 
-		// Collect from child's collectors
-		if collectors := child.collectors.Load(); collectors != nil {
-			for _, c := range *collectors {
-				c.Collect(childWriter)
-			}
+// GetMetricUint64 returns the current value of a [Uint64] metric by family name.
+//
+// Returns (value, true) if the metric exists and is a [Uint64], or (0, false) if not found or wrong type.
+//
+// This is typically used within an [IsActiveFunc] to check metric values.
+func (s *Set) GetMetricUint64(family string) (uint64, bool) {
+	hash := getHashStrings(family, nil)
+	if nm, ok := s.metrics.Load(hash); ok {
+		if m, ok := nm.metric.(*Uint64); ok {
+			return m.Get(), true
 		}
+	}
+	return 0, false
+}
 
-		return true
-	})
+// GetMetricInt64 returns the current value of an [Int64] metric by family name.
+//
+// Returns (value, true) if the metric exists and is an [Int64], or (0, false) if not found or wrong type.
+//
+// This is typically used within an [IsActiveFunc] to check metric values.
+func (s *Set) GetMetricInt64(family string) (int64, bool) {
+	hash := getHashStrings(family, nil)
+	if nm, ok := s.metrics.Load(hash); ok {
+		if m, ok := nm.metric.(*Int64); ok {
+			return m.Get(), true
+		}
+	}
+	return 0, false
+}
+
+// GetMetricFloat64 returns the current value of a [Float64] metric by family name.
+//
+// Returns (value, true) if the metric exists and is a [Float64], or (0, false) if not found or wrong type.
+//
+// This is typically used within an [IsActiveFunc] to check metric values.
+func (s *Set) GetMetricFloat64(family string) (float64, bool) {
+	hash := getHashStrings(family, nil)
+	if nm, ok := s.metrics.Load(hash); ok {
+		if m, ok := nm.metric.(*Float64); ok {
+			return m.Get(), true
+		}
+	}
+	return 0, false
 }

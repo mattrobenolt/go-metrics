@@ -13,6 +13,7 @@ type SetVec struct {
 	label       Label
 	partialHash *maphash.Hash
 	ttl         time.Duration
+	isActive    IsActiveFunc
 }
 
 // NewSetVec creates a new SetVec on the global Set.
@@ -58,7 +59,7 @@ func (sv *SetVec) WithLabelValue(value string) *Set {
 
 	set, ok := sv.s.setsByHash.Load(hash)
 	if !ok {
-		set = sv.s.loadOrStoreSetFromVec(hash, sv.ttl, sv.label, value)
+		set = sv.s.loadOrStoreSetFromVec(hash, sv.ttl, sv.isActive, sv.label, value)
 	}
 	set.KeepAlive()
 	return set
@@ -67,6 +68,23 @@ func (sv *SetVec) WithLabelValue(value string) *Set {
 // RemoveByLabelValue removes the Set for the corresponding label value.
 func (sv *SetVec) RemoveByLabelValue(value string) {
 	sv.s.setsByHash.Delete(hashFinish(sv.partialHash, value))
+}
+
+// SetIsActive sets a callback to determine if [Set]s created by this [SetVec] should be kept alive.
+//
+// The callback is called during expiration checks. If it returns true, the [Set] will not expire
+// even if the TTL has passed. This is useful for keeping [Set]s alive based on metric values,
+// such as keeping a [Set] alive while a gauge is greater than zero.
+//
+// Example:
+//
+//	sv := metrics.NewSetVecWithTTL("id", time.Hour)
+//	sv.SetIsActive(func(s *metrics.Set) bool {
+//	    active, _ := s.GetMetricUint64("active")
+//	    return active > 0
+//	})
+func (sv *SetVec) SetIsActive(fn IsActiveFunc) {
+	sv.isActive = fn
 }
 
 // NewUint64Vec creates a new [Uint64Vec] with the supplied name.
