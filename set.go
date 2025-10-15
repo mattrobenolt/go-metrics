@@ -260,27 +260,7 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 		constantTags: s.constantTags,
 	}
 
-	for _, nm := range s.metrics.Values() {
-		// yield the scheduler for each metric to not starve CPU
-		if throttle {
-			runtime.Gosched()
-		}
-		nm.metric.marshalTo(exp, nm.name)
-	}
-
-	if err := s.writeChildrenSets(bb, throttle); err != nil {
-		return 0, err
-	}
-
-	if collectors := s.collectors.Load(); collectors != nil {
-		for _, c := range *collectors {
-			// yield the scheduler for each Collector to not starve CPU
-			if throttle {
-				runtime.Gosched()
-			}
-			c.Collect(exp)
-		}
-	}
+	s.collectInternal(exp, throttle)
 
 	if bb.Len() == 0 {
 		return 0, nil
@@ -318,14 +298,32 @@ func (s *Set) rangeChildrenSets(f func(s *Set) bool) {
 	})
 }
 
-// writeChildrenSets writes all sets to the buffer.
-func (s *Set) writeChildrenSets(bb *bytes.Buffer, throttle bool) error {
-	var err error
-	s.rangeChildrenSets(func(child *Set) bool {
-		_, err = child.writePrometheus(bb, throttle)
-		return err == nil
-	})
-	return err
+// collectInternal is the unified collection logic used by both Collect and WritePrometheus.
+// It writes metrics, child sets, and collectors to the provided ExpfmtWriter.
+// If throttle is true, it yields the scheduler periodically to avoid CPU starvation.
+func (s *Set) collectInternal(w ExpfmtWriter, throttle bool) {
+	// Write all metrics in this set
+	for _, nm := range s.metrics.Values() {
+		// yield the scheduler for each metric to not starve CPU
+		if throttle {
+			runtime.Gosched()
+		}
+		nm.metric.marshalTo(w, nm.name)
+	}
+
+	// Write all children sets recursively
+	s.collectChildrenSets(w, throttle)
+
+	// Collect from any registered collectors
+	if collectors := s.collectors.Load(); collectors != nil {
+		for _, c := range *collectors {
+			// yield the scheduler for each Collector to not starve CPU
+			if throttle {
+				runtime.Gosched()
+			}
+			c.Collect(w)
+		}
+	}
 }
 
 func (s *Set) isExpired() bool {
@@ -473,25 +471,12 @@ func (s *Set) Collect(w ExpfmtWriter) {
 		constantTags: constantTags,
 	}
 
-	// Write all metrics in this set
-	for _, nm := range s.metrics.Values() {
-		nm.metric.marshalTo(exp, nm.name)
-	}
-
-	// Write all children sets recursively
-	s.collectChildrenSets(exp)
-
-	// Collect from any registered collectors
-	if collectors := s.collectors.Load(); collectors != nil {
-		for _, c := range *collectors {
-			c.Collect(exp)
-		}
-	}
+	s.collectInternal(exp, false)
 }
 
 // collectChildrenSets writes all child sets using the provided ExpfmtWriter,
 // preserving any existing constant tags in the writer.
-func (s *Set) collectChildrenSets(w ExpfmtWriter) {
+func (s *Set) collectChildrenSets(w ExpfmtWriter, throttle bool) {
 	s.rangeChildrenSets(func(child *Set) bool {
 		// Create a new writer with the child's tags appended to the current writer's tags
 		childWriter := ExpfmtWriter{
@@ -499,13 +484,11 @@ func (s *Set) collectChildrenSets(w ExpfmtWriter) {
 			constantTags: child.constantTags,
 		}
 
-		// Write child's metrics
-		for _, nm := range child.metrics.Values() {
-			nm.metric.marshalTo(childWriter, nm.name)
-		}
+		child.collectInternal(childWriter, throttle)
 
-		// Recursively collect from child's children
-		child.collectChildrenSets(childWriter)
+		return true
+	})
+}
 
 		// Collect from child's collectors
 		if collectors := child.collectors.Load(); collectors != nil {
