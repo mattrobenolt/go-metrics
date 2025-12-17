@@ -175,7 +175,11 @@ func NewTransformer(mapping Mapping) *Transformer {
 
 // compareLines compares two metric lines based on their family name
 func compareLines(a, b string) int {
-	return strings.Compare(getFamily(a), getFamily(b))
+	famA, famB := getFamily(a), getFamily(b)
+	if cmp := strings.Compare(famA, famB); cmp != 0 {
+		return cmp
+	}
+	return strings.Compare(a, b)
 }
 
 func getFamily(b string) string {
