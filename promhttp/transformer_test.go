@@ -20,6 +20,8 @@ foo{a="1"} 1
 foo{a="2"} 1
 ######
 
+some_count 1
+
 hist2_count{foo="bar"} 1
 hist2_sum{foo="bar"} 1
 hist2_bucket{le="+Inf",foo="bar"} 1
@@ -46,6 +48,10 @@ foo2{b="1"} 1
 			Type: Histogram,
 			Help: "cool histogram",
 		},
+		"some_count": {
+			Type: Counter,
+			Help: "counter with bad name",
+		},
 	})
 	r.WriteTo(tr)
 
@@ -65,14 +71,17 @@ foo2{b="1"} 1
 hist1_bucket{le="0.1",foo="bar"} 0
 hist1_bucket{le="10",foo="bar"} 1
 hist1_bucket{le="+Inf",foo="bar"} 1
-hist1_sum{foo="bar"} 1
 hist1_count{foo="bar"} 1
+hist1_sum{foo="bar"} 1
 # HELP hist2
 # TYPE hist2 untyped
 hist2_bucket{le="10",foo="bar"} 1
 hist2_bucket{le="+Inf",foo="bar"} 1
-hist2_sum{foo="bar"} 1
 hist2_count{foo="bar"} 1
+hist2_sum{foo="bar"} 1
+# HELP some_count counter with bad name
+# TYPE some_count counter
+some_count 1
 # HELP x
 # TYPE x untyped
 x 1

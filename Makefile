@@ -19,7 +19,7 @@ $(BIN)/godoc: | $(BIN)
 	$(TOOL_INSTALL) golang.org/x/tools/cmd/godoc@latest
 
 $(BIN)/gotestsum: Makefile | $(BIN)
-	$(TOOL_INSTALL) gotest.tools/gotestsum@v1.12.1
+	$(TOOL_INSTALL) gotest.tools/gotestsum@v1.13.0
 
 $(BIN)/benchstat: $(BIN)
 	$(TOOL_INSTALL) golang.org/x/perf/cmd/benchstat@latest

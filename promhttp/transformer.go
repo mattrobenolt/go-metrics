@@ -48,6 +48,16 @@ type Desc struct {
 // Mapping is a map of metric family names to their descriptions
 type Mapping map[string]Desc
 
+func (m Mapping) get(family string) (string, Desc) {
+	// check if we have an exact match in our mapping first
+	if d, ok := m[family]; ok {
+		return family, d
+	}
+
+	family = normalizeFamily(family)
+	return family, m[family]
+}
+
 // A Transformer accepts Prometheus metrics written in, and can read out
 // metrics augmented by a [Mapping]. If a mapping does not exist for a metric
 // family, it is assumed to be [Untyped].
@@ -136,20 +146,19 @@ func handleTransform(in *io.PipeReader, out *io.PipeWriter, mapping Mapping) {
 
 	var lastFamily string
 	for _, line := range lines {
-		family := getFamily(line)
+		family, desc := mapping.get(getFamily(line))
 		if family != lastFamily {
 			lastFamily = family
-			m := mapping[family]
 			buf.WriteString("# HELP ")
 			buf.WriteString(family)
-			if m.Help != "" {
+			if desc.Help != "" {
 				buf.WriteByte(' ')
-				buf.WriteString(m.Help)
+				buf.WriteString(desc.Help)
 			}
 			buf.WriteString("\n# TYPE ")
 			buf.WriteString(family)
 			buf.WriteByte(' ')
-			buf.WriteString(m.Type.String())
+			buf.WriteString(desc.Type.String())
 			buf.WriteByte('\n')
 		}
 		buf.WriteString(line)
@@ -172,22 +181,19 @@ func compareLines(a, b string) int {
 func getFamily(b string) string {
 	// Find either the first { or the first space to extract
 	// the family out of the metric line.
-	if idx := strings.IndexByte(b, '{'); idx != -1 {
-		b = b[:idx]
-	} else if idx := strings.IndexByte(b, ' '); idx != -1 {
-		b = b[:idx]
+	if idx := strings.IndexAny(b, "{ "); idx != -1 {
+		return b[:idx]
 	}
+	return b
+}
 
+func normalizeFamily(b string) string {
 	// Family names for prom are without the special suffixes
 	// for histograms.
-	switch {
-	case strings.HasSuffix(b, "_bucket"):
-		b = strings.TrimSuffix(b, "_bucket")
-	case strings.HasSuffix(b, "_count"):
-		b = strings.TrimSuffix(b, "_count")
-	case strings.HasSuffix(b, "_sum"):
-		b = strings.TrimSuffix(b, "_sum")
+	for _, suffix := range [...]string{"_bucket", "_count", "_sum"} {
+		if prefix, found := strings.CutSuffix(b, suffix); found {
+			return prefix
+		}
 	}
-
 	return b
 }
