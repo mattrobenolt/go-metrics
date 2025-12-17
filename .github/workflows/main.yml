@@ -11,37 +11,35 @@ jobs:
   test:
     strategy:
       matrix:
-        go: ['1.24', '1.25']
+        go: ['go124', 'go125']
         os: [ubuntu, macos]
     runs-on: ${{ matrix.os }}-latest
-    name: test (go${{ matrix.go }}-${{ matrix.os }})
+    name: test (${{ matrix.go }}-${{ matrix.os }})
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: ${{ matrix.go }}
-      - run: go mod download
-      - run: go build -v
-      - run: make test
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop .#${{ matrix.go }} --command go mod download
+      - run: nix develop .#${{ matrix.go }} --command go build -v
+      - run: nix develop .#${{ matrix.go }} --command just test
 
   test-race:
     strategy:
       matrix:
-        go: ['1.24', '1.25']
+        go: ['go124', 'go125']
         os: [ubuntu, macos]
     runs-on: ${{ matrix.os }}-latest
-    name: test-race (go${{ matrix.go }}-${{ matrix.os }})
+    name: test-race (${{ matrix.go }}-${{ matrix.os }})
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: ${{ matrix.go }}
-      - run: make test-race
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop .#${{ matrix.go }} --command just test-race
 
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: golangci/golangci-lint-action@v7
-        with:
-          version: v2.0.2
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop .#go125 --command just lint

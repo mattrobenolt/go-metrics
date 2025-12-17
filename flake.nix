@@ -9,7 +9,12 @@
   };
 
   outputs =
-    { nixpkgs, flake-utils, matt, ... }:
+    {
+      nixpkgs,
+      flake-utils,
+      matt,
+      ...
+    }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -17,20 +22,28 @@
           inherit system;
           overlays = [ matt.overlays.default ];
         };
+
+        # Common dev tools for all shells
+        devTools = with pkgs; [
+          just
+          gopls
+          golangci-lint
+          gotestsum
+        ];
+
+        mkGoShell =
+          goPackage:
+          pkgs.mkShell {
+            packages = [ goPackage ] ++ devTools;
+          };
       in
       {
-        devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            go-bin_1_25
-            gopls
-            just
-            gnumake
-          ];
+        # Default shell uses Go 1.25
+        devShells.default = mkGoShell pkgs.go-bin_1_25;
 
-          shellHook = ''
-            export PATH="$PWD/bin:$PATH"
-          '';
-        };
+        # Explicit shells for each Go version
+        devShells.go124 = mkGoShell pkgs.go_1_24;
+        devShells.go125 = mkGoShell pkgs.go-bin_1_25;
       }
     );
 }
