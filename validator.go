@@ -28,6 +28,11 @@ func MustTag(label, value string) Tag {
 	}
 }
 
+// NewTag creates a Tag from an already-validated Label and Value.
+func NewTag(label Label, value Value) Tag {
+	return Tag{label: label, value: value}
+}
+
 // UnsafeValue creates a Value, but does not validate it.
 func UnsafeValue(s string) Value {
 	return Value{s}
@@ -43,6 +48,107 @@ func MustValue(s string) Value {
 	// Values are expected to vary quite a lot, and there's no use
 	// in uniquing.
 	return Value{s}
+}
+
+// SanitizeValue escapes a string to be a valid tag value.
+// Backslashes, double-quotes, and line feeds are escaped.
+// Invalid UTF-8 sequences are replaced with the Unicode replacement character.
+//
+// If the input is already valid, it is returned without allocation.
+func SanitizeValue(s string) Value {
+	// Fast path for valid UTF-8: just check for escape characters
+	if utf8ValidString(s) {
+		n := 0
+		for i := range len(s) {
+			switch s[i] {
+			case '\\', '"', '\n':
+				n++
+			}
+		}
+		if n == 0 {
+			return Value{s}
+		}
+		// Valid UTF-8 but needs escaping
+		b := make([]byte, 0, len(s)+n)
+		last := 0
+		for i := range len(s) {
+			var esc byte
+			switch s[i] {
+			case '\\':
+				esc = '\\'
+			case '"':
+				esc = '"'
+			case '\n':
+				esc = 'n'
+			default:
+				continue
+			}
+			b = append(b, s[last:i]...)
+			b = append(b, '\\', esc)
+			last = i + 1
+		}
+		b = append(b, s[last:]...)
+		return Value{string(b)}
+	}
+
+	// Slow path: invalid UTF-8, need to scan and replace
+	extra := 0
+	for i := 0; i < len(s); {
+		c := s[i]
+		if c < 0x80 {
+			switch c {
+			case '\\', '"', '\n':
+				extra++
+			}
+			i++
+			continue
+		}
+		r, size := decodeRuneInString(s[i:])
+		if r == runeError && size == 1 {
+			extra += 2 // replacement char is 3 bytes, invalid is 1
+			i++
+		} else {
+			i += size
+		}
+	}
+
+	b := make([]byte, 0, len(s)+extra)
+	last := 0
+	for i := 0; i < len(s); {
+		c := s[i]
+		if c < 0x80 {
+			var esc byte
+			switch c {
+			case '\\':
+				esc = '\\'
+			case '"':
+				esc = '"'
+			case '\n':
+				esc = 'n'
+			default:
+				i++
+				continue
+			}
+			b = append(b, s[last:i]...)
+			b = append(b, '\\', esc)
+			i++
+			last = i
+			continue
+		}
+
+		r, size := decodeRuneInString(s[i:])
+		if r == runeError && size == 1 {
+			b = append(b, s[last:i]...)
+			b = append(b, "\uFFFD"...)
+			i++
+			last = i
+		} else {
+			i += size
+		}
+	}
+	b = append(b, s[last:]...)
+
+	return Value{string(b)}
 }
 
 // MustTags converts label value pairs into Tags.
