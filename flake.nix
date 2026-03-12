@@ -32,19 +32,25 @@
         ];
 
         mkGoShell =
-          goPackage:
-          pkgs.mkShell {
-            packages = [ goPackage ] ++ devTools;
-          };
+          goPackage: attrs:
+          pkgs.mkShell (
+            {
+              packages = [ goPackage ] ++ devTools;
+            }
+            // attrs
+          );
+        synctestEnv = {
+          GOEXPERIMENT = "synctest";
+        };
       in
       {
         # Default shell uses Go 1.25
-        devShells.default = mkGoShell pkgs.go-bin_1_25;
+        devShells.default = mkGoShell pkgs.go-bin_1_25 synctestEnv;
 
         # Explicit shells for each Go version
-        devShells.go124 = mkGoShell pkgs.go-bin_1_24;
-        devShells.go125 = mkGoShell pkgs.go-bin_1_25;
-        devShells.go126 = mkGoShell pkgs.go-bin_1_26;
+        devShells.go124 = mkGoShell pkgs.go-bin_1_24 synctestEnv;
+        devShells.go125 = mkGoShell pkgs.go-bin_1_25 synctestEnv;
+        devShells.go126 = mkGoShell pkgs.go-bin_1_26 { };
       }
     );
 }

@@ -20,15 +20,15 @@ docs:
 
 # Run tests
 test:
-    GOEXPERIMENT=synctest gotestsum {{ TEST_FLAGS }}
+    gotestsum {{ TEST_FLAGS }}
 
 # Run tests with race detector
 test-race:
-    GOEXPERIMENT=synctest gotestsum {{ TEST_FLAGS }} -- -race
+    gotestsum {{ TEST_FLAGS }} -- -race
 
 # Run tests in watch mode
 test-watch:
-    GOEXPERIMENT=synctest gotestsum --watch {{ TEST_FLAGS }}
+    gotestsum --watch {{ TEST_FLAGS }}
 
 # Update benchmark results
 update-benchmarks:
