@@ -10,6 +10,7 @@ concurrency:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         go: ['go124', 'go125']
         os: [ubuntu, macos]
@@ -25,6 +26,7 @@ jobs:
 
   test-race:
     strategy:
+      fail-fast: false
       matrix:
         go: ['go124', 'go125']
         os: [ubuntu, macos]
