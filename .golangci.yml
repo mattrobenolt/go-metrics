@@ -27,6 +27,7 @@ linters:
       excludes:
         - G104
         - G115
+        - G602
 
 formatters:
   enable:

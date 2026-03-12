@@ -42,8 +42,9 @@
         devShells.default = mkGoShell pkgs.go-bin_1_25;
 
         # Explicit shells for each Go version
-        devShells.go124 = mkGoShell pkgs.go_1_24;
+        devShells.go124 = mkGoShell pkgs.go-bin_1_24;
         devShells.go125 = mkGoShell pkgs.go-bin_1_25;
+        devShells.go126 = mkGoShell pkgs.go-bin_1_26;
       }
     );
 }
