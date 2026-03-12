@@ -48,7 +48,11 @@ func ResetDefaultSet() {
 // onto the global Set.
 func RegisterDefaultCollectors() {
 	RegisterCollector(
-		NewGoMetricsCollector(),
+		NewGoInfoCollector(),
+		NewGoGCCollector(),
+		NewGoMemoryCollector(),
+		NewGoCPUCollector(),
+		NewGoMemstatsCollector(),
 		NewProcessMetricsCollector(),
 	)
 }

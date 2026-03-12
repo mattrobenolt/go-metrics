@@ -65,7 +65,18 @@ func observe(next http.Handler) http.Handler {
 }
 
 func init() {
-	metrics.RegisterDefaultCollectors()
+	metrics.RegisterCollector(
+		metrics.NewGoInfoCollector(),
+		metrics.NewGoGCCollector(),
+		metrics.NewGoMemoryCollector(),
+		metrics.NewGoSchedCollector(),
+		metrics.NewGoCPUCollector(),
+		// metrics.NewGoSyncCollector(),
+		// metrics.NewGoCgoCollector(),
+		// metrics.NewGoGodebugCollector(),
+		// metrics.NewGoMemstatsCollector(),
+		metrics.NewProcessMetricsCollector(),
+	)
 }
 
 func main() {
