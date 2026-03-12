@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['go124', 'go125']
+        go: ['go124', 'go125', 'go126']
         os: [ubuntu, macos]
     runs-on: ${{ matrix.os }}-latest
     name: test (${{ matrix.go }}-${{ matrix.os }})
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['go124', 'go125']
+        go: ['go124', 'go125', 'go126']
         os: [ubuntu, macos]
     runs-on: ${{ matrix.os }}-latest
     name: test-race (${{ matrix.go }}-${{ matrix.os }})
@@ -44,4 +44,4 @@ jobs:
       - uses: actions/checkout@v6
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - run: nix develop .#go125 --command just lint
+      - run: nix develop .#go126 --command just lint
