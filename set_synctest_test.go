@@ -12,6 +12,7 @@ import (
 )
 
 func stubFastClock(t *testing.T, testClock *fasttime.Clock) {
+	t.Helper()
 	originalFastClock := fastClock
 	t.Cleanup(func() {
 		fastClock = originalFastClock
@@ -31,6 +32,12 @@ func TestSetVecTTL(t *testing.T) {
 
 		sv.WithLabelValue("1").NewCounter("foo").Inc()
 		sv.WithLabelValue("2").NewCounter("foo").Inc()
+
+		// Observe initial activity so expiration is measured from this scrape.
+		assertMarshalUnordered(t, set, []string{
+			`foo{a="1"} 1`,
+			`foo{a="2"} 1`,
+		})
 
 		time.Sleep(750 * time.Millisecond)
 
