@@ -100,7 +100,8 @@ func BenchmarkWritePrometheusTTL(b *testing.B) {
 			},
 			func(child *Set) {
 				// Active sets must survive even with an old timestamp.
-				child.lastUsed.Store(fastClock().Now() - fasttime.Instant(2*time.Hour))
+				child.keepAliveState.Store(0)
+				child.idleSince = fastClock().Now() - fasttime.Instant(2*time.Hour)
 			},
 			false,
 		},
@@ -110,7 +111,8 @@ func BenchmarkWritePrometheusTTL(b *testing.B) {
 			time.Hour,
 			nil,
 			func(child *Set) {
-				child.lastUsed.Store(fastClock().Now() - fasttime.Instant(2*time.Hour))
+				child.keepAliveState.Store(0)
+				child.idleSince = fastClock().Now() - fasttime.Instant(2*time.Hour)
 			},
 			true,
 		},

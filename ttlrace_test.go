@@ -23,7 +23,8 @@ func TestSetTTLRace(t *testing.T) {
 
 	// Model a set that was idle for longer than the production TTL. This
 	// happens BEFORE the race; neither goroutine needs to pause for 7 days.
-	child.lastUsed.Store(fastClock().Now() - fasttime.Instant(child.ttl+time.Second))
+	child.idleSince = fastClock().Now() - fasttime.Instant(child.ttl+time.Second)
+	child.keepAliveState.Store(0)
 
 	expirationDecided := make(chan struct{})
 	resumeDeletion := make(chan struct{})

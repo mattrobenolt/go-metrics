@@ -11,12 +11,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.withmatt.com/metrics/internal/atomicx"
 	"go.withmatt.com/metrics/internal/fasttime"
 	"go.withmatt.com/metrics/internal/syncx"
 )
 
 const minimumWriteBuffer = 16 * 1024
+
+const (
+	setTouched uint32 = 1 << iota
+	setDeleted
+)
 
 var defaultSet = newSet()
 
@@ -93,12 +97,27 @@ type Set struct {
 	// Children sets inherit these base tags.
 	constantTags string
 
-	ttl      time.Duration
-	lastUsed atomicx.Instant
-
-	// isActive is an optional callback to determine if this Set should be kept alive.
-	// If set, it will be called during expiration checks.
+	// ttl defines the amount of time that we keep around idle
+	// sets of metrics. If this is not set, sets are never expired.
+	//
+	// The maximum time between a Set's last activity and its expiration is
+	// "ttl + (interval between WritePrometheus calls)".
+	ttl time.Duration
+	// keepAliveState is a bitfield that is shared between expiration
+	// routines and lookups. Expiration routines run when WritePrometheus
+	// is called. Lookups are like "set.WithLabelValues(...)".
+	// - setTouched is set when a Set is used and can be done any time.
+	// - setDeleted is set when a Set is being deleted, and should only
+	//   occur inside an expirationMu lock.
+	keepAliveState atomic.Uint32
+	// expirationMu serializes expiration checks. This includes calls to
+	// isActive, clearing setTouched, and checking/setting idleSince.
+	expirationMu sync.Mutex
+	// isActive is an optional callback to determine if this Set should be
+	// kept alive. If set, it will be called during expiration checks.
 	isActive IsActiveFunc
+	// idleSince records when an expiration routine last observed activity.
+	idleSince fasttime.Instant
 }
 
 // NewSet creates new set of metrics.
@@ -155,18 +174,23 @@ func (s *Set) setConstantTags(previousConstantTags string, constantTags ...strin
 // Reset resets the Set and retains allocated memory for reuse.
 //
 // Reset retains any ConstantTags if set.
-func (s *Set) Reset() {
-	defer s.KeepAlive()
-
+//
+// Returns false if this Set has expired.
+func (s *Set) Reset() bool {
 	s.metrics.Clear()
 	s.setsByHash.Clear()
 	s.unorderedSets.Clear()
 	s.collectors.Store(nil)
+
+	return s.KeepAlive()
+
 }
 
 // NewSet creates a new child Set in s.
 // This will panic if constant tags are not unique within the parent Set. If
 // no constant tags are provided, this will never fail.
+//
+// Do not call this concurrently with WritePrometheus.
 func (s *Set) NewSet(constantTags ...string) *Set {
 	defer s.KeepAlive()
 
@@ -303,7 +327,7 @@ func (s *Set) rangeChildrenSets(f func(s *Set) bool) {
 			if testHookBeforeSetDelete != nil {
 				testHookBeforeSetDelete(child)
 			}
-			s.setsByHash.Delete(key)
+			s.setsByHash.CompareAndDelete(key, child)
 			return true
 		}
 		keepGoing = f(child)
@@ -354,13 +378,33 @@ func (s *Set) isExpired() bool {
 		return false
 	}
 
-	// Check if user considers this Set "active"
-	if s.isActive != nil && s.isActive(s) {
-		s.KeepAlive() // Bump lastUsed since it's active
-		return false  // Don't expire while active
+	s.expirationMu.Lock()
+	defer s.expirationMu.Unlock()
+
+	// Get the current state. Also clear the setTouched bit so that the
+	// next call to isExpired can see if this Set was touched between now
+	// and then.
+	state := s.keepAliveState.And(^setTouched)
+	if state&setDeleted != 0 {
+		return true
 	}
 
-	return fastClock().Since(s.lastUsed.Load()) > s.ttl
+	active := s.isActive != nil && s.isActive(s)
+	now := fastClock().Now()
+	if state&setTouched != 0 || active {
+		// The set was touched since the last time isExpired() checked,
+		// or isActive() claims that it's active. Set idleSince=now so
+		// that we keep it alive for at least ttl longer.
+		s.idleSince = now
+		return false
+	}
+	if now.Sub(s.idleSince) <= s.ttl {
+		// We're still in the ttl.
+		return false
+	}
+	// If we get here and if we didn't race against KeepAlive, then this
+	// Set is expired and should be deleted.
+	return s.keepAliveState.CompareAndSwap(0, setDeleted)
 }
 
 // mustStoreSet adds a new Set, and will panic if the set has already been registered.
@@ -377,9 +421,12 @@ func (s *Set) mustStoreSet(set *Set) {
 }
 
 // mustStoreMetric adds a new Metric, and will panic if the metric already has
-// been registered.
+// been registered or if the Set is expired.
 func (s *Set) mustStoreMetric(m Metric, name MetricName) {
-	defer s.KeepAlive()
+	if !s.KeepAlive() {
+		panic("Set expired")
+	}
+
 	nm := &namedMetric{
 		id:     getHashTags(name.Family.String(), name.Tags),
 		name:   name,
@@ -443,11 +490,15 @@ func (s *Set) loadOrStoreSetFromVec(
 	return s.loadOrStoreSet(set)
 }
 
-// KeepAlive is used to bump a Set's expiration when a TTL is set.
-func (s *Set) KeepAlive() {
-	if s.ttl > 0 {
-		s.lastUsed.Store(fastClock().Now())
+// KeepAlive records activity when a TTL is set. It returns false if the Set
+// should not be used because it's being deleted. SetVec lookups retry
+// automatically, but callers holding a Set directly must obtain a new Set.
+func (s *Set) KeepAlive() bool {
+	if s.ttl == 0 {
+		return true
 	}
+	prevState := s.keepAliveState.Or(setTouched)
+	return prevState&setDeleted == 0
 }
 
 func (s *Set) loadOrStoreSet(newSet *Set) *Set {
