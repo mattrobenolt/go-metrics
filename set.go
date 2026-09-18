@@ -289,6 +289,10 @@ func (s *Set) writePrometheus(w io.Writer, throttle bool) (int, error) {
 	return bb.Len(), nil
 }
 
+// testHookBeforeSetDelete synchronizes expiration race tests. Set it only
+// before starting collection, and restore it after collection has finished.
+var testHookBeforeSetDelete func(*Set)
+
 // rangeChildrenSets iterates over all child sets with a single
 // callback function. rangeChildrenSets also maintains expiration
 // and deletes expired sets if applicable.
@@ -296,6 +300,9 @@ func (s *Set) rangeChildrenSets(f func(s *Set) bool) {
 	keepGoing := true
 	s.setsByHash.Range(func(key metricHash, child *Set) bool {
 		if child.isExpired() {
+			if testHookBeforeSetDelete != nil {
+				testHookBeforeSetDelete(child)
+			}
 			s.setsByHash.Delete(key)
 			return true
 		}
