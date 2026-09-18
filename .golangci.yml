@@ -20,6 +20,8 @@ linters:
     - errcheck
 
   settings:
+    goconst:
+      ignore-tests: true
     staticcheck:
       checks:
         - all

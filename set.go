@@ -183,7 +183,6 @@ func (s *Set) Reset() bool {
 	s.collectors.Store(nil)
 
 	return s.KeepAlive()
-
 }
 
 // NewSet creates a new child Set in s.
