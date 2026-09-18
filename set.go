@@ -190,7 +190,7 @@ func (s *Set) Reset() bool {
 // This will panic if constant tags are not unique within the parent Set. If
 // no constant tags are provided, this will never fail.
 //
-// Do not call this concurrently with WritePrometheus.
+// Do not call this concurrently with WritePrometheus if the Set has a TTL.
 func (s *Set) NewSet(constantTags ...string) *Set {
 	defer s.KeepAlive()
 
